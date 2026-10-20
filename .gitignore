@@ -12,3 +12,4 @@ UserSettings/
 # Local course reference PDFs (include course-specific lab access information)
 /GameDev 2026 - Kickoff.pdf
 /gamedev2026-designwkp2.pdf
+__pycache__/

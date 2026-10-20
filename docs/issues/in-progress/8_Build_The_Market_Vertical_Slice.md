@@ -1,13 +1,23 @@
-# EM-008: Build the market vertical slice
+---
+type: feature
+priority: high
+created: 2026-10-17
+assignee: Codex
+branch:
+---
 
-- Status: Implemented; Unity runtime acceptance pending
-- Priority: P0
-- Owner: Codex
+# 8 — Build the market vertical slice
+
 - Dependencies: None; use the new design document.
+- Progress: Implemented; Unity runtime acceptance pending
 
-## What is the issue?
+## Context
 
 Build and test a playable first market-management loop for the new Christmas-market direction.
+
+## Goal
+
+Build the market vertical slice.
 
 ## Where is the issue?
 
@@ -17,7 +27,7 @@ New Assets/_Wintermarkt runtime, editor and tests; existing Assets/_EchoMaze rem
 
 The market simulation and presentation source now provide configurable buildings, placement previews, bounded visitors, pathfinding, queue reservations, service income, upgrades, attraction, rides, festival timer, pause/restart and results. Eight deterministic core tests pass; Unity assemblies compile against the installed Unity API. Unity scene import, Play Mode loop and exported build still need verification.
 
-## Complete fix procedure
+## Tasks
 
 1. Create a separate Wintermarkt runtime assembly and a safe editor bootstrap for the Market scene, orthographic camera, grid, provisional Goethekreuzung-side entrance and original blockout geometry. Keep the existing editor version and preserve existing user assets.
 2. Implement configurable building definitions and a money balance. Provide a green/red placement preview, grid footprints, entrance and service entry cells. Reject occupied or route-blocking placements and spend coins only after successful placement.
@@ -25,7 +35,7 @@ The market simulation and presentation source now provide configurable buildings
 4. Add a selected-building panel and a visible upgrade that changes service throughput with one atomic coin spend. Show money, arrivals and queue status; support pause and restart.
 5. Add focused tests for placement rejection without coin loss, routes, queue reservations, income once per service and upgrade affordability. Run Unity compilation and a manual entrance-to-service-to-exit loop; record actual logs and unresolved blockers.
 
-## Verification and acceptance criteria
+## Acceptance criteria
 
 In Unity, place a stall, watch a visitor walk to it and leave after service, earn coins, and buy an upgrade that demonstrably improves throughput. Invalid placement and unaffordable upgrades change neither money nor state. Pause and restart work.
 
@@ -38,3 +48,7 @@ In Unity, place a stall, watch a visitor walk to it and leave after service, ear
 - Unity Editor import, manual playtest and build remain pending due to Package Manager socket restrictions in this environment.
 
 - Location clarification: base the first playable map on Volksgarten at Goethekreuzung. Mariendom and Hauptplatz are separate locations on the proposed city overview, not additional required maps for this ticket.
+
+## Outcome
+
+_Filled in when closed: what shipped, the commit(s), and what was left out and why._
