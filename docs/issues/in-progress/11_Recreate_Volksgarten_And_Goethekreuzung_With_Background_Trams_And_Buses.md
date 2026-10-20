@@ -42,6 +42,7 @@ Meet docs/LOCATION_AND_TRANSIT.md acceptance criteria. Both vehicle types move a
 ## Work log
 
 - Requirement and official reference inventory recorded. Implementation and visual comparison remain pending.
+- 2026-10-20: blockout from Joash's Google Maps and Street View screenshots (see LOCATION_AND_TRANSIT.md). New `tools/build_site.py` generates site.json (55x74 cells, real outline, principal paths, streets, buildings, tram and bus routes as data); MarketWorld draws streets, buildings, labels and polyline vehicle routes from site.json; evening look with lit wooden huts (pitched roofs, eave and ridge light strips), fairy-lit trees and lit windows; camera bounds follow the site. `-demo` launch option opens the market with two stalls for screenshots. Checked in the macOS build: no exceptions, guests arrive and are served. Still open: local recognition feedback, real tree positions, tram tunnel and alignment check.
 
 ## Outcome
 

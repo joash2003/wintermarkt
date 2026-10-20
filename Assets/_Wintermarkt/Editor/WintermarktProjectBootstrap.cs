@@ -14,6 +14,7 @@ namespace Wintermarkt.Editor
         const string SceneDirectory = "Assets/_Wintermarkt/Scenes";
         const string ScenePath = SceneDirectory + "/Market.unity";
         const string BlockoutMaterialPath = "Assets/_Wintermarkt/Resources/Wintermarkt/Blockout.mat";
+        const string GlowMaterialPath = "Assets/_Wintermarkt/Resources/Wintermarkt/Glow.mat";
 
         [MenuItem("Tools/Wintermarkt/Validate Market Data")]
         public static void ValidateData()
@@ -21,7 +22,8 @@ namespace Wintermarkt.Editor
             var config = Resources.Load<TextAsset>("Wintermarkt/market");
             var site = Resources.Load<TextAsset>("Wintermarkt/site");
             if (!config || !site) throw new InvalidOperationException("Missing Assets/_Wintermarkt/Resources/Wintermarkt JSON.");
-            if (!Resources.Load<Material>("Wintermarkt/Blockout")) throw new InvalidOperationException("Missing " + BlockoutMaterialPath + ". Run Tools > Wintermarkt > Create or Repair Project.");
+            if (!Resources.Load<Material>("Wintermarkt/Blockout") || !Resources.Load<Material>("Wintermarkt/Glow"))
+                throw new InvalidOperationException("Missing " + BlockoutMaterialPath + " or " + GlowMaterialPath + ". Run Tools > Wintermarkt > Create or Repair Project.");
             JsonUtility.FromJson<MarketSettings>(config.text).Validate();
             var grid = new SiteGrid(JsonUtility.FromJson<SiteData>(site.text));
             if (grid.Path(grid.Entrance, grid.Entrance, new System.Collections.Generic.HashSet<Cell>()) == null)
@@ -35,6 +37,12 @@ namespace Wintermarkt.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(SceneDirectory);
             if (!File.Exists(BlockoutMaterialPath)) AssetDatabase.CreateAsset(new Material(Shader.Find("Standard")), BlockoutMaterialPath);
+            if (!File.Exists(GlowMaterialPath))
+            {
+                // Emission is a shader keyword: a build only keeps it if a shipped material already uses it.
+                var glow = new Material(Shader.Find("Standard")); glow.EnableKeyword("_EMISSION"); glow.SetColor("_EmissionColor", Color.white);
+                glow.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None; AssetDatabase.CreateAsset(glow, GlowMaterialPath);
+            }
             ValidateData();
             if (!File.Exists(ScenePath))
             {
