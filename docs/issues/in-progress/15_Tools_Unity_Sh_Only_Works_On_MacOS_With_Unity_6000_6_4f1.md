@@ -34,6 +34,8 @@ tools/unity.sh, line 4 (`unity_editor` default).
 ## Work log
 
 - 2026-10-20: found while making the quality gate cross-platform. Not fixed yet.
+- 2026-10-20: tools/unity.sh now searches the Unity Hub folders on macOS, Windows (Git Bash) and Linux, preferring the version pinned in ProjectVersion.txt; checked on macOS with fake installs (pinned wins, otherwise newest).
+- 2026-10-20: first run of the new manual workflow `.github/workflows/windows-check.yml` on a real Windows machine (run 39422975573): 6 of 7 gate checks passed; Core tests failed because tools/test-market-core.sh ran Unity's extensionless `bin/mono`, which is not a Windows program ("Exec format error"). Unity ships both `mono` and `mono.exe` on every OS, so the script now picks `mono.exe` only when `OS=Windows_NT`. Windows has python3, python and py.
 
 ## Outcome
 
