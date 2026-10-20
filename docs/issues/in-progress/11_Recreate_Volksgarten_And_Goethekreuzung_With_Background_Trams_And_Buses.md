@@ -2,8 +2,8 @@
 type: feature
 priority: high
 created: 2026-10-17
-assignee:
-branch:
+assignee: Joash Johnson Samuel
+branch: 11-real-volksgarten
 ---
 
 # 11 — Recreate Volksgarten and Goethekreuzung with background trams and buses
