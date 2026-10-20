@@ -1,14 +1,24 @@
-# EM-002: Generate scenes, sprites, settings and editor bootstrap
+---
+type: chore
+priority: high
+created: 2026-10-17
+assignee: Codex
+branch:
+closed: 2026-10-17
+---
 
-- Status: Superseded
-- Priority: P0
-- Owner: Codex
-- Dependencies: None; coordinate scene setup with EM-001.
+# 2 — Generate scenes, sprites, settings and editor bootstrap
+
+- Dependencies: None; coordinate scene setup with issue 1.
 - Evidence basis: Source inspection on 2026-10-17; no Unity execution claimed.
 
-## What is the issue?
+## Context
 
 Generate scenes, sprites, settings and editor bootstrap. This work is required to meet the Unity handoff acceptance criteria.
+
+## Goal
+
+Generate scenes, sprites, settings and editor bootstrap.
 
 ## Where is the issue?
 
@@ -18,7 +28,7 @@ Generate scenes, sprites, settings and editor bootstrap. This work is required t
 
 GameManager requires Resources/GameSettings and Resources/Square, and uses Camera.main. Those assets and scene files do not yet exist. Start throws when settings are absent.
 
-## Complete fix procedure
+## Tasks
 
 1. Add Editor-only EchoMazeProjectBootstrap with Tools > Echo Maze > Create/Repair Project and a batch callable method.
 2. Generate an original square sprite with Sprite import settings and one unit size, GameSettings.asset, orthographic tagged Main Camera, and MainMenu/Game/Victory scenes with GameManager.
@@ -27,13 +37,13 @@ GameManager requires Resources/GameSettings and Resources/Square, and uses Camer
 5. Preserve existing assets; skip them or require an explicit backup/overwrite action.
 6. Validate all levels and save generated .meta files.
 
-## Verification and acceptance criteria
+## Acceptance criteria
 
 Fresh import followed by bootstrap produces runnable scenes and required Resources assets. Repeat bootstrap preserves edits. MainMenu opens; Play loads Level 1; player collides with walls; exit advances once.
 
 ## Contributor handoff
 
-Claim this ticket in a separate commit by setting Owner and Status to In progress. Use branch `issue/EM-002-short-description`. Record observations, changed files, exact test commands/results and remaining limitations below. Open a PR referencing this ID and request another contributor's review. Mark Done only after review and recorded acceptance evidence.
+Claim this ticket in a separate commit by setting Owner and Status to In progress. Use branch `issue/issue 2-short-description`. Record observations, changed files, exact test commands/results and remaining limitations below. Open a PR referencing this ID and request another contributor's review. Mark Done only after review and recorded acceptance evidence.
 
 ## Work log
 
@@ -42,3 +52,7 @@ Claim this ticket in a separate commit by setting Owner and Status to In progres
 - 2026-10-17 (Codex): Added Editor bootstrap preserving existing assets, generating Resources/scene entry points, setting Wall/input and registering scenes. Unity batch startup failed before compilation because UPM socket creation was denied (EPERM). Scene/asset generation remains pending.
 
 - User pivot: superseded by the Linz Wintermarkt direction. This is not a completion claim. Reuse relevant implementation or testing work only after assessing the new design.
+
+## Outcome
+
+Superseded on 2026-10-17 by the pivot from Echo Maze to Linz Wintermarkt (see DESIGN_LOG.md). The maze acceptance criteria no longer apply; the source stays in Assets/_EchoMaze.

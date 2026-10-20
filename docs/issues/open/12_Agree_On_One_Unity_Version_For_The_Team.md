@@ -1,13 +1,22 @@
-# EM-012: Agree on one Unity version for the team
+---
+type: chore
+priority: high
+created: 2026-10-20
+assignee:
+branch:
+---
 
-- Status: Open
-- Priority: P1
-- Owner: Unassigned
+# 12 — Agree on one Unity version for the team
+
 - Dependencies: None
 
-## What is the issue?
+## Context
 
 The project is pinned to Unity 6000.6.4f1, but the course setup and at least one team machine use Unity 6.3 LTS (6000.3.25f1). Opening the project in a different editor version prompts an upgrade or downgrade and can rewrite ProjectSettings and package versions. If two people use different versions, their commits keep overwriting each other's settings.
+
+## Goal
+
+Everyone on the team opens the project in the same Unity version.
 
 ## Where is the issue?
 
@@ -18,14 +27,14 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 - 2026-10-20: this Mac has only 6000.3.25f1 installed under /Applications/Unity/Hub/Editor. The 6000.6.4f1 pin comes from the machine the prototype was first written on.
 - The pure C# compile check and the 8 core tests pass against 6000.3.25f1's references (`tools/quality-check.sh`). The project has not been opened in the 6000.3 editor yet, so package compatibility is unverified.
 
-## Complete fix procedure
+## Tasks
 
 1. The team picks one version. The 6.3 LTS that the course setup uses is the safer choice.
 2. One person opens the project in that version, accepts the version change, runs Tools → Wintermarkt → Create or Repair Project and presses Play.
 3. Commit the changed ProjectVersion.txt, Packages/manifest.json and packages-lock.json together, and update the version in README.md.
 4. Everyone installs that exact version through Unity Hub.
 
-## Verification and acceptance criteria
+## Acceptance criteria
 
 - [ ] ProjectVersion.txt and README.md name the agreed version.
 - [ ] The project opens in that version without errors and the market scene plays.
@@ -35,3 +44,7 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 ## Work log
 
 - 2026-10-20: found while porting the quality gate; compile and test tools now detect the installed Unity instead of a fixed version path.
+
+## Outcome
+
+_Filled in when closed: what shipped, the commit(s), and what was left out and why._

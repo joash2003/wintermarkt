@@ -17,7 +17,7 @@ The pure market simulation tests can run without launching Unity: `bash tools/te
 - [Initial design-document deck v0.1](docs/submission/Linz_Wintermarkt_Initial_Design_Document_v0.1.pptx) — editable 9-slide PowerPoint; generated with `python3 tools/create_design_deck.py`
 - [Game concept and MVP](docs/LINZ_WINTERMARKT_DESIGN.md)
 - [Location/transit reference brief](docs/LOCATION_AND_TRANSIT.md)
-- [Local issue board](docs/issues/README.md)
+- [Issue tracker](docs/issues/README.md): `python3 tools/issue.py list`
 - [Contributor workflow](CONTRIBUTING.md) and [bundled contributor skills](docs/CONTRIBUTOR_SETUP.md)
 - [Verification record](TESTING.md)
 

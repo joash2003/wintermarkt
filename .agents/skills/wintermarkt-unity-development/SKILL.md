@@ -11,6 +11,6 @@ Inspect ProjectSettings/ProjectVersion.txt and installed editors; preserve the r
 
 GameManager centralizes Playing, Paused, Caught, Transitioning and Victory. Stop movement/input outside Playing, freeze scaled timers on pause, and resolve only one outcome per frame. Use Rigidbody2D movement in FixedUpdate with normalized keyboard input. Ensure legacy input is enabled before relying on Input.GetKey.
 
-Use Canvas and CanvasScaler for menus and HUD. GameManager currently references a missing MazeUI: see EM-001. Required Resources settings/sprite and scenes are also pending: see EM-002. Reinspect before assuming those gaps still exist.
+Use Canvas and CanvasScaler for menus and HUD. GameManager currently references a missing MazeUI: see issue 1. Required Resources settings/sprite and scenes are also pending: see issue 2. Reinspect before assuming those gaps still exist.
 
 Editor bootstrap must preserve hand-edited assets, configure layer 8 as Wall, generate required Resources assets and register scenes. Include generated .meta files. See the testing skill for verification; report compilation, Play Mode and standalone results separately.
