@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-"""Compile the market assemblies against the installed Unity 6.4 C# references without launching UPM."""
+"""Compile the market assemblies against the installed Unity C# references, at Unity's C# 9 language level, without launching UPM."""
 import os, shlex, subprocess, sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-unity = Path(os.environ.get('UNITY_APP', '/Applications/Unity/Hub/Editor/6000.6.4f1/Unity.app/Contents'))
-managed = unity / 'Resources/Scripting/Managed'
+hubs = [Path('/Applications/Unity/Hub/Editor'), Path('C:/Program Files/Unity/Hub/Editor'), Path.home() / 'Unity/Hub/Editor']
+installed = sorted(p for hub in hubs for p in [*hub.glob('*/Unity.app/Contents'), *hub.glob('*/Editor')])
+unity = Path(os.environ['UNITY_APP']) if 'UNITY_APP' in os.environ else installed[-1] if installed else Path('/missing')
+data = unity / 'Resources/Scripting' if (unity / 'Resources/Scripting').is_dir() else unity / 'Data'
+packages = unity / 'Resources/PackageManager' if (unity / 'Resources/PackageManager').is_dir() else data / 'Resources/PackageManager'
+managed = data / 'Managed'
 engine = managed / 'UnityEngine'
-dotnet = unity / 'Resources/Scripting/DotNetSdk/dotnet'
-csc = unity / 'Resources/Scripting/DotNetSdk/sdk/8.0.318/Roslyn/bincore/csc.dll'
-netstandard = unity / 'Resources/Scripting/NetStandard/ref/2.1.0/netstandard.dll'
-ui = unity / 'Resources/PackageManager/ProjectTemplates/libcache/com.unity.template.2d-cross-platform-2d-7.0.0/ScriptAssemblies/UnityEngine.UI.dll'
-if not csc.exists() or not ui.exists() or not netstandard.exists():
-    raise SystemExit('Unity 6000.6.4f1 references not found. Set UNITY_APP to Unity.app/Contents.')
+mono = data / 'MonoBleedingEdge/bin' / ('mono.exe' if os.name == 'nt' else 'mono')
+csc = data / 'MonoBleedingEdge/lib/mono/4.5/csc.exe'
+netstandard = data / 'NetStandard/ref/2.1.0/netstandard.dll'
+ui = next(iter(sorted(packages.glob('ProjectTemplates/libcache/*/ScriptAssemblies/UnityEngine.UI.dll'))), Path('/missing'))
+if not mono.exists() or not csc.exists() or not ui.exists() or not netstandard.exists():
+    raise SystemExit('Unity references not found. Install Unity through Unity Hub or set UNITY_APP to Unity.app/Contents (macOS) or the version\'s Editor folder (Windows/Linux).')
 logs = root / 'Logs/market-compile'; logs.mkdir(parents=True, exist_ok=True)
 refs = [netstandard, managed/'UnityEngine.dll', managed/'UnityEditor.dll'] + list(engine.glob('*.dll'))
 refs = [p for p in refs if p.exists()]
 refs.append(ui)
 def compile(name, files, extra=()):
     output = logs / (name + '.dll')
-    command = [str(dotnet), str(csc), '-nologo', '-nostdlib+', '-target:library', '-out:' + str(output)]
+    command = [str(mono), str(csc), '-nologo', '-noconfig', '-langversion:9.0', '-nostdlib+', '-target:library', '-out:' + str(output)]
     command += ['-reference:' + str(p) for p in refs]
     command += ['-reference:' + str(p) for p in extra]
     command += [str(p) for p in files]
