@@ -52,4 +52,16 @@ Legacy maze checks above remain historical. Market JSON and Unity bootstrap sour
 | `bash tools/test-market-core.sh` | PASS: 8 simulation tests covering placement atomicity, navigation, service income, queue slots, pause/upgrade, throughput, bounded full run and invalid configuration. |
 | Unity Editor bootstrap/import, EditMode run and player build | Not run successfully here. The earlier Unity batch attempt was blocked when Package Manager could not create `/tmp/Unity-Upm-10033.sock` (`listen EPERM`). |
 
-For a local editor acceptance run, open this project in Unity Hub 6000.6.4f1, allow package import, select **Tools → Wintermarkt → Create or Repair Project**, press Play, place a stall, observe a visitor complete service, collect income and buy an upgrade. Then run `bash tools/unity.sh test` and `bash tools/unity.sh build`. Record results before marking issue 8 fully accepted. Geography and transit remain provisional; see `docs/LOCATION_AND_TRANSIT.md`.
+For a local editor acceptance run, open this project in Unity Hub 6000.3.25f1, allow package import, select **Tools → Wintermarkt → Create or Repair Project**, press Play, place a stall, observe a visitor complete service, collect income and buy an upgrade. Then run `bash tools/unity.sh test` and `bash tools/unity.sh build`. Record results before marking issue 8 fully accepted. Geography and transit remain provisional; see `docs/LOCATION_AND_TRANSIT.md`.
+
+## First real Unity run (2026-10-20)
+
+Environment: macOS, Unity 6000.3.25f1 (6.3 LTS), after switching the project from 6000.6.4f1 (issue 12).
+
+| Check | Result |
+|---|---|
+| `bash tools/unity.sh setup` | PASS: package import, no compile errors, data validated (32x36 site), Market.unity created and registered for the build |
+| `bash tools/unity.sh test` | PASS: 24/24 EditMode tests in Unity's test runner (8 Wintermarkt, 16 legacy Echo Maze) |
+| `bash tools/unity.sh build` | PASS: Builds/LinzWintermarkt_macOS/LinzWintermarkt.app (103 MB) |
+| Launch the built app | First build: every surface magenta and `ArgumentNullException: shader` in `MarketWorld.Material` (Shader.Find("Standard") returns null in a player). Fixed by loading Resources/Wintermarkt/Blockout.mat. Second build: still magenta, because ProjectSettings/GraphicsSettings.asset had every built-in shader slot blank, so UI/Default was not in the build. Fixed by letting Unity regenerate the file. Third build: renders the park, roads, Musiktheater, HUD (350 coins, 0 guests, 10:00) and build menu; no exceptions in Player.log |
+| Place a stall and play a festival | Not run: scripted clicks are blocked on this Mac. Needs a human tester |

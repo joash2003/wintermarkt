@@ -5,7 +5,7 @@ description: Validate Wintermarkt changes, run Unity tests, reproduce gameplay d
 
 The current game is Linz Wintermarkt; docs/LINZ_WINTERMARKT_DESIGN.md is the specification. Maze details below (levels, sonar, enemies, handoff sections) describe the legacy Echo Maze in Assets/_EchoMaze.
 
-Inspect installed Unity and current project state before choosing a command. Read handoff sections 13–14 and the relevant EM ticket. The editor observed on this Mac is /Applications/Unity/Hub/Editor/6000.6.4f1/Unity.app/Contents/MacOS/Unity; contributors must use their own editor path. Do not require this absolute path on other machines.
+Inspect installed Unity and current project state before choosing a command. Read handoff sections 13–14 and the relevant EM ticket. The team editor is 6000.3.25f1 (6.3 LTS) and tools/unity.sh finds it; contributors must use their own editor path. Do not require this absolute path on other machines.
 
 Run EditMode tests through Unity Test Runner or an appropriate batch command with -projectPath, -runTests, -testPlatform EditMode, -testResults and -logFile. Inspect XML and logs, including compiler/package/license failures. Do not use -quit if it terminates asynchronous test execution early. If no test assembly exists, implement it before claiming results (issue 3).
 

@@ -1,3 +1,12 @@
 * text=auto
 *.sh text eol=lf
 .githooks/* text eol=lf
+
+# Unity writes these files itself, with trailing spaces on empty values; don't flag them.
+*.meta -whitespace
+*.unity -whitespace
+*.prefab -whitespace
+*.mat -whitespace
+*.asset -whitespace
+*.anim -whitespace
+*.controller -whitespace

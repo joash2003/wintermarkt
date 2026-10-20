@@ -4,5 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Wintermarkt/Scenes/Market.unity
+    guid: 5628f2dc68b0b4c7fb614b7ac323b709
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0
