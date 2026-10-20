@@ -1,0 +1,65 @@
+# Runs the quality gate, the pre-commit hook, the ticket tracker and tools/unity.sh on a real
+# Windows machine, the way a Windows teammate uses them (Git Bash + Unity Hub's default folder).
+# Manual only: installing Unity downloads about 4 GB. Run it from the Actions tab, or:
+#   gh workflow run windows-check.yml
+name: Windows check
+on: workflow_dispatch
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        shell: pwsh
+        run: |
+          curl.exe -sSL -o "$env:RUNNER_TEMP\gitleaks.zip" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip
+          Expand-Archive "$env:RUNNER_TEMP\gitleaks.zip" "$env:RUNNER_TEMP\gitleaks"
+          "$env:RUNNER_TEMP\gitleaks" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      # Editor files only. The gate never starts the editor, so no Unity license is needed.
+      - name: Install Unity 6000.3.25f1 where Unity Hub puts it
+        shell: pwsh
+        run: |
+          curl.exe -sSL -o "$env:RUNNER_TEMP\UnitySetup.exe" https://download.unity3d.com/download_unity/e1dba0a9aba4/Windows64EditorInstaller/UnitySetup64-6000.3.25f1.exe
+          Start-Process -Wait -FilePath "$env:RUNNER_TEMP\UnitySetup.exe" -ArgumentList '/S', '/D=C:\Program Files\Unity\Hub\Editor\6000.3.25f1'
+          Get-Item 'C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe'
+
+      - name: Which Python names exist
+        shell: bash
+        run: |
+          for p in python3 python py; do printf '%s: ' "$p"; "$p" --version 2>&1 || true; done
+
+      - name: Quality gate (Git Bash)
+        shell: bash
+        run: bash tools/quality-check.sh
+
+      - name: Pre-commit hook blocks a bad commit and passes a good one
+        shell: bash
+        run: |
+          git config core.hooksPath .githooks
+          git config user.name ci
+          git config user.email ci@example.invalid
+          printf '<<<<<<< HEAD\nx\n>>>>>>> other\n' > conflict.txt
+          git add conflict.txt
+          if git commit -m "should be blocked"; then echo "hook did NOT block the bad commit"; exit 1; fi
+          git rm -q --cached conflict.txt
+          rm conflict.txt
+          git commit --allow-empty -m "should pass"
+
+      - name: tools/unity.sh finds Unity
+        shell: bash
+        run: |
+          out=$(bash tools/unity.sh 2>&1) || code=$?
+          echo "$out"
+          test "${code:-0}" -eq 2
+          echo "$out" | grep -q 'Hub/Editor/6000.3.25f1/Editor/Unity.exe'
+
+      - name: Ticket tracker from PowerShell
+        shell: pwsh
+        run: |
+          py -B tools/issue.py list
+          py -B tools/issue.py check --offline
+          if ($LASTEXITCODE -ne 0) { exit 1 }
