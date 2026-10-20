@@ -1,7 +1,9 @@
 ---
-name: echo-testing-and-release
-description: Validate EchoMaze changes, run Unity tests, reproduce gameplay defects or create desktop releases with evidence.
+name: wintermarkt-testing-and-release
+description: Validate Wintermarkt changes, run Unity tests, reproduce gameplay defects or create desktop releases with evidence.
 ---
+
+The current game is Linz Wintermarkt; docs/LINZ_WINTERMARKT_DESIGN.md is the specification. Maze details below (levels, sonar, enemies, handoff sections) describe the legacy Echo Maze in Assets/_EchoMaze.
 
 Inspect installed Unity and current project state before choosing a command. Read handoff sections 13–14 and the relevant EM ticket. The editor observed on this Mac is /Applications/Unity/Hub/Editor/6000.6.4f1/Unity.app/Contents/MacOS/Unity; contributors must use their own editor path. Do not require this absolute path on other machines.
 
