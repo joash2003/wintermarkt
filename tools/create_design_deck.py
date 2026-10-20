@@ -9,7 +9,7 @@ import re
 OUT = Path(__file__).resolve().parents[1] / 'docs/submission/Linz_Wintermarkt_Initial_Design_Document_v0.1.pptx'
 W, H = 13.333333, 7.5
 EMU = 914400
-LOGO = Path('/Users/joashjohnson/Downloads/JKU_Logo.png')
+LOGO = Path(__file__).resolve().parents[1] / 'docs/submission/assets/JKU_Logo.png'
 
 # Palette: paper, deep evergreen, berry, warm gold, ice, and slate.
 C = {
