@@ -2,8 +2,8 @@
 type: chore
 priority: high
 created: 2026-10-20
-assignee:
-branch:
+assignee: Joash Johnson Samuel
+branch: main
 ---
 
 # 12 — Agree on one Unity version for the team
@@ -36,14 +36,15 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 
 ## Acceptance criteria
 
-- [ ] ProjectVersion.txt and README.md name the agreed version.
-- [ ] The project opens in that version without errors and the market scene plays.
-- [ ] `tools/quality-check.sh` passes.
+- [x] ProjectVersion.txt and README.md name the agreed version.
+- [x] The project opens in that version without errors and the market scene plays.
+- [x] `tools/quality-check.sh` passes.
 - [ ] Another contributor reviewed the change.
 
 ## Work log
 
 - 2026-10-20: found while porting the quality gate; compile and test tools now detect the installed Unity instead of a fixed version path.
+- 2026-10-20: team decision (Joash): Unity 6000.3.25f1 (6.3 LTS). Changed ProjectVersion.txt and Packages/manifest.json (ugui 2.6.0 -> 2.0.0, test-framework 1.8.0 -> 1.6.0, the versions 6.3 ships); committed the new packages-lock.json. `tools/unity.sh setup`, `test` (24/24 EditMode) and `build` pass in 6.3, and the built app runs (see TESTING.md). README, readme.txt, AGENTS.md and the skills name 6.3 LTS. Remaining: Alibek and Bobby install 6000.3.25f1 and confirm the project opens, then close this.
 
 ## Outcome
 

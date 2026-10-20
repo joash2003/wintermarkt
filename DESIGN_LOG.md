@@ -5,6 +5,10 @@
 The user replaced Echo Maze with a Linz Christmas-market management game: maximize visitors, upgrade shops and include rides. See docs/LINZ_WINTERMARKT_DESIGN.md. The proposed defining trade-off is attraction versus service capacity. Existing maze source is retained, and all earlier maze decisions below are historical. Market gameplay is not implemented.
 
 
+## 2026-10-20
+
+The team uses Unity 6000.3.25f1 (6.3 LTS), the course setup version, instead of 6000.6.4f1 (issue 12). Package versions follow what 6.3 ships: ugui 2.0.0, test-framework 1.6.0.
+
 ## 2026-10-17
 
 Preserve the handoff MVP: exactly three fixed maps, one sonar and one enemy type. Scans grant information but attract enemies. Shared settings retain proposed handoff values; no balancing changes are justified before actual playtesting.

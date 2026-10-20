@@ -23,7 +23,8 @@ namespace Wintermarkt
         {
             Material m; if (!materials.TryGetValue(c, out m))
             {
-                m = new Material(Shader.Find("Standard")); m.color = c; m.SetFloat("_Glossiness", .12f); materials[c] = m;
+                // A Resources material ships its shader in builds; Shader.Find("Standard") returns null there.
+                m = new Material(Resources.Load<Material>("Wintermarkt/Blockout")); m.color = c; m.SetFloat("_Glossiness", .12f); materials[c] = m;
             }
             return m;
         }

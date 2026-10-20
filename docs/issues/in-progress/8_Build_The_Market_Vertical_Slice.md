@@ -48,6 +48,7 @@ In Unity, place a stall, watch a visitor walk to it and leave after service, ear
 - Unity Editor import, manual playtest and build remain pending due to Package Manager socket restrictions in this environment.
 
 - Location clarification: base the first playable map on Volksgarten at Goethekreuzung. Mariendom and Hauptplatz are separate locations on the proposed city overview, not additional required maps for this ticket.
+- 2026-10-20: first real Unity run (6000.3.25f1): import, EditMode tests (24/24) and macOS build pass. The first build crashed in `MarketWorld.Material` (Shader.Find("Standard") is null in a player) and rendered magenta; the materials now copy Resources/Wintermarkt/Blockout.mat, which the bootstrap creates and ValidateData requires. The UI was also magenta because ProjectSettings/GraphicsSettings.asset had every built-in shader slot blank (UI/Default missing from builds); Unity regenerated the defaults. The third build renders the market, HUD and build menu with no exceptions. Still open: a human places a stall and plays a festival to the results screen.
 
 ## Outcome
 

@@ -31,8 +31,8 @@ Install the hook once per clone: `git config core.hooksPath .githooks`. Every co
 | Core tests | the simulation tests in Assets/_Wintermarkt/Tests |
 
 What the gate needs:
-- **macOS:** Unity through Unity Hub (found automatically), python3, and `brew install gitleaks`.
-- **Windows:** Git for Windows (the hook runs in Git Bash), Unity through Unity Hub in the default `C:\Program Files\Unity\Hub\Editor` (found automatically), Python 3 from python.org with "Add to PATH" ticked, and `winget install gitleaks` (or the release zip from github.com/gitleaks/gitleaks, on PATH).
+- **macOS:** Unity 6000.3.25f1 (6.3 LTS) through Unity Hub (found automatically), python3, and `brew install gitleaks`.
+- **Windows:** Git for Windows (the hook runs in Git Bash), Unity 6000.3.25f1 (6.3 LTS) through Unity Hub in the default `C:\Program Files\Unity\Hub\Editor` (found automatically), Python 3 from python.org with "Add to PATH" ticked, and `winget install gitleaks` (or the release zip from github.com/gitleaks/gitleaks, on PATH).
 - **Unity installed somewhere else:** set `UNITY_APP` to `Unity.app/Contents` (macOS) or the version's `Editor` folder (Windows).
 
 Rules:
