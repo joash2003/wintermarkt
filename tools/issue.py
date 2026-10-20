@@ -235,8 +235,8 @@ def render_issue(number: str, title: str, meta: dict[str, str]) -> str:
         render_front_matter(meta) + f"\n# {number} — {title}\n\n"
         "## Context\n\n_Why this exists: what was observed, what is at stake._\n\n"
         "## Goal\n\n_The one-sentence outcome that makes this done._\n\n"
-        "## Acceptance criteria\n\n- [ ] \n\n"
-        "## Tasks\n\n- [ ] \n\n"
+        "## Acceptance criteria\n\n- [ ]\n\n"
+        "## Tasks\n\n- [ ]\n\n"
         "## Outcome\n\n"
         f"{OUTCOME_PLACEHOLDER}: what shipped, the commit(s), and what was left out and why._\n"
     )
