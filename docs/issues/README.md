@@ -8,6 +8,9 @@ Active project: **Linz Wintermarkt** (working title). See [design](../LINZ_WINTE
 | [EM-009](EM-009.md) | P1 | Implemented; playtest pending | Codex | Add market attraction, stall variety and rides |
 | [EM-010](EM-010.md) | P1 | Draft deck prepared; submission pending | Codex + team | Prepare the market design deck and course evidence |
 | [EM-011](EM-011.md) | P1 | Open | Unassigned | Recreate the real location with background trams and buses |
+| [EM-012](EM-012.md) | P1 | Open | Unassigned | Agree on one Unity version for the team |
+| [EM-013](EM-013.md) | P1 | Open | Unassigned | Visitors arriving before anything is built count as welcomed and lost |
+| [EM-014](EM-014.md) | P3 | Open | Unassigned | Queue positions do not move up |
 
 ## Superseded maze work
 
