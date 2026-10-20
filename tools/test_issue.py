@@ -88,15 +88,12 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(tracker.reserve_number(git, self.tree), 5)
         self.assertIn(["tag", "-d", "issue/4"], git.calls)
 
-    def test_offline_reservation_needs_the_flag_and_warns(self):
+    def test_filing_while_offline_is_refused_instead_of_guessing_a_number(self):
         git = FakeGit()
         git.offline = True
         with self.assertRaisesRegex(SystemExit, "cannot reach origin"):
-            tracker.reserve_number(git, self.tree)
-        err = io.StringIO()
-        with contextlib.redirect_stderr(err):
-            self.assertEqual(tracker.reserve_number(git, self.tree, offline=True), 1)
-        self.assertIn("not reserved on origin", err.getvalue())
+            self.file(git)
+        self.assertEqual(list((self.tree / "open").iterdir()), [])
 
     def test_a_non_race_push_failure_is_reported_once_with_the_reason(self):
         class DeniedGit(FakeGit):

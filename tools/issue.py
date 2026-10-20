@@ -179,20 +179,22 @@ def local_numbers(issues_dir: Path = ISSUES_DIR) -> set[int]:
     return {issue.base for issue in load_issues(issues_dir)}
 
 
-def reserve_number(git: GitRunner, issues_dir: Path = ISSUES_DIR, offline: bool = False) -> int:
+def reserve_number(git: GitRunner, issues_dir: Path = ISSUES_DIR) -> int:
     """Take the next free base number by pushing a create-only tag.
 
     Git's receive-pack refuses a tag that already exists, so of two concurrent
     attempts exactly one wins; the loser re-reads and tries the next number.
     An annotated tag with a timestamp and PID in its message gives each attempt
     a distinct object, so a same-name push is never a silent no-op.
+
+    There is deliberately no offline fallback: a locally guessed number can
+    collide with one reserved online meanwhile, and the online check cannot
+    tell whose tag it is. The ticket cannot reach the team until you push
+    anyway, so file it once you are online.
     """
     taken = remote_numbers(git)
     if taken is None:
-        if not offline:
-            raise SystemExit("cannot reach origin to reserve a number (pass --offline to skip)")
-        print("warning: origin unreachable - number not reserved on origin", file=sys.stderr)
-        return max(local_numbers(issues_dir), default=0) + 1
+        raise SystemExit("cannot reach origin to reserve a number - file the ticket once you are online")
 
     last_error = ""
     for _ in range(MAX_RESERVE_ATTEMPTS):
@@ -270,7 +272,6 @@ class NewIssue:
     type_: str
     priority: str
     parent: int | None = None
-    offline: bool = False
 
 
 def create_issue(spec: NewIssue, git: GitRunner, issues_dir: Path = ISSUES_DIR) -> Path:
@@ -290,9 +291,9 @@ def create_issue(spec: NewIssue, git: GitRunner, issues_dir: Path = ISSUES_DIR) 
         number = next_sub_number(spec.parent, issues_dir)
         meta["parent"] = f"'{spec.parent}'"
     elif spec.type_ == "epic":
-        number = f"{reserve_number(git, issues_dir, spec.offline)}.00"
+        number = f"{reserve_number(git, issues_dir)}.00"
     else:
-        number = str(reserve_number(git, issues_dir, spec.offline))
+        number = str(reserve_number(git, issues_dir))
 
     path = issues_dir / "open" / f"{number}_{slugify(spec.title)}.md"
     path.parent.mkdir(exist_ok=True)
@@ -433,7 +434,6 @@ def main(argv: list[str] | None = None) -> int:
     new.add_argument("--type", dest="type_", default="chore", choices=TYPES)
     new.add_argument("--priority", default="medium", choices=PRIORITIES)
     new.add_argument("--parent", type=int, help="attach as a sub-issue of epic N")
-    new.add_argument("--offline", action="store_true", help="skip the origin reservation")
 
     mv = sub.add_parser("move", help="move an issue to another state")
     mv.add_argument("number")
@@ -448,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.cmd == "new":
-        spec = NewIssue(args.title, args.type_, args.priority, args.parent, args.offline)
+        spec = NewIssue(args.title, args.type_, args.priority, args.parent)
         print(create_issue(spec, run_git).relative_to(ROOT))
     elif args.cmd == "move":
         print(move_issue(args.number, args.state, run_git).relative_to(ROOT))
