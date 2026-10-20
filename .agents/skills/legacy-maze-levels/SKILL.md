@@ -1,6 +1,6 @@
 ---
-name: echo-levels-and-enemies
-description: Edit EchoMaze JSON maps, grid validation, BFS, fog, sonar or enemy state behavior. Use for maze and navigation mechanics.
+name: legacy-maze-levels
+description: Edit the legacy Echo Maze JSON maps, grid validation, BFS, fog, sonar or enemy state behavior. Legacy maze code only; not used by Wintermarkt.
 ---
 
 Read handoff sections 2–5 and 8 and inspect Scripts/LevelData.cs and EnemyController.cs.

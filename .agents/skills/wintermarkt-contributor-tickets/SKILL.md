@@ -1,6 +1,6 @@
 ---
-name: echo-contributor-tickets
-description: Create, claim, investigate, fix or review EchoMaze contributor tickets and pull requests.
+name: wintermarkt-contributor-tickets
+description: Create, claim, investigate, fix or review Wintermarkt contributor tickets and pull requests.
 ---
 
 Read CONTRIBUTING.md and docs/issues/README.md. Local Markdown tickets are authoritative until hosted issue URLs are recorded. Do not claim GitHub Issues were published when only files exist.

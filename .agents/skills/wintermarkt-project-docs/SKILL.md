@@ -1,7 +1,9 @@
 ---
-name: echo-project-docs
-description: Maintain EchoMaze beginner setup, credits, design decisions, course handoff and playtest documentation.
+name: wintermarkt-project-docs
+description: Maintain Wintermarkt beginner setup, credits, design decisions, course handoff and playtest documentation.
 ---
+
+The current game is Linz Wintermarkt; docs/LINZ_WINTERMARKT_DESIGN.md is the specification. Maze details below (levels, sonar, enemies, handoff sections) describe the legacy Echo Maze in Assets/_EchoMaze.
 
 Use the handoff as the game specification and current source/testing evidence as the status authority. Read the ticket and inspect implementation before documenting commands or delivered features.
 

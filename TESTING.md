@@ -1,6 +1,6 @@
 # Verification record
 
-Date: 2026-10-17. Project: initial EchoMaze source. Environment: macOS; Unity executable reports 6000.6.4f1. No Unity runtime success is claimed.
+Date: 2026-10-17. Project: initial Linz Wintermarkt source (legacy Echo Maze retained). Environment: macOS; Unity executable reports 6000.6.4f1. No Unity runtime success is claimed.
 
 | Check actually executed | Result |
 |---|---|
