@@ -2,8 +2,8 @@
 type: bug
 priority: medium
 created: 2026-10-20
-assignee:
-branch:
+assignee: Joash Johnson Samuel
+branch: main
 ---
 
 # 15 — tools/unity.sh only works on macOS with Unity 6000.6.4f1
