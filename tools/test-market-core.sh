@@ -10,6 +10,9 @@ if [ -z "$mono_root" ]; then
   done
 fi
 if [ -z "$mono_root" ]; then echo 'Unity not found. Install it through Unity Hub or set UNITY_APP.' >&2; exit 1; fi
+# Unity ships both bin/mono and bin/mono.exe on every OS; only the .exe runs on Windows.
+mono="$mono_root/bin/mono"
+if [ "${OS:-}" = Windows_NT ]; then mono="$mono.exe"; fi
 mkdir -p Logs/core-tests
-"$mono_root/bin/mono" "$mono_root/lib/mono/4.5/csc.exe" -nologo -target:exe -out:Logs/core-tests/MarketTests.exe Assets/_Wintermarkt/Core/*.cs Assets/_Wintermarkt/Tests/MarketTestCases.cs tools/tests/MarketRunner.cs
-"$mono_root/bin/mono" Logs/core-tests/MarketTests.exe
+"$mono" "$mono_root/lib/mono/4.5/csc.exe" -nologo -target:exe -out:Logs/core-tests/MarketTests.exe Assets/_Wintermarkt/Core/*.cs Assets/_Wintermarkt/Tests/MarketTestCases.cs tools/tests/MarketRunner.cs
+"$mono" Logs/core-tests/MarketTests.exe
