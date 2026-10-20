@@ -1,7 +1,15 @@
 #!/bin/bash
 set -euo pipefail
-project_dir="$(cd "$(dirname "$0")/.." && pwd)"
-mono_root="${UNITY_MONO_ROOT:-/Applications/Unity/Hub/Editor/6000.6.4f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge}"
-mkdir -p "$project_dir/Logs/core-tests"
-"$mono_root/bin/mono" "$mono_root/lib/mono/4.5/csc.exe" -nologo -target:exe -out:"$project_dir/Logs/core-tests/MarketTests.exe" "$project_dir"/Assets/_Wintermarkt/Core/*.cs "$project_dir/Assets/_Wintermarkt/Tests/MarketTestCases.cs" "$project_dir/tools/tests/MarketRunner.cs"
-"$mono_root/bin/mono" "$project_dir/Logs/core-tests/MarketTests.exe"
+cd "$(dirname "$0")/.."
+mono_root="${UNITY_MONO_ROOT:-}"
+if [ -z "$mono_root" ]; then
+  for unity in /Applications/Unity/Hub/Editor/*/Unity.app/Contents "/c/Program Files/Unity/Hub/Editor/"*/Editor "$HOME"/Unity/Hub/Editor/*/Editor "${UNITY_APP:-}"; do
+    for candidate in "$unity/Resources/Scripting/MonoBleedingEdge" "$unity/Data/MonoBleedingEdge"; do
+      if [ -f "$candidate/lib/mono/4.5/csc.exe" ]; then mono_root=$candidate; fi
+    done
+  done
+fi
+if [ -z "$mono_root" ]; then echo 'Unity not found. Install it through Unity Hub or set UNITY_APP.' >&2; exit 1; fi
+mkdir -p Logs/core-tests
+"$mono_root/bin/mono" "$mono_root/lib/mono/4.5/csc.exe" -nologo -target:exe -out:Logs/core-tests/MarketTests.exe Assets/_Wintermarkt/Core/*.cs Assets/_Wintermarkt/Tests/MarketTestCases.cs tools/tests/MarketRunner.cs
+"$mono_root/bin/mono" Logs/core-tests/MarketTests.exe

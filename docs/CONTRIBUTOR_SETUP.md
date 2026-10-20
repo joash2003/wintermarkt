@@ -2,7 +2,7 @@
 
 Clone or download the entire source repository, including hidden `.agents` and `.github` directories. Open the repository root in your coding assistant. Five original project skills ship in `.agents/skills/`; no network download, account connection or global skill copy is required for those files. Codex supports repository-local skills; they should be available in the next turn when the repository is the active workspace. If missing, reopen the project/session and ask the assistant to read AGENTS.md and list the bundled skills. Discovery has not been verified in another contributor session.
 
-Other assistants can read AGENTS.md and the relevant SKILL.md directly; automatic discovery varies. CLAUDE.md points Claude Code to the same source files. Players running the game do not need AI skills.
+Other assistants can read AGENTS.md and the relevant SKILL.md directly; automatic discovery varies. CLAUDE.md, GEMINI.md and .github/copilot-instructions.md point Claude Code, Gemini CLI and GitHub Copilot to the same rules. Players running the game do not need AI skills.
 
 Install the Unity Editor version recorded in ProjectSettings/ProjectVersion.txt through Unity Hub, with your desktop build support, Git, and a C# editor. Python 3 is needed only for optional repository helper scripts. Skills provide workflows; they do not install Unity, license it, compile C# or add credentials.
 
