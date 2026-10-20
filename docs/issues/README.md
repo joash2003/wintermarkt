@@ -35,7 +35,7 @@ After `new` or `move`, commit the change on its own, for example `File issue 15:
 
 Sub-issues never reserve: `11.01`, `11.02` and so on share the epic's number.
 
-`--offline` files without reserving and prints a warning. `check` without `--offline` then flags the number until the tag exists or the file is on `main`.
+Filing needs a connection to GitHub; without one, `new` refuses rather than guess a number that someone else may take meanwhile. The ticket cannot reach the team until you push anyway, so file it once you are online. `check` (online) flags any ticket file whose number was never reserved, for example one created by hand.
 
 ## Front matter
 

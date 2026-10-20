@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs the quality gate on merge commits too (`git pull`, `git merge`), which skip pre-commit.
+# Without it, two tickets with the same number from different people could merge silently.
+exec bash tools/quality-check.sh
