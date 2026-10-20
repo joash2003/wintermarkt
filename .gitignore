@@ -1,0 +1,14 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Bb]uilds/
+UserSettings/
+.vs/
+*.csproj
+*.sln
+.DS_Store
+
+# Local course reference PDFs (include course-specific lab access information)
+/GameDev 2026 - Kickoff.pdf
+/gamedev2026-designwkp2.pdf

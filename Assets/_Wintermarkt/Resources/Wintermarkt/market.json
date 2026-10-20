@@ -1,0 +1,175 @@
+{
+  "startingCoins": 350,
+  "maxVisitors": 60,
+  "festivalSeconds": 600,
+  "baseArrivalSeconds": 12,
+  "minArrivalSeconds": 2,
+  "walkSecondsPerCell": 0.65,
+  "patienceSeconds": 35,
+  "initialReputation": 60,
+  "happinessGain": 1,
+  "abandonmentLoss": 2,
+  "varietyBonus": 3,
+  "buildings": [
+    {
+      "id": "punsch",
+      "title": "Punsch H\u00fctte",
+      "category": "drinks",
+      "width": 2,
+      "depth": 2,
+      "queueSlots": 4,
+      "unlockVisitors": 0,
+      "levels": [
+        {
+          "cost": 100,
+          "capacity": 1,
+          "income": 9,
+          "serviceSeconds": 7,
+          "attraction": 5
+        },
+        {
+          "cost": 75,
+          "capacity": 2,
+          "income": 12,
+          "serviceSeconds": 5.6000000000000005,
+          "attraction": 6.5
+        },
+        {
+          "cost": 120,
+          "capacity": 3,
+          "income": 15,
+          "serviceSeconds": 4.2,
+          "attraction": 8.5
+        }
+      ]
+    },
+    {
+      "id": "pastry",
+      "title": "Sweet Bakery",
+      "category": "food",
+      "width": 2,
+      "depth": 2,
+      "queueSlots": 4,
+      "unlockVisitors": 0,
+      "levels": [
+        {
+          "cost": 120,
+          "capacity": 1,
+          "income": 12,
+          "serviceSeconds": 9,
+          "attraction": 6
+        },
+        {
+          "cost": 90,
+          "capacity": 2,
+          "income": 15,
+          "serviceSeconds": 7.2,
+          "attraction": 7.800000000000001
+        },
+        {
+          "cost": 144,
+          "capacity": 3,
+          "income": 18,
+          "serviceSeconds": 5.3999999999999995,
+          "attraction": 10.2
+        }
+      ]
+    },
+    {
+      "id": "craft",
+      "title": "Christmas Crafts",
+      "category": "crafts",
+      "width": 2,
+      "depth": 2,
+      "queueSlots": 4,
+      "unlockVisitors": 0,
+      "levels": [
+        {
+          "cost": 160,
+          "capacity": 1,
+          "income": 18,
+          "serviceSeconds": 12,
+          "attraction": 8
+        },
+        {
+          "cost": 120,
+          "capacity": 2,
+          "income": 21,
+          "serviceSeconds": 9.600000000000001,
+          "attraction": 10.4
+        },
+        {
+          "cost": 192,
+          "capacity": 3,
+          "income": 24,
+          "serviceSeconds": 7.199999999999999,
+          "attraction": 13.6
+        }
+      ]
+    },
+    {
+      "id": "carousel",
+      "title": "Winter Carousel",
+      "category": "rides",
+      "width": 3,
+      "depth": 3,
+      "queueSlots": 6,
+      "unlockVisitors": 10,
+      "levels": [
+        {
+          "cost": 260,
+          "capacity": 1,
+          "income": 15,
+          "serviceSeconds": 10,
+          "attraction": 18
+        },
+        {
+          "cost": 195,
+          "capacity": 2,
+          "income": 18,
+          "serviceSeconds": 8.0,
+          "attraction": 23.400000000000002
+        },
+        {
+          "cost": 312,
+          "capacity": 3,
+          "income": 21,
+          "serviceSeconds": 6.0,
+          "attraction": 30.599999999999998
+        }
+      ]
+    },
+    {
+      "id": "wheel",
+      "title": "Festival Wheel",
+      "category": "landmark",
+      "width": 4,
+      "depth": 3,
+      "queueSlots": 8,
+      "unlockVisitors": 35,
+      "levels": [
+        {
+          "cost": 480,
+          "capacity": 1,
+          "income": 24,
+          "serviceSeconds": 14,
+          "attraction": 32
+        },
+        {
+          "cost": 360,
+          "capacity": 2,
+          "income": 27,
+          "serviceSeconds": 11.200000000000001,
+          "attraction": 41.6
+        },
+        {
+          "cost": 576,
+          "capacity": 3,
+          "income": 30,
+          "serviceSeconds": 8.4,
+          "attraction": 54.4
+        }
+      ]
+    }
+  ]
+}

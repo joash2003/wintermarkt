@@ -1,0 +1,7 @@
+{
+  "name": "Wintermarkt.Runtime",
+  "references": [
+    "Wintermarkt.Core",
+    "UnityEngine.UI"
+  ]
+}
