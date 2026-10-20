@@ -1,0 +1,55 @@
+name: EchoMaze issue or work item
+description: Report a problem or missing deliverable with a fix procedure.
+title: "[EM] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the issue?
+      description: Describe expected and actual behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: location
+    attributes:
+      label: Where is the issue?
+      description: Repository paths, classes, scene, level or coordinates.
+    validations:
+      required: true
+  - type: textarea
+    id: observations
+    attributes:
+      label: Observations and reproduction
+      description: Steps, editor/OS version and actual evidence; label unverified hypotheses.
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Complete fix or diagnostic procedure
+      description: Concrete steps, affected files, dependencies and edge cases. If cause is unknown, describe how to establish it.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification and acceptance criteria
+      description: Commands or manual actions and expected results.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - cannot compile, start or progress
+        - P1 - core gameplay, testing or build
+        - P2 - usability or documentation
+        - P3 - cosmetic
+    validations:
+      required: true
+  - type: textarea
+    id: coordination
+    attributes:
+      label: Dependencies and ownership
+      description: Related EM IDs and proposed owner; leave unassigned if unknown.

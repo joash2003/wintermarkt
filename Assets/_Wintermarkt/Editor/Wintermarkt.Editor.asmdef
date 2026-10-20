@@ -1,0 +1,10 @@
+{
+  "name": "Wintermarkt.Editor",
+  "references": [
+    "Wintermarkt.Core",
+    "Wintermarkt.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

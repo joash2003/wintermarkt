@@ -1,0 +1,6 @@
+{
+  "name": "EchoMaze.Runtime",
+  "references": [
+    "Unity.ugui"
+  ]
+}

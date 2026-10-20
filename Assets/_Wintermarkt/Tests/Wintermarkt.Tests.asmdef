@@ -1,0 +1,12 @@
+{
+  "name": "Wintermarkt.Tests",
+  "references": [
+    "Wintermarkt.Core"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
