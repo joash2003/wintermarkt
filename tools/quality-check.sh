@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Windows often has only `python` or `py`, and its `python3` can be a Microsoft Store stub that fails.
 py=python3
 for candidate in python3 python py; do
-  if "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 8))' >/dev/null 2>&1; then py=$candidate; break; fi
+  if "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1; then py=$candidate; break; fi
 done
 
 failed=()
@@ -25,14 +25,6 @@ check() {
   fi
 }
 
-issue_board() {
-  local f missing=0
-  for f in docs/issues/EM-*.md; do
-    grep -q "(${f##*/})" docs/issues/README.md || { echo "${f##*/} is not on the board in docs/issues/README.md"; missing=1; }
-  done
-  return $missing
-}
-
 json_data() {
   local f bad=0
   while IFS= read -r f; do
@@ -45,8 +37,9 @@ echo "Quality gate"
 check "Secret scan (staged)" gitleaks git --staged --no-banner --redact
 check "Whitespace + conflicts" git diff --cached --check
 check "JSON data" json_data
-check "Issue board" issue_board
-check "C# compile (Unity API)" "$py" tools/compile-market.py
+check "Issue files" "$py" -B tools/issue.py check --offline
+check "Issue tool tests" "$py" -B -m unittest discover -s tools -p "test_*.py"
+check "C# compile (Unity API)" "$py" -B tools/compile-market.py
 check "Core tests" bash tools/test-market-core.sh
 
 if [ ${#failed[@]} -gt 0 ]; then

@@ -87,7 +87,7 @@ Sources checked for location context:
 ## Concrete build sequence
 
 1. **Block out Volksgarten:** create a small grid, paths, fixed trees, Goethekreuzung-side entrance and an angled camera. Test zoom, selection and readable placement with simple shapes.
-2. **Prove the loop:** place one food stall, spawn visitors, route them to reserved queue positions, complete service, earn coins and buy one upgrade. This is EM-008's first playable checkpoint.
+2. **Prove the loop:** place one food stall, spawn visitors, route them to reserved queue positions, complete service, earn coins and buy one upgrade. This is issue 8's first playable checkpoint.
 3. **Make management matter:** implement attraction, limited service capacity, patience and clear feedback. Test whether buying another stall and upgrading an existing one are both useful.
 4. **Add market content:** introduce the three stall categories, carousel and Ferris wheel, visible upgrades and a timed festival result. Tune counts/costs only after observing playtests.
 5. **Add Linz character:** original stylized local environment, Christmas lighting and sound, plus the overview naming Volksgarten, Mariendom and Hauptplatz. Verify local references before detailed modeling.
@@ -95,4 +95,4 @@ Sources checked for location context:
 
 ## Updated requirement: geographic fidelity and background transit
 
-The user requires the location to be as similar as possible to the real site, with Linz trams and buses moving in the background. This replaces free compression of the park and upgrades ambient transit from optional to required. See [location and transit brief](LOCATION_AND_TRANSIT.md) for sources, geometry rules, implementation steps and evidence gaps. Keep the site fixed while allowing players to build and upgrade within viable market plots. EM-011 tracks this work.
+The user requires the location to be as similar as possible to the real site, with Linz trams and buses moving in the background. This replaces free compression of the park and upgrades ambient transit from optional to required. See [location and transit brief](LOCATION_AND_TRANSIT.md) for sources, geometry rules, implementation steps and evidence gaps. Keep the site fixed while allowing players to build and upgrade within viable market plots. issue 11 tracks this work.

@@ -3,7 +3,7 @@
 ## Design pivot — Linz Wintermarkt
 
 - Replaced the active maze concept with Christmas-market management, upgradeable stalls and rides.
-- Added the proposed market MVP, lecture review and new milestone tickets EM-008–EM-010.
+- Added the proposed market MVP, lecture review and new milestone tickets, issues 8–10.
 - Preserved legacy maze source and marked its tickets Superseded. The market source prototype now exists; editor/runtime acceptance remains pending.
 
 

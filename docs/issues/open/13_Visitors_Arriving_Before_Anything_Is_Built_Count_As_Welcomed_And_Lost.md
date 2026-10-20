@@ -1,15 +1,24 @@
-# EM-013: Visitors arriving before anything is built count as welcomed and lost
+---
+type: bug
+priority: high
+created: 2026-10-20
+assignee:
+branch:
+---
 
-- Status: Open
-- Priority: P1
-- Owner: Unassigned
+# 13 — Visitors arriving before anything is built count as welcomed and lost
+
 - Dependencies: None
 
-## What is the issue?
+## Context
 
 Visitors start arriving before the player has placed any building. Each one is counted as welcomed (the festival score) and immediately as abandoned, and each costs `abandonmentLoss` reputation. The opening seconds inflate the score while also punishing the player for not having built anything yet.
 
 Expected: either no visitors arrive until the first building exists, or arrivals with nowhere to go do not count towards the score or cost reputation.
+
+## Goal
+
+Visitors only count towards the score and reputation once they can actually be served.
 
 ## Where is the issue?
 
@@ -20,13 +29,13 @@ Assets/_Wintermarkt/Core/MarketSimulation.cs, `SpawnVisitor()`: `Welcomed++` run
 - From code reading, confirmed by the 18 Oct scripted run "build 1 stall, then do nothing" (80 welcomed, 8 abandoned, reputation 99).
 - `chosen == null` also happens when every queue slot is full. Turning those visitors away may be intended, since full queues should cost reputation. Decide that case separately.
 
-## Complete fix procedure
+## Tasks
 
 1. Decide the rule: hold arrivals until the first building exists, or do not count a visitor as welcomed until they reach a queue slot.
 2. Change `SpawnVisitor()` (or the arrival timer) accordingly. Keep the full-queue case working as decided above.
 3. Add a test in Assets/_Wintermarkt/Tests/MarketTestCases.cs: tick a market with no buildings for 30 s and require Welcomed, Abandoned and Reputation to be unchanged. Confirm the test fails before the fix.
 
-## Verification and acceptance criteria
+## Acceptance criteria
 
 - [ ] New test fails on the old code and passes on the fix.
 - [ ] `tools/quality-check.sh` passes.
@@ -35,3 +44,7 @@ Assets/_Wintermarkt/Core/MarketSimulation.cs, `SpawnVisitor()`: `Welcomed++` run
 ## Work log
 
 - 2026-10-20: filed from the 18 Oct review of the simulation.
+
+## Outcome
+
+_Filled in when closed: what shipped, the commit(s), and what was left out and why._

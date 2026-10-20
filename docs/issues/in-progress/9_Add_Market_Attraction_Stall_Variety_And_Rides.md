@@ -1,13 +1,23 @@
-# EM-009: Add market attraction, stall variety and rides
+---
+type: feature
+priority: high
+created: 2026-10-17
+assignee:
+branch:
+---
 
-- Status: Implemented; playtest and balance review pending
-- Priority: P1
-- Owner: Unassigned
-- Dependencies: EM-008.
+# 9 — Add market attraction, stall variety and rides
 
-## What is the issue?
+- Dependencies: issue 8.
+- Progress: Implemented; playtest and balance review pending
+
+## Context
 
 Add market attraction, stall variety and rides is required for the new Christmas-market direction.
+
+## Goal
+
+Add market attraction, stall variety and rides.
 
 ## Where is the issue?
 
@@ -29,15 +39,15 @@ Five configurable stall/ride definitions now have three upgrade levels, attracti
 
 With any real effort no visitor ever leaves a queue, so the attraction-versus-capacity decision never comes up and building attractions always wins. Suspected cause: `minArrivalSeconds` = 2 caps arrivals at one every 2 s, which never overloads the queues. Bots react perfectly, so humans will do somewhat worse, but the structure holds.
 
-## Complete fix procedure
+## Tasks
 
-1. Build on the verified EM-008 slice. Add hot-drink, pastry and craft stall definitions with three proposed upgrade levels, costs, footprint, service duration, capacity and attraction.
+1. Build on the verified issue 8 slice. Add hot-drink, pastry and craft stall definitions with three proposed upgrade levels, costs, footprint, service duration, capacity and attraction.
 2. Add a carousel and Ferris wheel using simple looping animation, queue/service behavior and visible level changes. Unlock the larger ride through a clearly displayed visitor milestone.
 3. Implement a bounded arrival formula using attraction, category variety and reputation, with a minimum arrival rate for recovery. Add queue patience and transparent feedback when visitors abandon a queue.
 4. Implement an adjustable festival timer and results screen reporting unique arrivals, completed services, queue abandonments and income. Pause must freeze all simulation timers.
 5. Compare attraction purchases with service upgrades in actual playtests. Record numbers, player understanding and changes; adjust one or a few parameters per iteration. Verify the final market can finish and restart without stale visitors or money.
 
-## Verification and acceptance criteria
+## Acceptance criteria
 
 Players can place and upgrade all proposed stall/ride categories, understand queue pressure, and complete a festival session. Scoring counts each arriving visitor once. Attraction and capacity offer observable different benefits.
 
@@ -45,3 +55,7 @@ Players can place and upgrade all proposed stall/ride categories, understand que
 
 - Implemented in the Wintermarkt source as part of the first prototype pass. Direct Unity API compilation and eight core tests pass; editor/runtime playtest and balance review remain pending.
 - 2026-10-20: recorded the 18 Oct scripted balance runs under Observations. Next: tune arrival pressure until capacity matters, then confirm with a human playtest.
+
+## Outcome
+
+_Filled in when closed: what shipped, the commit(s), and what was left out and why._

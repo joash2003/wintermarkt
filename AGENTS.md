@@ -25,7 +25,8 @@ Install the hook once per clone: `git config core.hooksPath .githooks`. Every co
 | Secret scan (staged) | API keys, tokens and passwords in what you are committing |
 | Whitespace + conflicts | leftover `<<<<<<<` merge markers and broken whitespace |
 | JSON data | broken market.json, site.json or other JSON under Assets |
-| Issue board | a ticket file missing from docs/issues/README.md |
+| Issue files | a ticket with a wrong filename, heading, front matter or missing section, or closed without an Outcome |
+| Issue tool tests | breakage in tools/issue.py, the ticket tracker |
 | C# compile (Unity API) | Core, Runtime and Editor code that would not compile in Unity |
 | Core tests | the simulation tests in Assets/_Wintermarkt/Tests |
 
@@ -44,11 +45,12 @@ Rules:
 ## Every issue you find gets a ticket
 
 - Any bug, balance problem, broken doc, missing asset or risk you notice goes into docs/issues/ in the same session. That includes problems outside your current task and ones you do not fix.
-- New ticket: copy docs/issues/TEMPLATE.md to the next unused EM number and add a row to the board in docs/issues/README.md. The gate fails if you forget the board.
-- If a ticket already covers it, add what you found to that ticket's Observations and Work log instead of opening a duplicate.
-- Commit the ticket on its own, for example `Add EM-015: queue timer ignores pause`. A finding that exists only in chat is lost.
+- Tickets live in docs/issues/ and the folder is the status (open, in-progress, blocked, closed, wont-fix). See docs/issues/README.md.
+- New ticket: `python3 tools/issue.py new "Title" --type bug --priority high` (Windows: `py` instead of `python3`). It reserves the next number on GitHub so two people never take the same one, and writes the file into open/. Never create ticket files by hand or guess a number. Then fill in Context, Goal, Acceptance criteria and Tasks.
+- If a ticket already covers it, add what you found to that ticket instead of opening a duplicate. `python3 tools/issue.py list` shows them all.
+- Commit the ticket on its own, for example `File issue 15: queue timer ignores pause`. A finding that exists only in chat is lost.
 - Write what you observed separately from what you suspect. Never present a guess as confirmed.
-- Before working on a ticket, set its owner and In progress in the ticket and on the board. Record what you changed and ran in its Work log.
+- Before working on a ticket, run `python3 tools/issue.py move N in-progress` (it stamps your name and branch). Record what you changed and ran in its Work log. To finish, write the Outcome section, then `move N closed`; the gate refuses a closed ticket without an Outcome.
 
 ## Safety
 
@@ -57,12 +59,12 @@ Rules:
 - Git: no `push --force`, no rewriting the history of main, no deleting branches you didn't create. Never run `git stash`, `git checkout --`, `git restore` or `git reset --hard` over uncommitted work: commit it first or ask.
 - Change only the files your task needs. Unity scenes (*.unity) and prefabs merge badly, so only one person edits a scene at a time; note it in the ticket.
 - Commit each asset's .meta file with it. Never commit Library/, Temp/, Logs/, Builds/ or UserSettings/.
-- Ask the human first before deleting files, large refactors, changing the Unity version (see EM-012), adding collaborators, or anything that publishes or sends messages.
+- Ask the human first before deleting files, large refactors, changing the Unity version (see issue 12), adding collaborators, or anything that publishes or sends messages.
 
 ## Commits and branches
 
-- One topic per commit, written as `EM-NNN: what changed` when it belongs to a ticket.
-- One branch per ticket, for example `issue/EM-013-pre-build-arrivals`. See CONTRIBUTING.md for review and statuses.
+- One topic per commit, written as `Issue N: what changed` when it belongs to a ticket.
+- One branch per ticket, for example `13-pre-build-arrivals`. See CONTRIBUTING.md for review.
 
 ## Project skills
 
