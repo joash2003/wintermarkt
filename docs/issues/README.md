@@ -1,6 +1,6 @@
 # Project issue board
 
-Active project: **Linz Wintermarkt** (working title). See [design](../LINZ_WINTERMARKT_DESIGN.md). Local Markdown tickets remain authoritative. The local origin points to https://github.com/joash2003/EchoMaze.git, but main has no commits yet; source publication and hosted Issues are not verified.
+Active project: **Linz Wintermarkt** (working title). See [design](../LINZ_WINTERMARKT_DESIGN.md). Local Markdown tickets remain authoritative. The source is published to the private repo https://github.com/joash2003/wintermarkt; hosted Issues are not in use yet.
 
 | ID | Priority | Status | Owner | Issue |
 |---|---|---|---|---|
