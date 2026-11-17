@@ -3,6 +3,8 @@ namespace Wintermarkt.Tests
 {
     public sealed class MarketTests
     {
+        [Test] public void VisitorVisitsEveryWish() { MarketTestCases.VisitorVisitsEveryWish(); }
+        [Test] public void MissingWishDisappoints() { MarketTestCases.MissingWishDisappoints(); }
         [Test] public void NoArrivalsBeforeFirstBuilding() { MarketTestCases.NoArrivalsBeforeFirstBuilding(); }
         [Test] public void PlacementIsAtomic() { MarketTestCases.PlacementIsAtomic(); }
         [Test] public void NavigationRejectsWalls() { MarketTestCases.NavigationRejectsWalls(); }

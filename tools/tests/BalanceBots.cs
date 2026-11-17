@@ -15,7 +15,11 @@ static class BalanceBots
         { "attractions only, no upgrades", s => { if (s.Buildings.Count == 0) { Place(s, "punsch"); return; } foreach (var id in ByAttraction) { var d = s.FindDefinition(id); if (s.Welcomed >= d.unlockVisitors) { Place(s, id); return; } } } },
         { "upgrade busiest first", s => { if (s.Buildings.Count == 0) { Place(s, "punsch"); return; } if (!Upgrade(s, b => s.QueueCount(b))) { if (s.Buildings.All(b => b.Level + 1 >= b.Definition.levels.Length)) Place(s, "punsch"); } } },
         { "variety first, then upgrades", s => { foreach (var id in new[] { "punsch", "pastry", "craft", "carousel", "wheel" }) if (!Any(s, id)) { var d = s.FindDefinition(id); if (s.Welcomed >= d.unlockVisitors) { Place(s, id); return; } } Upgrade(s, b => s.QueueCount(b)); } },
-        { "balanced: serve when busy, else attract", s => { if (s.Buildings.Count == 0) { Place(s, "punsch"); return; } if (Busy(s)) { if (!Upgrade(s, b => s.QueueCount(b))) Place(s, "punsch"); return; } foreach (var id in ByAttraction) { var d = s.FindDefinition(id); if (s.Welcomed >= d.unlockVisitors) { Place(s, id); return; } } } },
+        { "listen: build what is missing, serve when busy, else attract", s => {
+            if (s.Buildings.Count == 0) { Place(s, "punsch"); return; }
+            if (s.MostWanted != null) { foreach (var d in s.Settings.buildings) if (d.category == s.MostWanted) { Place(s, d.id); return; } }
+            if (Busy(s)) { if (!Upgrade(s, b => s.QueueCount(b))) { var busiest = s.Buildings.OrderByDescending(b => s.QueueCount(b)).First(); Place(s, busiest.Definition.id); } return; }
+            foreach (var id in ByAttraction) { var d = s.FindDefinition(id); if (s.Welcomed >= d.unlockVisitors) { Place(s, id); return; } } } },
     };
     static int Main(string[] a)
     {
@@ -24,12 +28,12 @@ static class BalanceBots
         var grid = new SiteGrid(site); var e = grid.Entrance; cells = new List<Cell>();
         for (int y = 0; y < grid.Height; y++) for (int x = 0; x < grid.Width; x++) if (Math.Abs(x - e.x) + Math.Abs(y - e.y) > 3 && grid.Buildable(new Cell(x, y))) cells.Add(new Cell(x, y));
         cells = cells.OrderBy(c => Math.Abs(c.x - e.x) + Math.Abs(c.y - e.y)).Take(700).ToList();
-        Console.WriteLine("{0,-42}{1,9}{2,8}{3,10}{4,6}{5,8}{6,6}", "strategy", "welcomed", "served", "abandoned", "rep", "earned", "bldgs");
+        Console.WriteLine("{0,-62}{1,8}{2,7}{3,13}{4,8}{5,7}{6,5}{7,8}{8,6}", "strategy", "arrived", "happy", "disappointed", "gave up", "sales", "rep", "earned", "bldgs");
         foreach (var pair in Strategies)
         {
             var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site);
             while (!s.Finished) { pair.Value(s); s.Tick(1); }
-            Console.WriteLine("{0,-42}{1,9}{2,8}{3,10}{4,6:0}{5,8}{6,6}", pair.Key, s.Welcomed, s.Served, s.Abandoned, s.Reputation, s.Earned, s.Buildings.Count);
+            Console.WriteLine("{0,-62}{1,8}{2,7}{3,13}{4,8}{5,7}{6,5:0}{7,8}{8,6}", pair.Key, s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Served, s.Reputation, s.Earned, s.Buildings.Count);
         }
         return 0;
     }
