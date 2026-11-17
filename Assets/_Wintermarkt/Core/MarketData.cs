@@ -36,7 +36,7 @@ namespace Wintermarkt.Core
     public sealed class WaveDefinition
     {
         public string title;
-        public float seconds, arrivalFactor = 1;
+        public float seconds, arrivalFactor = 1, helpFactor = 1;
         public int target;
     }
 
@@ -49,6 +49,9 @@ namespace Wintermarkt.Core
         public float initialReputation = 60, happinessGain = 1, abandonmentLoss = 2;
         public float varietyBonus = 3, disappointmentLoss = 1;
         public int maxWishes = 3;
+        /// <summary>Help calls (issue 23): a stall with a queue calls every helpIntervalSeconds; 0 switches calls off.</summary>
+        public float helpIntervalSeconds, helpWindowSeconds = 8, boostSeconds = 15, closedSeconds = 10;
+        public int helpTip = 5;
         /// <summary>Empty means one wave of festivalSeconds without a target.</summary>
         public WaveDefinition[] waves = new WaveDefinition[0];
         public BuildingDefinition[] buildings;
@@ -57,10 +60,11 @@ namespace Wintermarkt.Core
         {
             if (startingCoins < 0 || maxVisitors < 1 || festivalSeconds <= 0 || minArrivalSeconds <= 0 ||
                 baseArrivalSeconds < minArrivalSeconds || walkSecondsPerCell <= 0 || patienceSeconds <= 0 ||
-                initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1)
+                initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1 ||
+                helpIntervalSeconds < 0 || helpWindowSeconds <= 0 || boostSeconds < 0 || closedSeconds < 0 || helpTip < 0)
                 throw new ArgumentException("Invalid market simulation settings.");
             foreach (var w in waves ?? new WaveDefinition[0])
-                if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
+                if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.helpFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
             if (buildings == null || buildings.Length == 0) throw new ArgumentException("At least one building is required.");
             var ids = new HashSet<string>();
             foreach (var b in buildings)

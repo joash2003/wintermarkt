@@ -177,6 +177,46 @@ namespace Wintermarkt.Tests
             seen.Clear(); for (int i = 0; i < 450; i++) { slow.Tick(.1f); foreach (var v in slow.Visitors) seen.Add(v.Mood); }
             Require(seen.Contains(VisitorMood.GaveUp), "A visitor who waited too long gave up");
         }
-        public static Action[] All { get { return new Action[] { MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        // The one-stall market with help calls switched on: a call every few seconds while visitors wait.
+        static MarketSimulation CreateHelp()
+        {
+            var sim = Create(); sim.Settings.helpIntervalSeconds = 6; sim.Settings.helpWindowSeconds = 4; sim.Settings.boostSeconds = 10; sim.Settings.closedSeconds = 5; sim.Settings.helpTip = 3;
+            sim.Settings.buildings[0].levels[0].serviceSeconds = 4;
+            return sim;
+        }
+        static MarketBuilding WaitForCall(MarketSimulation sim)
+        {
+            for (int i = 0; i < 400; i++) { sim.Tick(.1f); foreach (var b in sim.Buildings) if (b.NeedsHelp) return b; }
+            throw new Exception("No stall called for help");
+        }
+        public static void HelpedStallIsBoosted()
+        {
+            var sim = CreateHelp(); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            Require(!sim.TryHelp(1, out reason), "A stall that is not calling cannot be helped");
+            var b = WaitForCall(sim); int coins = sim.Coins;
+            Require(sim.TryHelp(b.Id, out reason), reason);
+            Require(!b.NeedsHelp && b.BoostRemaining > 9 && sim.Coins == coins + 3 && sim.Helped == 1, "Helping boosts the stall and pays the tip once");
+            Require(!sim.TryHelp(b.Id, out reason) && sim.Coins == coins + 3, "Helped twice");
+            var plain = CreateHelp(); plain.Settings.helpIntervalSeconds = 0; plain.TryPlace("stall", new Cell(2, 2), out reason);
+            var boosted = CreateHelp(); boosted.TryPlace("stall", new Cell(2, 2), out reason);
+            for (int i = 0; i < 600; i++) { plain.Tick(.1f); boosted.Tick(.1f); foreach (var x in boosted.Buildings) if (x.NeedsHelp) boosted.TryHelp(x.Id, out reason); }
+            Require(boosted.Served > plain.Served, "A stall that is always helped must serve more than one without help calls");
+        }
+        public static void MissedHelpClosesStall()
+        {
+            var sim = CreateHelp(); string reason; sim.TryPlace("stall", new Cell(2, 2), out reason);
+            var b = WaitForCall(sim); sim.Tick(4.2f);
+            Require(!b.NeedsHelp && b.ClosedRemaining > 4 && sim.MissedHelp == 1 && b.BoostRemaining <= 0, "A missed call closes the stall");
+            sim.Tick(4.5f); int served = sim.Served; sim.Tick(.3f); Require(sim.Served == served && b.ClosedRemaining > 0, "A closed stall serves nobody");
+            sim.Tick(12); Require(sim.Served > served, "The stall must reopen");
+        }
+        public static void HelpCallsGrowWithStalls()
+        {
+            var one = CreateHelp(); var two = CreateHelp(); string reason;
+            one.TryPlace("stall", new Cell(2, 2), out reason); two.TryPlace("stall", new Cell(2, 2), out reason); Require(two.TryPlace("stall", new Cell(6, 2), out reason), reason);
+            one.Tick(120); two.Tick(120);
+            Require(one.MissedHelp > 0 && two.MissedHelp > one.MissedHelp, "Two stalls must call more often than one");
+        }
+        public static Action[] All { get { return new Action[] { HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

@@ -3,7 +3,7 @@ type: feature
 priority: high
 created: 2026-11-17
 assignee:
-branch:
+branch: 23-help-calls
 ---
 
 # 23 — Stalls call for the player's help on a timer
@@ -30,6 +30,10 @@ Stalls with a queue call for help; a click in time boosts the stall, a missed ca
 - [ ] Simulation and data in Core.
 - [ ] What the player sees and clicks in Runtime.
 - [ ] Tune with `bash tools/balance-bots.sh` and record the result in the design spec.
+
+## Work log
+
+- 2026-11-17: three tests first (23 compile errors against the old code). Per building: `HelpRemaining`, `BoostRemaining`, `ClosedRemaining` and its own staggered timer; `TryHelp`; a closed stall starts no service and a boosted one serves in half the time. Settings in market.json: a call every 25 s (divided by the act's helpFactor 1 / 1.4 / 1.2), 8 s to answer, 15 s boost, 10 s closed, 5 coins tip. In the game a click on or near a calling stall helps it; the stall shows a pulsing yellow ball with a shrinking red ring, a CLOSED slab or a green boost light. Bots answer after about 3 s and miss one call in four; the same strategy that never helps loses in act 2 (44 happy against 213). 19 core tests pass. Not checked yet: the look and the click in Unity.
 
 ## Outcome
 
