@@ -85,6 +85,13 @@ namespace Wintermarkt.Tests
             rejected = false; try { sim.Settings.Validate(); } catch (ArgumentException) { rejected = true; }
             Require(rejected, "Zero service duration accepted");
         }
-        public static Action[] All { get { return new Action[] { PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void NoArrivalsBeforeFirstBuilding()
+        {
+            var sim = Create(); sim.Tick(30);
+            Require(sim.Welcomed == 0 && sim.Abandoned == 0 && sim.Reputation == sim.Settings.initialReputation, "Visitors arrived before anything was built");
+            string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            sim.Tick(10); Require(sim.Welcomed > 0, "No arrivals after the first building");
+        }
+        public static Action[] All { get { return new Action[] { NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

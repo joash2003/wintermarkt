@@ -153,7 +153,8 @@ namespace Wintermarkt.Core
             while (seconds > .00001f && !Finished)
             {
                 float dt = Math.Min(.1f, Math.Min(seconds, Remaining)); seconds -= dt; Remaining = Math.Max(0, Remaining - dt);
-                arrivalCountdown -= dt;
+                // Nobody arrives at an empty market: the festival score and reputation start with the first building.
+                if (buildings.Count > 0) arrivalCountdown -= dt;
                 if (arrivalCountdown <= 0) { if (visitors.Count < Settings.maxVisitors) SpawnVisitor(); arrivalCountdown = ArrivalInterval; }
                 foreach (var v in visitors)
                 {
