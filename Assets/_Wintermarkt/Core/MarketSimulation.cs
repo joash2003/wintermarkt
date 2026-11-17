@@ -14,6 +14,14 @@ namespace Wintermarkt.Core
         public Cell Origin { get; internal set; }
         public int Level { get; internal set; }
         public BuildingLevel Stats { get { return Definition.levels[Level]; } }
+        /// <summary>Seconds left to answer a call for help; 0 when the stall is not calling.</summary>
+        public float HelpRemaining { get; internal set; }
+        public bool NeedsHelp { get { return HelpRemaining > 0; } }
+        /// <summary>Seconds of double-speed service left after being helped.</summary>
+        public float BoostRemaining { get; internal set; }
+        /// <summary>Seconds the stall stays closed after a missed call.</summary>
+        public float ClosedRemaining { get; internal set; }
+        internal float NextHelp; internal int Calls;
         public Cell QueueCell(int slot) { return new Cell(Origin.x + slot % Definition.width, Origin.y + Definition.depth + slot / Definition.width); }
     }
 
@@ -55,6 +63,9 @@ namespace Wintermarkt.Core
         public int Happy { get; private set; }
         /// <summary>Visitors who left because something they wanted was not built.</summary>
         public int Disappointed { get; private set; }
+        /// <summary>Help calls answered in time, and calls that ran out.</summary>
+        public int Helped { get; private set; }
+        public int MissedHelp { get; private set; }
         public int Earned { get; private set; }
         public float Reputation { get; private set; }
         public float Remaining { get; private set; }
@@ -150,7 +161,7 @@ namespace Wintermarkt.Core
             if (!CanPlace(id, origin, out reason)) return false;
             var d = FindDefinition(id);
             var b = new MarketBuilding { Id = nextBuilding++, Definition = d, Origin = origin, Level = 0 };
-            Coins -= b.Stats.cost; buildings.Add(b);
+            Coins -= b.Stats.cost; buildings.Add(b); ScheduleHelp(b);
             for (int y = 0; y < d.depth; y++) for (int x = 0; x < d.width; x++) occupied.Add(new Cell(origin.x + x, origin.y + y));
             for (int i = 0; i < d.queueSlots; i++) reserved.Add(b.QueueCell(i));
             missed.Remove(d.category);
@@ -166,6 +177,19 @@ namespace Wintermarkt.Core
             var next = b.Definition.levels[b.Level + 1];
             if (Coins < next.cost) { reason = "Not enough coins."; return false; }
             Coins -= next.cost; b.Level++; reason = b.Definition.title + " upgraded to level " + (b.Level + 1) + "!"; return true;
+        }
+
+        // Each stall has its own timer, staggered by its id, so more stalls mean more calls; later acts call more often.
+        void ScheduleHelp(MarketBuilding b) { b.NextHelp = Settings.helpIntervalSeconds * (.75f + (b.Id * 7 + b.Calls) % 3 * .25f) / CurrentWave.helpFactor; }
+
+        public bool TryHelp(int id, out string reason)
+        {
+            if (Paused || Finished) { reason = "Resume the festival to help."; return false; }
+            MarketBuilding b = null; foreach (var item in buildings) if (item.Id == id) b = item;
+            if (b == null || !b.NeedsHelp) { reason = "This stall does not need help right now."; return false; }
+            b.HelpRemaining = 0; b.BoostRemaining = Settings.boostSeconds; b.Calls++; ScheduleHelp(b);
+            Coins += Settings.helpTip; Earned += Settings.helpTip; Helped++;
+            reason = b.Definition.title + " helped: double speed, +" + Settings.helpTip + " coins."; return true;
         }
 
         /// <summary>Coins returned when a building is removed: half of what was spent on it.</summary>
@@ -220,7 +244,22 @@ namespace Wintermarkt.Core
                         }
                     }
                 }
-                foreach (var b in buildings) StartService(b);
+                foreach (var b in buildings)
+                {
+                    if (b.BoostRemaining > 0) b.BoostRemaining = Math.Max(0, b.BoostRemaining - dt);
+                    if (Settings.helpIntervalSeconds > 0)
+                    {
+                        if (b.ClosedRemaining > 0) b.ClosedRemaining = Math.Max(0, b.ClosedRemaining - dt);
+                        else if (b.NeedsHelp)
+                        {
+                            b.HelpRemaining -= dt;
+                            if (b.HelpRemaining <= 0) { b.HelpRemaining = 0; b.ClosedRemaining = Settings.closedSeconds; b.Calls++; ScheduleHelp(b); MissedHelp++; }
+                        }
+                        // A stall only calls while visitors are waiting for it: an idle stall has nothing to pour.
+                        else if ((b.NextHelp -= dt) <= 0 && QueueCount(b) > 0) b.HelpRemaining = Settings.helpWindowSeconds;
+                    }
+                    StartService(b);
+                }
                 visitors.RemoveAll(v => v.State == VisitorState.Gone);
                 if (Remaining <= 0)
                 {
@@ -289,6 +328,7 @@ namespace Wintermarkt.Core
 
         void StartService(MarketBuilding b)
         {
+            if (b.ClosedRemaining > 0) return;
             int active = 0; foreach (var v in visitors) if (v.Destination == b && v.State == VisitorState.Serving) active++;
             while (active < b.Stats.capacity)
             {
@@ -296,7 +336,7 @@ namespace Wintermarkt.Core
                 foreach (var v in visitors)
                     if (v.Destination == b && v.State == VisitorState.Waiting && (first == null || v.QueueOrder < first.QueueOrder)) first = v;
                 if (first == null) break;
-                first.State = VisitorState.Serving; first.ServiceRemaining = b.Stats.serviceSeconds; active++;
+                first.State = VisitorState.Serving; first.ServiceRemaining = b.Stats.serviceSeconds * (b.BoostRemaining > 0 ? .5f : 1); active++;
             }
         }
         void Leave(MarketVisitor v)

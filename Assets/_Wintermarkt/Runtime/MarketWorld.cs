@@ -15,6 +15,8 @@ namespace Wintermarkt
         readonly Dictionary<int, int> levels = new Dictionary<int, int>();
         readonly Dictionary<int, Transform> people = new Dictionary<int, Transform>();
         readonly Dictionary<int, Transform> marks = new Dictionary<int, Transform>();
+        readonly Dictionary<int, Transform> signals = new Dictionary<int, Transform>();
+        readonly Dictionary<int, int> signalState = new Dictionary<int, int>();
         readonly Dictionary<int, int> shown = new Dictionary<int, int>();
         /// <summary>One colour per building category: the stall sign, the wish markers above visitors and the build menu all use it.</summary>
         public static Color CategoryColor(string category)
@@ -77,7 +79,7 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); movingRides.Clear(); traffic.Clear();
+            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -225,13 +227,14 @@ namespace Wintermarkt
                 if (!buildings.ContainsKey(b.Id) || levels[b.Id] != b.Level)
                 {
                     if (buildings.ContainsKey(b.Id)) { buildings[b.Id].gameObject.SetActive(false); Destroy(buildings[b.Id].gameObject); }
-                    buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level;
+                    buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level; signals.Remove(b.Id); signalState.Remove(b.Id);
                 }
+                Signal(b);
             }
             if (buildings.Count != Simulation.Buildings.Count)
             {
                 var standing = new HashSet<int>(); foreach (var b in Simulation.Buildings) standing.Add(b.Id);
-                foreach (int id in new List<int>(buildings.Keys)) if (!standing.Contains(id)) { movingRides.Remove(buildings[id].Find("Ride motion")); Destroy(buildings[id].gameObject); buildings.Remove(id); levels.Remove(id); }
+                foreach (int id in new List<int>(buildings.Keys)) if (!standing.Contains(id)) { movingRides.Remove(buildings[id].Find("Ride motion")); Destroy(buildings[id].gameObject); buildings.Remove(id); levels.Remove(id); signals.Remove(id); signalState.Remove(id); }
             }
             var active = new HashSet<int>();
             foreach (var v in Simulation.Visitors)
@@ -263,6 +266,28 @@ namespace Wintermarkt
             foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
+        }
+        // Above the roof: a pulsing yellow ball with a shrinking red ring while the stall calls for help, a dark slab while it is closed, a green light while boosted.
+        void Signal(MarketBuilding b)
+        {
+            int state = b.NeedsHelp ? 1 : b.ClosedRemaining > 0 ? 2 : b.BoostRemaining > 0 ? 3 : 0, old; Transform signal;
+            if (!signalState.TryGetValue(b.Id, out old) || old != state)
+            {
+                if (signals.TryGetValue(b.Id, out signal) && signal) Destroy(signal.gameObject);
+                signal = new GameObject("Signal").transform; signal.SetParent(buildings[b.Id], false); signal.localPosition = Vector3.up * (b.Definition.id == "wheel" ? 21 : 9.5f);
+                signals[b.Id] = signal; signalState[b.Id] = state;
+                if (state == 1)
+                {
+                    Shape("Call", signal, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 2.6f, Glow(new Color(1, .85f, .1f)));
+                    Shape("Ring", signal, PrimitiveType.Cylinder, Vector3.down * 2, new Vector3(5, .12f, 5), Glow(new Color(1, .2f, .1f)));
+                }
+                else if (state == 2) { Box("Closed", signal, Vector3.zero, new Vector3(4, .8f, 1.2f), new Color(.12f, .08f, .08f)); Caption("CLOSED", signal, signal.position + Vector3.up * 1.4f, .45f); }
+                else if (state == 3) Shape("Boost", signal, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 1.3f, Glow(new Color(.3f, 1, .5f)));
+            }
+            if (state != 1) return;
+            signal = signals[b.Id]; float left = b.HelpRemaining / Simulation.Settings.helpWindowSeconds;
+            signal.GetChild(0).localScale = Vector3.one * (2.6f + .5f * Mathf.Sin(Time.unscaledTime * 9));
+            signal.GetChild(1).localScale = new Vector3(5 * left, .12f, 5 * left);
         }
         Transform BuildShop(MarketBuilding b)
         {
