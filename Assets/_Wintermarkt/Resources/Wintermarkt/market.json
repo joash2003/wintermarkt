@@ -1,15 +1,15 @@
 {
   "startingCoins": 350,
-  "maxVisitors": 60,
+  "maxVisitors": 200,
   "festivalSeconds": 600,
-  "baseArrivalSeconds": 12,
-  "minArrivalSeconds": 2,
+  "baseArrivalSeconds": 8,
+  "minArrivalSeconds": 0.5,
   "walkSecondsPerCell": 0.65,
   "patienceSeconds": 35,
   "initialReputation": 60,
-  "happinessGain": 1,
-  "abandonmentLoss": 2,
-  "varietyBonus": 3,
+  "happinessGain": 0.5,
+  "abandonmentLoss": 3,
+  "varietyBonus": 15,
   "buildings": [
     {
       "id": "punsch",

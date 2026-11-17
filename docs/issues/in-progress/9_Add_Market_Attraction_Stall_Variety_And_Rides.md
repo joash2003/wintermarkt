@@ -55,6 +55,7 @@ Players can place and upgrade all proposed stall/ride categories, understand que
 
 - Implemented in the Wintermarkt source as part of the first prototype pass. Direct Unity API compilation and eight core tests pass; editor/runtime playtest and balance review remain pending.
 - 2026-10-20: recorded the 18 Oct scripted balance runs under Observations. Next: tune arrival pressure until capacity matters, then confirm with a human playtest.
+- 2026-11-17: Joash asked to adjust happiness, objective and coins. Rebuilt the bot script and kept it this time (`bash tools/balance-bots.sh`, source in tools/tests/BalanceBots.cs). Baseline reproduced the 18 Oct result (0 abandoned, reputation 100 for every real strategy). Changes: score is visitors served instead of visitors welcomed (HUD, results screen, menu text, design spec); market.json maxVisitors 60 -> 200, baseArrivalSeconds 12 -> 8, minArrivalSeconds 2 -> 0.5, happinessGain 1 -> 0.5, abandonmentLoss 2 -> 3, varietyBonus 3 -> 15. Result table and plain-language rules are in the design spec under "How the numbers work". Attractions-only now loses (276 served, reputation 33) to mixed strategies (478 and 535 served). Not done: human playtest; reputation still saturates at 100; building costs and incomes untouched; 200 visitors on screen not checked for frame rate in Unity.
 
 ## Outcome
 
