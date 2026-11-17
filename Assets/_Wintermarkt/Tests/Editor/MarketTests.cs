@@ -3,6 +3,7 @@ namespace Wintermarkt.Tests
 {
     public sealed class MarketTests
     {
+        [Test] public void RemoveRefundsAndFreesSpace() { MarketTestCases.RemoveRefundsAndFreesSpace(); }
         [Test] public void MissedWaveTargetEndsFestival() { MarketTestCases.MissedWaveTargetEndsFestival(); }
         [Test] public void MetTargetsAdvanceAndWin() { MarketTestCases.MetTargetsAdvanceAndWin(); }
         [Test] public void ArrivalFactorSpeedsArrivals() { MarketTestCases.ArrivalFactorSpeedsArrivals(); }

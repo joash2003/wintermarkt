@@ -151,6 +151,19 @@ namespace Wintermarkt.Tests
             int before = slow.Welcomed; slow.Tick(25); fast.Tick(25);
             Require(fast.Welcomed - before > slow.Welcomed - before, "A higher arrival factor must bring more visitors");
         }
-        public static Action[] All { get { return new Action[] { MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void RemoveRefundsAndFreesSpace()
+        {
+            var sim = Create(); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            Require(sim.TryUpgrade(1, out reason), reason); Require(sim.Coins == 280, "Setup");
+            sim.Tick(6); Require(sim.Visitors.Count > 0, "Visitors must be on their way");
+            Require(sim.TryRemove(1, out reason), reason);
+            Require(sim.Coins > 280 + 109 && sim.Coins < 280 + 140 && sim.Buildings.Count == 0, "Removing refunds half of what was spent on the building");
+            Require(!sim.TryRemove(1, out reason), "Removed twice");
+            foreach (var v in sim.Visitors) Require(v.State == VisitorState.Leaving || v.State == VisitorState.Gone, "Visitors of a removed building must leave");
+            sim.Tick(5); Require(sim.Visitors.Count == 0, "Visitors of a removed building must walk out");
+            Require(sim.TryPlace("stall", new Cell(2, 2), out reason), "The space must be free again: " + reason);
+            sim.Tick(30); Require(sim.Served > 0, "The market must keep working after a removal");
+        }
+        public static Action[] All { get { return new Action[] { RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

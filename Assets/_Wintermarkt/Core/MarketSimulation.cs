@@ -165,6 +165,23 @@ namespace Wintermarkt.Core
             Coins -= next.cost; b.Level++; reason = b.Definition.title + " upgraded to level " + (b.Level + 1) + "!"; return true;
         }
 
+        /// <summary>Coins returned when a building is removed: half of what was spent on it.</summary>
+        public int Refund(MarketBuilding b) { int spent = 0; for (int i = 0; i <= b.Level; i++) spent += b.Definition.levels[i].cost; return spent / 2; }
+
+        // On a small plot the player must be able to make room again. Visitors on their way to the building look for another stop.
+        public bool TryRemove(int id, out string reason)
+        {
+            if (Paused || Finished) { reason = "Resume the festival to remove."; return false; }
+            MarketBuilding b = null; foreach (var item in buildings) if (item.Id == id) b = item;
+            if (b == null) { reason = "Select a building."; return false; }
+            Coins += Refund(b); buildings.Remove(b);
+            for (int y = 0; y < b.Definition.depth; y++) for (int x = 0; x < b.Definition.width; x++) occupied.Remove(new Cell(b.Origin.x + x, b.Origin.y + y));
+            for (int i = 0; i < b.Definition.queueSlots; i++) reserved.Remove(b.QueueCell(i));
+            foreach (var v in visitors)
+                if (v.Destination == b && v.State != VisitorState.Leaving && v.State != VisitorState.Gone) { v.Slot = -1; Continue(v); }
+            reason = b.Definition.title + " removed."; return true;
+        }
+
         public int QueueCount(MarketBuilding b)
         { int count = 0; foreach (var v in visitors) if (v.Destination == b && v.State != VisitorState.Leaving && v.State != VisitorState.Gone) count++; return count; }
         bool SlotTaken(MarketBuilding b, int slot)
