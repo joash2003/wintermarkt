@@ -3,7 +3,8 @@ type: bug
 priority: high
 created: 2026-10-20
 assignee:
-branch:
+branch: 9-market-balance
+closed: 2026-11-17
 ---
 
 # 13 — Visitors arriving before anything is built count as welcomed and lost
@@ -44,7 +45,8 @@ Assets/_Wintermarkt/Core/MarketSimulation.cs, `SpawnVisitor()`: `Welcomed++` run
 ## Work log
 
 - 2026-10-20: filed from the 18 Oct review of the simulation.
+- 2026-11-17: test `NoArrivalsBeforeFirstBuilding` added and confirmed failing on the old code, then fixed.
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+The arrival countdown only runs once at least one building exists (MarketSimulation.Tick), so nobody is welcomed, lost or charged to reputation at an empty market. Covered by `NoArrivalsBeforeFirstBuilding` in MarketTestCases and the EditMode wrapper. Left as it was on purpose: a visitor who arrives when every queue place is taken still counts as arrived and lost and costs reputation, because full queues should hurt. Since issue 9 changed the score to visitors served, those visitors no longer add to the score.
