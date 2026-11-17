@@ -12,6 +12,7 @@ from pathlib import Path
 ORIGIN = (370, 90)     # Goethekreuzung crossing on the reference screenshot
 SCALE = 0.45           # metres per screenshot pixel, +-15%
 CELL = 4               # metres per grid cell, matches the stall footprints in market.json
+PLOT_RADIUS = 70       # metres from the Goethekreuzung entrance: only this corner of the park is the playable market (issue 21)
 
 def P(px, py): return ((px - ORIGIN[0]) * SCALE, (ORIGIN[1] - py) * SCALE)
 def Ps(*pts): return [P(*p) for p in pts]
@@ -62,6 +63,18 @@ def distance(x, y, line):
         best = min(best, math.hypot(x - x1 - t * dx, y - y1 - t * dy))
     return best
 
+def clip(subject, clipper):
+    """Sutherland-Hodgman: the part of `subject` inside the convex, counter-clockwise `clipper`."""
+    out = subject
+    for (ax, ay), (bx, by) in zip(clipper, clipper[1:] + clipper[:1]):
+        side = lambda p: (bx - ax) * (p[1] - ay) - (by - ay) * (p[0] - ax)
+        pts, out = out, []
+        for p, q in zip(pts, pts[1:] + pts[:1]):
+            sp, sq = side(p), side(q)
+            if sp >= 0: out.append(p)
+            if (sp >= 0) != (sq >= 0): out.append((p[0] + (q[0] - p[0]) * sp / (sp - sq), p[1] + (q[1] - p[1]) * sp / (sp - sq)))
+    return out
+
 def build():
     xs, ys = [p[0] for p in PARK], [p[1] for p in PARK]
     width, height = math.ceil((max(xs) - min(xs)) / CELL) + 2, math.ceil((max(ys) - min(ys)) / CELL) + 2
@@ -81,6 +94,13 @@ def build():
             # A tree only where all 8 neighbours are free lawn or path, so it can never cut a route.
             if grid[gy][gx] == '.' and all(t in '.p' for t in ring) and abs(gx - ex) + abs(gy - ey) > 6 and rng.random() < .07:
                 grid[gy][gx] = 'T'
+    # Only the corner within PLOT_RADIUS of the entrance is the market; trees further out become scenery.
+    gate, scenery = centre(ex, ey), []
+    for gy in range(height):
+        for gx in range(width):
+            if grid[gy][gx] in '.pT' and math.dist(centre(gx, gy), gate) > PLOT_RADIUS:
+                if grid[gy][gx] == 'T': scenery.append(centre(gx, gy))
+                grid[gy][gx] = '#'
     seen, todo = {(ex, ey)}, [(ex, ey)]
     while todo:
         x, y = todo.pop()
@@ -90,13 +110,22 @@ def build():
     for gy in range(height):   # slivers the entrance cannot reach are not part of the playable park
         for gx in range(width):
             if grid[gy][gx] in '.p' and (gx, gy) not in seen: grid[gy][gx] = '#'
+    # Crop to the plot with a one-cell border; the cropped grid's centre is the new world origin.
+    used = [(gx, gy) for gy in range(height) for gx in range(width) if grid[gy][gx] != '#']
+    x0, x1, y0, y1 = min(c[0] for c in used) - 1, max(c[0] for c in used) + 1, min(c[1] for c in used) - 1, max(c[1] for c in used) + 1
+    cx, cy = centre((x0 + x1) / 2, (y0 + y1) / 2)
+    grid = [row[x0:x1 + 1] for row in grid[y0:y1 + 1]]
+    seen = {(x - x0, y - y0) for x, y in seen}; width, height = x1 - x0 + 1, y1 - y0 + 1
+    circle = [(gate[0] + PLOT_RADIUS * math.cos(a * math.pi / 24), gate[1] + PLOT_RADIUS * math.sin(a * math.pi / 24)) for a in range(48)]
     world = lambda pts: [round(v, 1) for x, y in pts for v in (x - cx, y - cy)]
     def route(kind, name, data):
         pts, stop = data
         lengths = [math.dist(a, b) for a, b in zip(pts, pts[1:])]
         along = min((sum(lengths[:i]) + math.dist(pts[i], stop), i) for i in range(len(lengths)))[0]
         return {"kind": kind, "name": name, "points": world(pts), "stopAt": round(along / sum(lengths), 3)}
-    features = ([{"kind": "park", "name": "", "points": world(PARK)}]
+    features = ([{"kind": "park", "name": "", "points": world(PARK)},
+                 {"kind": "plot", "name": "", "points": world(clip(PARK, circle)), "width": PLOT_RADIUS},
+                 {"kind": "tree", "name": "", "points": world(scenery)}]
                 + [{"kind": "path", "name": "", "points": world(line), "width": 5} for line in PATHS]
                 + [{"kind": "street", "name": n, "points": world(line), "width": w} for n, line, w in STREETS]
                 + [{"kind": "building", "name": n, "points": world(line), "width": d, "height": h} for n, line, d, h in BUILDINGS]
@@ -104,13 +133,14 @@ def build():
                 + [route("tram", "Tram, Goethekreuzung stop", TRAM), route("bus", "Bus, Bahnhofstraße stop", BUS)])
     rows = [''.join(r) for r in grid]
     buildable = sum(r.count('.') for r in rows)
-    assert buildable > 500 and all(grid[y][x] != '.' or (x, y) in seen for y in range(height) for x in range(width))
+    assert buildable > 150 and all(grid[y][x] != '.' or (x, y) in seen for y in range(height) for x in range(width))
     return rows, features, buildable
 
 if __name__ == '__main__':
     rows, features, buildable = build()
     status = ("Approximate blockout traced from a Google Maps screenshot (2026-10-20) at about 0.45 m per pixel, +-15%. "
-              "Principal paths only; trees are placeholders; tram and bus alignment approximate. Not surveyed; not an exact replica.")
+              "Principal paths only; trees are placeholders; tram and bus alignment approximate. Not surveyed; not an exact replica. "
+              f"Only the corner within {PLOT_RADIUS} m of the Goethekreuzung entrance is the playable market; the rest of the park is scenery.")
     head = json.dumps({"name": "Volksgarten · Goethekreuzung", "geographyStatus": status, "metersPerCell": CELL}, indent=2)[:-2]
     text = (head + ',\n  "rows": [\n' + ',\n'.join('    ' + json.dumps(r) for r in rows) + '\n  ],\n  "features": [\n'
             + ',\n'.join('    ' + json.dumps(f, ensure_ascii=False) for f in features) + '\n  ]\n}\n')
