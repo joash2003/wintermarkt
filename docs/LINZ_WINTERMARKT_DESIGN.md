@@ -17,12 +17,12 @@ The main decision is whether to spend on attracting more people or serving the c
 ## Proposed first playable version
 
 - Unity desktop game, a geographically faithful Volksgarten market area entered from Goethekreuzung, fixed angled overhead camera, simple original low-poly buildings. Orthographic 3D presentation with grid-based simulation; retain the recorded editor version. No new asset/rendering packages needed merely for the camera style.
-- A ten-minute festival session, adjustable in settings. The time limit gives the attraction objective a measurable end and makes spending decisions matter. This is a playtest target, not a course requirement.
+- A ten-minute festival in three waves with a target each (issue 20), adjustable in settings. The time limit gives the attraction objective a measurable end and makes spending decisions matter. This is a playtest target, not a course requirement.
 - Start with coins, one entrance and a clear walking area. Build, inspect and upgrade with mouse clicks. Pause and restart are available.
 - Three stall categories: hot drinks, pastries and crafts. Two rides: carousel and Ferris wheel. Unlock the larger ride after the market has welcomed enough visitors.
 - Each building has three visible levels in the first version. Upgrades change appearance, attraction, capacity or service rate. Data supports additional levels later; no unbounded upgrade system in the first prototype.
 - One visitor behavior system. Visitors arrive with two or three wishes, visit a building for each, queue, receive service, and leave. No complex per-visitor economy or daily routines.
-- End screen reports happy visitors (primary score since 17 Nov 2026, issue 19; before that visitors welcomed), visitors who arrived, who wanted more, who gave up, coins earned and final reputation.
+- End screen reports a win or a loss with the wave reached (issue 20), happy visitors (the score), visitors who arrived, who wanted more, who gave up, coins earned and final reputation.
 
 All numbers, building counts and level limits above are provisional scope choices.
 
@@ -40,29 +40,30 @@ A new ride increases attraction but consumes space and money. An upgraded pastry
 
 This is what the simulation actually calculates. The values are in `Resources/Wintermarkt/market.json`.
 
-- **Score: happy visitors.** The festival lasts 10 minutes (`festivalSeconds` 600). A visitor is happy when they leave having got everything they wanted. Coins are not the score; they are only what you build with.
-- **Wishes.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), taken in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest from where they stand.
-- **How a visit ends.** Got everything: happy, score +1. Something they wanted is not built: they leave having "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: they "gave up", reputation -3.
-- **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (9 to 30 coins), so a visitor with three wishes pays three times.
-- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `10 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one per second.
+- **Goal: pass three waves.** Afternoon (150 s, 6 happy visitors needed), Evening rush (240 s, 35, arrivals x1.6), Closing time (210 s, 60, arrivals x1.2). A wave that ends below its target ends the festival as a loss; passing all three wins. The score is the total of happy visitors.
+- **Happy visitor.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest. Only a visitor who got everything is happy.
+- **How a visit ends.** Got everything: happy. Something they wanted is not built: they leave having "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: they "gave up", reputation -3.
+- **On the map.** Each category has one colour (sign and flag on the building, swatch in the build menu). A visitor carries one lit cube per remaining wish, a gold ball when leaving happy and a red bar when they gave up.
+- **Space.** Only the corner within 70 m of the Goethekreuzung entrance is the market: 224 buildable cells of 4 m, minus trees and paths. A stall needs 4 cells plus 4 for its queue, the carousel 9 + 6, the wheel 12 + 8. A building can be removed for half of what was spent on it.
+- **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (4 to 15 coins; halved on 17 Nov because visitors now pay at every stop).
+- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `10 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one per second, divided by the wave's arrival factor.
 - **Attraction.** The sum of every building's attraction value, plus 15 for each different category beyond the first.
 - **Reputation.** Starts at 60, stays between 0 and 100. Each service adds 0.5; see above for the losses.
 - **Capacity.** A building serves `capacity` visitors at once, each taking `serviceSeconds`. An upgrade raises capacity (1, 2, 3), shortens service and raises income.
-- **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too.
-- **The decisions.** What to build next (what visitors miss), where (they walk between stops), and when to stop adding and start upgrading (queues).
+- **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too, so room has to be kept for them.
 
-Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site):
+Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site). "Happy per wave" is happy visitors against the target:
 
-| Strategy | Arrived | Happy (score) | Wanted more | Gave up | Reputation | Coins earned |
-|---|---|---|---|---|---|---|
-| One stall, then nothing | 74 | 0 | 73 | 0 | 52 | 504 |
-| Cheapest stall, repeatedly | 136 | 0 | 134 | 0 | 37 | 783 |
-| Attractions only, no upgrades | 311 | 77 | 91 | 101 | 1 | 7131 |
-| Upgrade the busiest first | 119 | 0 | 119 | 0 | 41 | 1176 |
-| One of each, then upgrades | 363 | 219 | 0 | 124 | 48 | 14871 |
-| Build what visitors miss, serve when busy, else attract | 464 | 361 | 12 | 52 | 100 | 20544 |
+| Strategy | Result | Happy per wave | Arrived | Happy | Wanted more | Gave up | Coins left |
+|---|---|---|---|---|---|---|---|
+| One stall, then nothing | Lost in wave 1 | 0/6 | 19 | 0 | 19 | 0 | 360 |
+| Cheapest stall, repeatedly | Lost in wave 1 | 0/6 | 27 | 0 | 26 | 0 | 80 |
+| Attractions only, no upgrades | Lost in wave 1 | 3/6 | 36 | 3 | 16 | 6 | 227 |
+| Upgrade the busiest first | Lost in wave 1 | 0/6 | 24 | 0 | 22 | 0 | 52 |
+| One of each, then upgrades | Won | 9/6, 43/35, 92/60 | 272 | 144 | 6 | 100 | 1984 |
+| One of each, then what visitors miss, duplicates when busy | Won | 12/6, 48/35, 81/60 | 305 | 141 | 39 | 103 | 1246 |
 
-A market of one kind of stall now scores nothing, attractions alone score little, and the player who builds what visitors miss scores most. These are bots that react perfectly, not people: no human playtest supports the numbers yet. Known weak points: income was not reduced although visitors now pay up to three times, so coins pile up; a visitor's wishes are not visible on the visitor; the park is far larger than the market needs; queue positions still do not move up (issue 14).
+A one-sided market loses in the first wave; the two mixed strategies win with a margin of roughly a third over each target. These are bots that react instantly, not people, and the targets were set from their results: no human playtest supports the numbers yet. Known weak points: about a hundred visitors still give up in a winning run, so the evening rush overloads even a full plot; coins are left over once the plot is full (decorations are the planned sink); queue positions still do not move up (issue 14).
 
 ## Placement and navigation
 

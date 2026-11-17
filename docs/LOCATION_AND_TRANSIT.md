@@ -63,4 +63,6 @@ Pick the camera by inspecting a blockout: keep the market readable and allow Goe
 - Market remains legible and playable; camera pan/zoom shows the surroundings.
 - No claim of an exact replica, current route lineup or completed geographic verification until checks actually occur.
 
+Decided deviation (17 Nov 2026, issue 21): only the corner within 70 m of the Goethekreuzung entrance is the playable market. The rest of the Volksgarten keeps its traced outline, paths and trees but is scenery. Reason: the whole park was far larger than a market of 10 to 30 buildings needs, so space never constrained the player.
+
 Current status (20 Oct 2026): `tools/build_site.py` generates site.json from geometry traced on the Google Maps screenshots above: a 55 × 74 cell park (4 m cells) with the real outline, entrance at Goethekreuzung, five principal paths, named surrounding streets, the Musiktheater, the Arbeiterkammer and other building masses, a tram with a stop at Goethekreuzung and a bus with a stop on Bahnhofstraße. Deviations to check: scale ±15%; only principal paths; trees are placeholders, not the real tree positions; the tram tunnel under the park (dotted on the map) is not modelled, and the surface tram alignment south-east of Goethekreuzung is an assumption; building heights are guesses. Not yet compared by someone who knows the site.

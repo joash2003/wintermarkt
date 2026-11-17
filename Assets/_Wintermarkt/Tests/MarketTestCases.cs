@@ -164,6 +164,19 @@ namespace Wintermarkt.Tests
             Require(sim.TryPlace("stall", new Cell(2, 2), out reason), "The space must be free again: " + reason);
             sim.Tick(30); Require(sim.Served > 0, "The market must keep working after a removal");
         }
-        public static Action[] All { get { return new Action[] { RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void MoodIsRecorded()
+        {
+            string reason; var seen = new HashSet<VisitorMood>();
+            var happy = CreateTwoCategories(); happy.TryPlace("stall", new Cell(2, 2), out reason); happy.TryPlace("drink", new Cell(6, 2), out reason);
+            var missing = CreateTwoCategories(); missing.TryPlace("stall", new Cell(2, 2), out reason);
+            for (int i = 0; i < 300; i++) { happy.Tick(.1f); foreach (var v in happy.Visitors) seen.Add(v.Mood); }
+            Require(seen.Contains(VisitorMood.None) && seen.Contains(VisitorMood.Happy) && seen.Count == 2, "A visitor who got everything leaves happy");
+            seen.Clear(); for (int i = 0; i < 300; i++) { missing.Tick(.1f); foreach (var v in missing.Visitors) seen.Add(v.Mood); }
+            Require(seen.Contains(VisitorMood.Disappointed) && !seen.Contains(VisitorMood.Happy), "A visitor who missed something leaves disappointed");
+            var slow = Create(); slow.Settings.buildings[0].levels[0].serviceSeconds = 200; slow.TryPlace("stall", new Cell(2, 2), out reason);
+            seen.Clear(); for (int i = 0; i < 450; i++) { slow.Tick(.1f); foreach (var v in slow.Visitors) seen.Add(v.Mood); }
+            Require(seen.Contains(VisitorMood.GaveUp), "A visitor who waited too long gave up");
+        }
+        public static Action[] All { get { return new Action[] { MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }
