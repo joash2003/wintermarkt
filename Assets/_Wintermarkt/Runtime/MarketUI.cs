@@ -112,7 +112,7 @@ namespace Wintermarkt
             else
             {
                 var sim = game.Simulation;
-                string verdict = sim.Failed ? "THE MARKET CLOSED EARLY" : sim.Stars >= 3 ? "THE BEST MARKET LINZ HAS SEEN" : sim.Stars == 2 ? "A GOOD EVENING" : sim.Stars == 1 ? "A LONG, COLD EVENING" : "LINZ WENT HOME HUNGRY";
+                string verdict = sim.Failed ? "THE MARKET CLOSED EARLY" : sim.Krampuses.Count > 0 && sim.Stars < 2 ? "THE KRAMPUS WON" : sim.Stars >= 3 ? "THE BEST MARKET LINZ HAS SEEN" : sim.Stars == 2 ? "A GOOD EVENING" : sim.Stars == 1 ? "A LONG, COLD EVENING" : "LINZ WENT HOME HUNGRY";
                 Label(verdict, card, new Vector2(0, 250), new Vector2(620, 60), 34, gold);
                 // Stars as gold or dim diamonds: the built-in font has no star glyph on every platform.
                 for (int i = 0; i < sim.WaveCount; i++)
@@ -122,8 +122,8 @@ namespace Wintermarkt
                 for (int i = 0; i < sim.WaveResults.Count; i++) acts += (i > 0 ? "   ·   " : "") + sim.Settings.waves[i].title + " " + sim.WaveResults[i] + "/" + sim.Settings.waves[i].target;
                 if (sim.Failed) acts += (acts.Length > 0 ? "   ·   " : "") + "reputation fell to zero in " + sim.CurrentWave.title;
                 Label(acts, card, new Vector2(0, 75), new Vector2(630, 36), 17, gold);
-                Label(sim.Welcomed + " arrived  ·  " + sim.Disappointed + " wanted more  ·  " + sim.Abandoned + " gave up\nYou helped " + sim.Helped + " of " + (sim.Helped + sim.MissedHelp) + " calls  ·  " + sim.Earned + " coins earned\nFinal reputation: " + Mathf.RoundToInt(sim.Reputation) + "%", card, new Vector2(0, 5), new Vector2(600, 100), 20, ink);
-                ActionButton("Play the evening again", card, new Vector2(0, -120), new Vector2(350, 50), game.StartFestival);
+                Label(sim.Welcomed + " arrived  ·  " + sim.Disappointed + " wanted more  ·  " + sim.Abandoned + " gave up\nYou helped " + sim.Helped + " of " + (sim.Helped + sim.MissedHelp) + " calls  ·  " + sim.Earned + " coins earned\n" + (sim.KrampusHits > 0 ? sim.DrivenOff + " Krampus driven off  ·  " + sim.Scared + " visitors scared away\n" : "") + "Final reputation: " + Mathf.RoundToInt(sim.Reputation) + "%", card, new Vector2(0, -5), new Vector2(600, 130), 20, ink);
+                ActionButton("Play the evening again", card, new Vector2(0, -135), new Vector2(350, 50), game.StartFestival);
                 ActionButton("Main menu", card, new Vector2(0, -190), new Vector2(350, 50), game.Menu);
             }
         }
@@ -145,7 +145,8 @@ namespace Wintermarkt
                 + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total") + "   ·   stars " + sim.Stars + "/" + sim.WaveCount;
             // Event banner: a running event with its time left, else a warning of the next one, else the one that just happened.
             if (sim.EventCount != seenEvents) { if (sim.EventCount > seenEvents) { flashUntil = Time.unscaledTime + 5; game.PlayClick(); } seenEvents = sim.EventCount; }
-            string news = sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s"
+            int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
+            string news = hunting > 0 ? "Krampus run! Click them to throw snowballs   " + hunting + " left" : sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s"
                 : sim.Upcoming != null ? "In " + Mathf.CeilToInt(sim.UpcomingIn) + "s   " + sim.Upcoming.title
                 : sim.LastEvent != null && Time.unscaledTime < flashUntil ? sim.LastEvent.title : null;
             bannerPanel.gameObject.SetActive(news != null); if (news != null) banner.text = news;

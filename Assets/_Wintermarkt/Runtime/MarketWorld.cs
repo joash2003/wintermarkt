@@ -16,6 +16,8 @@ namespace Wintermarkt
         readonly Dictionary<int, Transform> people = new Dictionary<int, Transform>();
         readonly Dictionary<int, Transform> marks = new Dictionary<int, Transform>();
         readonly Dictionary<int, Transform> signals = new Dictionary<int, Transform>();
+        readonly Dictionary<int, Transform> beasts = new Dictionary<int, Transform>();
+        readonly Dictionary<int, int> beastHits = new Dictionary<int, int>();
         readonly Dictionary<int, int> signalState = new Dictionary<int, int>();
         readonly Dictionary<int, int> shown = new Dictionary<int, int>();
         /// <summary>One colour per building category: the stall sign, the wish markers above visitors and the build menu all use it.</summary>
@@ -79,7 +81,7 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); movingRides.Clear(); traffic.Clear();
+            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -257,6 +259,7 @@ namespace Wintermarkt
                     if (marks.TryGetValue(v.Id, out mark)) Destroy(mark.gameObject);
                     mark = new GameObject("Wishes").transform; mark.SetParent(person, false); mark.localPosition = Vector3.up * 3.4f; marks[v.Id] = mark; shown[v.Id] = signature;
                     if (v.Mood == VisitorMood.Happy) Shape("Happy", mark, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 1.1f, Glow(new Color(1, .82f, .2f)));
+                    else if (v.Mood == VisitorMood.Scared) Shape("Scared", mark, PrimitiveType.Cube, Vector3.zero, new Vector3(.4f, 1.3f, .4f), Glow(new Color(.6f, .8f, 1f)));
                     else if (v.Mood == VisitorMood.GaveUp) Shape("Gave up", mark, PrimitiveType.Cube, Vector3.zero, new Vector3(1.2f, .35f, .35f), Glow(new Color(1, .1f, .1f)));
                     else for (int i = 0; i < v.Wishes.Count; i++) Shape("Wish " + v.Wishes[i], mark, PrimitiveType.Cube, new Vector3((i - (v.Wishes.Count - 1) * .5f) * .95f, 0, 0), Vector3.one * .8f, Glow(CategoryColor(v.Wishes[i])));
                 }
@@ -266,7 +269,39 @@ namespace Wintermarkt
             foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
+            Beasts();
             Snowfall(Simulation.ActiveEvent != null && Simulation.ActiveEvent.kind == "storm", dt);
+        }
+        // The Krampus of the finale: a dark horned figure with glowing eyes; each snowball that hit it shows as a white ball above its head.
+        void Beasts()
+        {
+            var present = new HashSet<int>();
+            foreach (var k in Simulation.Krampuses)
+            {
+                present.Add(k.Id); Transform beast; int hits;
+                if (!beasts.TryGetValue(k.Id, out beast))
+                {
+                    beast = new GameObject("Krampus " + k.Id).transform; beast.SetParent(content); beast.localScale = Vector3.one * 1.7f; beasts[k.Id] = beast;
+                    Color fur = new Color(.13f, .09f, .08f), horn = new Color(.82f, .76f, .6f);
+                    Shape("Body", beast, PrimitiveType.Capsule, Vector3.up * 1.5f, new Vector3(1.5f, 1.5f, 1.5f), fur);
+                    Shape("Head", beast, PrimitiveType.Sphere, Vector3.up * 3.3f, Vector3.one * 1.25f, fur);
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        Shape("Horn", beast, PrimitiveType.Cylinder, new Vector3(side * .55f, 4.2f, 0), new Vector3(.22f, .65f, .22f), horn).localRotation = Quaternion.Euler(0, 0, -side * 28);
+                        Shape("Eye", beast, PrimitiveType.Sphere, new Vector3(side * .28f, 3.4f, .55f), Vector3.one * .28f, Glow(new Color(1, .1f, .05f)));
+                    }
+                    Shape("Tongue", beast, PrimitiveType.Cube, new Vector3(0, 2.9f, .6f), new Vector3(.3f, .6f, .15f), Glow(new Color(.9f, .1f, .15f)));
+                }
+                if (!beastHits.TryGetValue(k.Id, out hits) || hits != k.Hits)
+                {
+                    var old = beast.Find("Snow"); if (old) Destroy(old.gameObject);
+                    var snowballs = new GameObject("Snow").transform; snowballs.SetParent(beast, false); beastHits[k.Id] = k.Hits;
+                    for (int i = 0; i < k.Hits; i++) Shape("Snowball", snowballs, PrimitiveType.Sphere, new Vector3((i - (k.Hits - 1) * .5f) * .8f, 5.4f, 0), Vector3.one * .7f, Glow(Color.white));
+                }
+                beast.position = Vector3.Lerp(World(k.Position), World(k.NextCell), k.EdgeProgress);
+                if (k.NextCell != k.Position) beast.rotation = Quaternion.LookRotation(World(k.NextCell) - World(k.Position));
+            }
+            foreach (int id in new List<int>(beasts.Keys)) if (!present.Contains(id)) { Destroy(beasts[id].gameObject); beasts.Remove(id); beastHits.Remove(id); }
         }
         // The snowstorm event: plain falling cubes, because a particle shader may be missing from a build (see issue 8).
         void Snowfall(bool storm, float dt)

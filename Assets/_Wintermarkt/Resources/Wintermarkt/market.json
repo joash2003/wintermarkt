@@ -17,6 +17,8 @@
   "boostSeconds": 15,
   "closedSeconds": 10,
   "helpTip": 5,
+  "krampusSecondsPerCell": 0.9,
+  "scareLoss": 0.5,
   "waves": [
     {
       "title": "Afternoon",
@@ -94,6 +96,17 @@
       "factor": 1,
       "kind": "burst",
       "title": "The last tram is packed",
+      "category": ""
+    },
+    {
+      "wave": 2,
+      "count": 5,
+      "at": 100,
+      "seconds": 0,
+      "warnSeconds": 20,
+      "factor": 3,
+      "kind": "krampus",
+      "title": "The Krampus run is coming: click them to throw snowballs!",
       "category": ""
     }
   ],

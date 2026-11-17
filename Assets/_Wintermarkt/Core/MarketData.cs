@@ -41,7 +41,8 @@ namespace Wintermarkt.Core
     }
 
     /// <summary>A timed change of the rules (issue 25). kind: burst (count visitors arrive, all wanting category if set),
-    /// storm (for seconds: patience times factor, everyone also wants category), powercut (every stall calls for help, window times factor).</summary>
+    /// storm (for seconds: patience times factor, everyone also wants category), powercut (every stall calls for help, window times factor),
+    /// krampus (count Krampus enter one after the other; factor is the number of snowball hits that drives one off).</summary>
     [Serializable]
     public sealed class EventDefinition
     {
@@ -62,6 +63,8 @@ namespace Wintermarkt.Core
         /// <summary>Help calls (issue 23): a stall with a queue calls every helpIntervalSeconds; 0 switches calls off.</summary>
         public float helpIntervalSeconds, helpWindowSeconds = 8, boostSeconds = 15, closedSeconds = 10;
         public int helpTip = 5;
+        /// <summary>The Krampus run (issue 26): how fast a Krampus walks and what a scared visitor costs in reputation.</summary>
+        public float krampusSecondsPerCell = .9f, scareLoss = .5f;
         /// <summary>Empty means one wave of festivalSeconds without a target.</summary>
         public WaveDefinition[] waves = new WaveDefinition[0];
         public EventDefinition[] events = new EventDefinition[0];
@@ -72,13 +75,13 @@ namespace Wintermarkt.Core
             if (startingCoins < 0 || maxVisitors < 1 || festivalSeconds <= 0 || minArrivalSeconds <= 0 ||
                 baseArrivalSeconds < minArrivalSeconds || walkSecondsPerCell <= 0 || patienceSeconds <= 0 ||
                 initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1 ||
-                helpIntervalSeconds < 0 || helpWindowSeconds <= 0 || boostSeconds < 0 || closedSeconds < 0 || helpTip < 0)
+                helpIntervalSeconds < 0 || helpWindowSeconds <= 0 || boostSeconds < 0 || closedSeconds < 0 || helpTip < 0 || krampusSecondsPerCell <= 0 || scareLoss < 0)
                 throw new ArgumentException("Invalid market simulation settings.");
             foreach (var w in waves ?? new WaveDefinition[0])
                 if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.helpFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
             foreach (var e in events ?? new EventDefinition[0])
                 if (e == null || e.wave < 0 || e.at < 0 || e.seconds < 0 || e.warnSeconds < 0 || e.count < 0 || e.factor <= 0 ||
-                    (e.kind != "burst" && e.kind != "storm" && e.kind != "powercut")) throw new ArgumentException("Invalid event.");
+                    (e.kind != "burst" && e.kind != "storm" && e.kind != "powercut" && e.kind != "krampus")) throw new ArgumentException("Invalid event.");
             if (buildings == null || buildings.Length == 0) throw new ArgumentException("At least one building is required.");
             var ids = new HashSet<string>();
             foreach (var b in buildings)
