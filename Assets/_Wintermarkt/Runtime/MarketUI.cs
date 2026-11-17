@@ -74,7 +74,9 @@ namespace Wintermarkt
                 {
                     string id = definition.id; string title = definition.title + "\n" + definition.levels[0].cost + " coins";
                     if (definition.unlockVisitors > 0) title += " · " + definition.unlockVisitors + " guests";
-                    ActionButton(title, BuildMenu, new Vector2(0, 120 - i++ * 68), new Vector2(215, 58), () => game.ChooseBuild(id));
+                    var button = ActionButton(title, BuildMenu, new Vector2(0, 120 - i++ * 68), new Vector2(215, 58), () => game.ChooseBuild(id));
+                    // Legend: the same colour as the stall sign and the wish cubes above visitors.
+                    Panel("Category colour", button.transform, new Vector2(0, .5f), new Vector2(10, 0), new Vector2(12, 46), MarketWorld.CategoryColor(definition.category)).GetComponent<Image>().raycastTarget = false;
                 }
                 Label("WASD / arrows: pan\nScroll: zoom · Middle drag: pan\nRight-click: cancel build", BuildMenu, new Vector2(0, -215), new Vector2(220, 60), 13, ink);
                 buildButtonsReady = true;
@@ -107,7 +109,7 @@ namespace Wintermarkt
             {
                 var sim = game.Simulation;
                 Label(sim.Won ? "THANK YOU, LINZ" : "THE MARKET CLOSED EARLY", card, new Vector2(0, 210), new Vector2(600, 70), sim.Won ? 42 : 36, gold);
-                Label(sim.Happy + " happy visitors", card, new Vector2(0, 135), new Vector2(590, 60), 34, ink);
+                Label(sim.Happy + (sim.Happy == 1 ? " happy visitor" : " happy visitors"), card, new Vector2(0, 135), new Vector2(590, 60), 34, ink);
                 Label(sim.Won ? "All " + sim.WaveCount + " waves passed" : "Wave " + (sim.Wave + 1) + ", " + sim.CurrentWave.title + ": " + sim.WaveHappy + " of " + sim.CurrentWave.target + " happy visitors", card, new Vector2(0, 85), new Vector2(590, 40), 22, gold);
                 Label(sim.Welcomed + " arrived  ·  " + sim.Disappointed + " wanted more  ·  " + sim.Abandoned + " gave up\n" + sim.Earned + " coins earned\nFinal reputation: " + Mathf.RoundToInt(sim.Reputation) + "%", card, new Vector2(0, 10), new Vector2(590, 120), 22, ink);
                 ActionButton("Try a new layout", card, new Vector2(0, -120), new Vector2(350, 50), game.StartFestival);

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 namespace Wintermarkt.Core
 {
     public enum VisitorState { Walking, Waiting, Serving, Leaving, Gone }
+    /// <summary>How a visit ended; None while the visitor is still on their way round.</summary>
+    public enum VisitorMood { None, Happy, Disappointed, GaveUp }
 
     public sealed class MarketBuilding
     {
@@ -24,6 +26,7 @@ namespace Wintermarkt.Core
         public int Slot { get; internal set; }
         /// <summary>Building categories this visitor still wants to visit.</summary>
         public List<string> Wishes { get; internal set; }
+        public VisitorMood Mood { get; internal set; }
         public float Waited { get; internal set; }
         public float ServiceRemaining { get; internal set; }
         public List<Cell> Route { get; internal set; }
@@ -204,7 +207,7 @@ namespace Wintermarkt.Core
                     if (v.State == VisitorState.Waiting)
                     {
                         v.Waited += dt;
-                        if (v.Waited >= Settings.patienceSeconds) { Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
+                        if (v.Waited >= Settings.patienceSeconds) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
                     }
                     if (v.State == VisitorState.Serving)
                     {
@@ -264,11 +267,11 @@ namespace Wintermarkt.Core
                 v.Destination = chosen; v.Slot = slot; v.Route = route; v.RouteIndex = 0; v.EdgeProgress = 0; v.Waited = 0; v.QueueOrder = nextOrder++;
                 v.State = route.Count == 0 ? VisitorState.Waiting : VisitorState.Walking; return;
             }
-            if (full) { Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); }
-            else if (v.Wishes.Count == 0) { Happy++; WaveHappy++; }
+            if (full) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); }
+            else if (v.Wishes.Count == 0) { v.Mood = VisitorMood.Happy; Happy++; WaveHappy++; }
             else
             {
-                Disappointed++; Reputation = Math.Max(0, Reputation - Settings.disappointmentLoss);
+                v.Mood = VisitorMood.Disappointed; Disappointed++; Reputation = Math.Max(0, Reputation - Settings.disappointmentLoss);
                 foreach (string wish in v.Wishes) { int n; missed.TryGetValue(wish, out n); missed[wish] = n + 1; }
             }
             Leave(v);
