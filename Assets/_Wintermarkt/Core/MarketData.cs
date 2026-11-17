@@ -71,7 +71,7 @@ namespace Wintermarkt.Core
         public SiteFeature[] features = new SiteFeature[0];
     }
 
-    /// <summary>Scenery around the grid in world metres: street, building, label, tram or bus. Points are x,z pairs.</summary>
+    /// <summary>Scenery around the grid in world metres: park (outline), path, street, building, label, tram or bus. Points are x,z pairs.</summary>
     [Serializable]
     public sealed class SiteFeature
     {
