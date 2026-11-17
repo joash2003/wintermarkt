@@ -38,32 +38,35 @@ A new ride increases attraction but consumes space and money. An upgraded pastry
 
 ## How the numbers work (17 Nov 2026)
 
-This is what the simulation actually calculates. The values are in `Resources/Wintermarkt/market.json`.
+The game is designed to be played once, for about ten minutes (decided 17 Nov 2026): one evening in three acts. This is what the simulation calculates. The values are in `Resources/Wintermarkt/market.json`.
 
-- **Goal: pass three waves.** Afternoon (150 s, 6 happy visitors needed), Evening rush (240 s, 35, arrivals x1.6), Closing time (210 s, 60, arrivals x1.2). A wave that ends below its target ends the festival as a loss; passing all three wins. The score is the total of happy visitors.
+- **Three acts, one star each.** Afternoon (150 s, 6 happy visitors for the star), Evening rush (240 s, 35, arrivals x1.6), Closing time (210 s, 60, arrivals x1.2). A missed target costs the star but the evening goes on. It ends early only if reputation falls to zero. The ending card gives a verdict by stars.
 - **Happy visitor.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest. Only a visitor who got everything is happy.
-- **How a visit ends.** Got everything: happy. Something they wanted is not built: they leave having "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: they "gave up", reputation -3.
-- **On the map.** Each category has one colour (sign and flag on the building, swatch in the build menu). A visitor carries one lit cube per remaining wish, a gold ball when leaving happy and a red bar when they gave up.
+- **How a visit ends.** Got everything: happy. Something they wanted is not built: "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: "gave up", reputation -2.
+- **Stalls call for help.** A stall with a queue calls about every 25 s (more often in acts 2 and 3). Click it within 8 s: it serves twice as fast for 15 s and pays 5 coins. Miss it: it closes for 10 s. Every stall has its own timer, so a bigger market needs more of the player.
+- **Events.** Act 1: a full tram (6 visitors at once). Act 2: a school class (12 visitors who want only food, announced 20 s ahead), a snowstorm (45 s: patience x0.6 and everyone also wants a hot drink, announced 15 s ahead), a power cut (every stall calls at once, 12 s to answer, no warning). Act 3: a packed last tram (10 visitors).
+- **On the map.** Each category has one colour (sign and flag on the building, swatch in the build menu). A visitor carries one lit cube per remaining wish, a gold ball when leaving happy and a red bar when they gave up. A calling stall shows a yellow ball with a shrinking red ring.
 - **Space.** Only the corner within 70 m of the Goethekreuzung entrance is the market: 224 buildable cells of 4 m, minus trees and paths. A stall needs 4 cells plus 4 for its queue, the carousel 9 + 6, the wheel 12 + 8. A building can be removed for half of what was spent on it.
-- **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (4 to 15 coins; halved on 17 Nov because visitors now pay at every stop).
-- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `10 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one per second, divided by the wave's arrival factor.
+- **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (4 to 15 coins).
+- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `10 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one per second, divided by the act's arrival factor.
 - **Attraction.** The sum of every building's attraction value, plus 15 for each different category beyond the first.
 - **Reputation.** Starts at 60, stays between 0 and 100. Each service adds 0.5; see above for the losses.
 - **Capacity.** A building serves `capacity` visitors at once, each taking `serviceSeconds`. An upgrade raises capacity (1, 2, 3), shortens service and raises income.
 - **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too, so room has to be kept for them.
 
-Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site). "Happy per wave" is happy visitors against the target:
+Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site). They answer a help call after about 3 seconds and miss one in four, except the one marked "never helps". "Happy per act" is happy visitors against the star target:
 
-| Strategy | Result | Happy per wave | Arrived | Happy | Wanted more | Gave up | Coins left |
+| Strategy | Result | Happy per act | Arrived | Happy | Wanted more | Gave up | Calls helped |
 |---|---|---|---|---|---|---|---|
-| One stall, then nothing | Lost in wave 1 | 0/6 | 19 | 0 | 19 | 0 | 360 |
-| Cheapest stall, repeatedly | Lost in wave 1 | 0/6 | 27 | 0 | 26 | 0 | 80 |
-| Attractions only, no upgrades | Lost in wave 1 | 3/6 | 36 | 3 | 16 | 6 | 227 |
-| Upgrade the busiest first | Lost in wave 1 | 0/6 | 24 | 0 | 22 | 0 | 52 |
-| One of each, then upgrades | Won | 9/6, 43/35, 92/60 | 272 | 144 | 6 | 100 | 1984 |
-| One of each, then what visitors miss, duplicates when busy | Won | 12/6, 48/35, 81/60 | 305 | 141 | 39 | 103 | 1246 |
+| One stall, then nothing | 0 stars | 0/6, 0/35, 0/60 | 112 | 0 | 105 | 6 | 16/21 |
+| Cheapest stall, repeatedly | 0 stars | 0/6, 0/35, 0/60 | 191 | 0 | 190 | 0 | 65/81 |
+| Attractions only, no upgrades | 0 stars | 3/6, 18/35, 7/60 | 249 | 28 | 152 | 60 | 90/102 |
+| Upgrade the busiest first | 0 stars | 0/6, 0/35, 0/60 | 166 | 0 | 165 | 0 | 40/45 |
+| One of each, then upgrades | 3 stars | 9/6, 76/35, 103/60 | 396 | 188 | 6 | 179 | 98/104 |
+| One of each, then upgrades, never helps | Closed in act 2 | 8/6 | 76 | 10 | 4 | 46 | 0/14 |
+| One of each, then what visitors miss, duplicates when busy | 3 stars | 13/6, 61/35, 130/60 | 451 | 204 | 37 | 182 | 121/130 |
 
-A one-sided market loses in the first wave; the two mixed strategies win with a margin of roughly a third over each target. These are bots that react instantly, not people, and the targets were set from their results: no human playtest supports the numbers yet. Known weak points: about a hundred visitors still give up in a winning run, so the evening rush overloads even a full plot; coins are left over once the plot is full (decorations are the planned sink); queue positions still do not move up (issue 14).
+A one-sided market plays the whole evening without a star; the two mixed strategies get all three; the same mixed strategy without helping the stalls loses its reputation and closes in act 2. These are bots, not people, and the targets were set from their results: no human playtest supports the numbers yet. Known weak points: well over a hundred visitors still give up in a three-star run, so the evening rush overloads even a full plot; coins are left over once the plot is full; queue positions still do not move up (issue 14); the finale (issue 26) is not built.
 
 ## Placement and navigation
 
