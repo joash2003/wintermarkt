@@ -39,9 +39,11 @@ static class BalanceBots
             while (!s.Finished) {
                 // A person notices a call after about 3 seconds and misses one in four; strategies marked "never helps" ignore them.
                 if (!pair.Key.Contains("never helps")) foreach (var b in s.Buildings) if (b.NeedsHelp && b.HelpRemaining <= s.Settings.helpWindowSeconds - 3 && (b.Id + s.Helped + s.MissedHelp) % 4 != 0) { string why; s.TryHelp(b.Id, out why); }
+                // One snowball a second at the first Krampus still hunting.
+                if (!pair.Key.Contains("never helps")) foreach (var k in s.Krampuses) if (!k.Fleeing) { string hit; s.TryHit(k.Position, out hit); break; }
                 pair.Value(s); s.Tick(1); }
             for (int w = 0; w < s.WaveResults.Count; w++) perWave.Add(s.WaveResults[w] + "/" + s.Settings.waves[w].target);
-            Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,9}", pair.Key, (s.Failed ? "closed act " + (s.Wave + 1) + " " : s.Stars + " stars ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, s.Helped + "/" + (s.Helped + s.MissedHelp));
+            Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,9}", pair.Key, (s.Failed ? "closed act " + (s.Wave + 1) + " " : s.Stars + " stars ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, s.Helped + "/" + (s.Helped + s.MissedHelp) + "  scared " + s.Scared + ", off " + s.DrivenOff);
         }
         return 0;
     }
