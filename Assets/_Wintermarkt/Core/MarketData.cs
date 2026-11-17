@@ -31,6 +31,15 @@ namespace Wintermarkt.Core
         public BuildingLevel[] levels;
     }
 
+    /// <summary>One part of the festival: it must end with at least `target` happy visitors or the festival is lost.</summary>
+    [Serializable]
+    public sealed class WaveDefinition
+    {
+        public string title;
+        public float seconds, arrivalFactor = 1;
+        public int target;
+    }
+
     [Serializable]
     public sealed class MarketSettings
     {
@@ -40,6 +49,8 @@ namespace Wintermarkt.Core
         public float initialReputation = 60, happinessGain = 1, abandonmentLoss = 2;
         public float varietyBonus = 3, disappointmentLoss = 1;
         public int maxWishes = 3;
+        /// <summary>Empty means one wave of festivalSeconds without a target.</summary>
+        public WaveDefinition[] waves = new WaveDefinition[0];
         public BuildingDefinition[] buildings;
 
         public void Validate()
@@ -48,6 +59,8 @@ namespace Wintermarkt.Core
                 baseArrivalSeconds < minArrivalSeconds || walkSecondsPerCell <= 0 || patienceSeconds <= 0 ||
                 initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1)
                 throw new ArgumentException("Invalid market simulation settings.");
+            foreach (var w in waves ?? new WaveDefinition[0])
+                if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
             if (buildings == null || buildings.Length == 0) throw new ArgumentException("At least one building is required.");
             var ids = new HashSet<string>();
             foreach (var b in buildings)

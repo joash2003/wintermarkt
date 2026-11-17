@@ -121,6 +121,36 @@ namespace Wintermarkt.Tests
             Require(sim.MostWanted == "drinks", "The missing category is reported");
             Require(sim.TryPlace("drink", new Cell(6, 2), out reason), reason); Require(sim.MostWanted == null, "Building it clears the report");
         }
-        public static Action[] All { get { return new Action[] { VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        // Two 30-second waves on the one-stall test market.
+        static MarketSimulation CreateWaves(int firstTarget, float secondFactor = 1)
+        {
+            var basis = Create();
+            basis.Settings.waves = new[] { new WaveDefinition { title = "One", seconds = 30, target = firstTarget },
+                                           new WaveDefinition { title = "Two", seconds = 30, target = 0, arrivalFactor = secondFactor } };
+            return new MarketSimulation(basis.Settings, basis.Site.Data);
+        }
+        public static void MissedWaveTargetEndsFestival()
+        {
+            var sim = CreateWaves(1000); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            sim.Tick(29); Require(!sim.Finished && sim.Wave == 0, "The first wave ended early");
+            sim.Tick(2); Require(sim.Failed && sim.Finished && !sim.Won && sim.Wave == 0, "A missed target must end the festival as a loss");
+            int welcomed = sim.Welcomed; sim.Tick(30); Require(sim.Welcomed == welcomed, "A lost festival kept running");
+        }
+        public static void MetTargetsAdvanceAndWin()
+        {
+            var sim = CreateWaves(1); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            sim.Tick(31); Require(!sim.Finished && sim.Wave == 1 && sim.Remaining > 28 && sim.Remaining <= 30, "A met target must start the next wave");
+            Require(sim.WaveHappy < sim.Happy, "The wave count must restart");
+            sim.Tick(31); Require(sim.Won && sim.Finished && !sim.Failed, "Passing the last wave wins");
+        }
+        public static void ArrivalFactorSpeedsArrivals()
+        {
+            var slow = CreateWaves(0, 1); var fast = CreateWaves(0, 4); string reason;
+            foreach (var sim in new[] { slow, fast }) { sim.TryPlace("stall", new Cell(2, 2), out reason); sim.Tick(30.5f); }
+            Require(slow.Welcomed == fast.Welcomed, "The first wave is identical");
+            int before = slow.Welcomed; slow.Tick(25); fast.Tick(25);
+            Require(fast.Welcomed - before > slow.Welcomed - before, "A higher arrival factor must bring more visitors");
+        }
+        public static Action[] All { get { return new Action[] { MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

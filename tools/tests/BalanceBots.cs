@@ -28,12 +28,13 @@ static class BalanceBots
         var grid = new SiteGrid(site); var e = grid.Entrance; cells = new List<Cell>();
         for (int y = 0; y < grid.Height; y++) for (int x = 0; x < grid.Width; x++) if (Math.Abs(x - e.x) + Math.Abs(y - e.y) > 3 && grid.Buildable(new Cell(x, y))) cells.Add(new Cell(x, y));
         cells = cells.OrderBy(c => Math.Abs(c.x - e.x) + Math.Abs(c.y - e.y)).Take(700).ToList();
-        Console.WriteLine("{0,-62}{1,8}{2,7}{3,13}{4,8}{5,7}{6,5}{7,8}{8,6}", "strategy", "arrived", "happy", "disappointed", "gave up", "sales", "rep", "earned", "bldgs");
+        Console.WriteLine("{0,-62}{1,-16}{2,8}{3,7}{4,8}{5,8}{6,5}{7,7}{8,6}{9,6}", "strategy", "result", "arrived", "happy", "wanted+", "gave up", "rep", "coins", "bldgs", "free");
         foreach (var pair in Strategies)
         {
-            var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site);
-            while (!s.Finished) { pair.Value(s); s.Tick(1); }
-            Console.WriteLine("{0,-62}{1,8}{2,7}{3,13}{4,8}{5,7}{6,5:0}{7,8}{8,6}", pair.Key, s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Served, s.Reputation, s.Earned, s.Buildings.Count);
+            var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site); var perWave = new List<string>(); int wave = 0, happy = 0;
+            while (!s.Finished) { pair.Value(s); happy = s.WaveHappy; wave = s.Wave; s.Tick(1); if (s.Wave != wave || s.Finished) perWave.Add((s.Finished && s.Wave == wave ? s.WaveHappy : happy) + "/" + s.Settings.waves[wave].target); }
+            string r; int free = cells.Count(c => s.CanPlace("punsch", c, out r) || r == "Not enough coins.");
+            Console.WriteLine("{0,-62}{1,-16}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,6}", pair.Key, (s.Won ? "WON " : "lost ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, free);
         }
         return 0;
     }
