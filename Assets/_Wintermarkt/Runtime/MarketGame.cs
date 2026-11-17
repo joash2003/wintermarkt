@@ -109,7 +109,10 @@ namespace Wintermarkt
             if (callingNow > lastCalling) { Message = caller.Definition.title + " needs you: click it before the ring runs out!"; PlayClick(); }
             lastCalling = callingNow;
             if (Simulation.Wave != lastWave)
-            { lastWave = Simulation.Wave; Message = "Wave " + (lastWave + 1) + ": " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick(); }
+            {
+                int done = Simulation.WaveResults[lastWave], needed = Simulation.Settings.waves[lastWave].target; lastWave = Simulation.Wave;
+                Message = (done >= needed ? "Star earned (" + done + "/" + needed + "). " : "No star (" + done + "/" + needed + "). ") + "Now: " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick();
+            }
             if (State == FestivalState.Playing && Simulation.Finished) { State = FestivalState.Results; HidePreview(); UI.Refresh(); return; }
             if (State != FestivalState.Playing) return;
             if (Input.GetMouseButtonDown(1)) CancelBuild();

@@ -8,7 +8,7 @@
   "patienceSeconds": 35,
   "initialReputation": 60,
   "happinessGain": 0.5,
-  "abandonmentLoss": 3,
+  "abandonmentLoss": 2,
   "varietyBonus": 15,
   "disappointmentLoss": 0.5,
   "maxWishes": 3,
