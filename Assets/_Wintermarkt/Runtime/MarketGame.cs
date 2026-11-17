@@ -21,7 +21,7 @@ namespace Wintermarkt
         Cell lastCell = new Cell(-999, -999);
         string lastChoice;
         bool lastValid, previewVisible;
-        int lastWave;
+        int lastWave, lastCalling;
         AudioSource audioSource;
         AudioClip click;
         MarketSettings settings;
@@ -61,7 +61,7 @@ namespace Wintermarkt
         {
             Simulation = new MarketSimulation(settings, site); World.Initialize(Simulation);
             BuildChoice = null; Selected = null; focus = World.World(Simulation.Site.Entrance) * .3f; previewVisible = false; lastChoice = null; lastCell = new Cell(-999, -999);
-            Message = "Choose a stall, then place it on an open plot. Leave room for its queue."; lastWave = 0;
+            Message = "Choose a stall, then place it on an open plot. Leave room for its queue."; lastWave = 0; lastCalling = 0;
             PlaceCamera();
         }
         public void StartFestival() { ResetSimulation(); State = FestivalState.Playing; UI.Refresh(); }
@@ -105,6 +105,9 @@ namespace Wintermarkt
             HandleCamera();
             float dt = State == FestivalState.Playing ? Time.deltaTime : 0;
             Simulation.Tick(dt); World.Synchronize(dt);
+            int callingNow = 0; MarketBuilding caller = null; foreach (var b in Simulation.Buildings) if (b.NeedsHelp) { callingNow++; caller = b; }
+            if (callingNow > lastCalling) { Message = caller.Definition.title + " needs you: click it before the ring runs out!"; PlayClick(); }
+            lastCalling = callingNow;
             if (Simulation.Wave != lastWave)
             { lastWave = Simulation.Wave; Message = "Wave " + (lastWave + 1) + ": " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick(); }
             if (State == FestivalState.Playing && Simulation.Finished) { State = FestivalState.Results; HidePreview(); UI.Refresh(); return; }
@@ -129,7 +132,19 @@ namespace Wintermarkt
                     Message = reason;
                 }
             }
-            else if (Input.GetMouseButtonDown(0)) { Selected = Simulation.At(cell); UI.RefreshSelection(); }
+            else if (Input.GetMouseButtonDown(0))
+            {
+                // A click on or near a calling stall helps it: the bubble floats above the roof, so the click may land a cell or two behind.
+                MarketBuilding calling = null; float nearest = 3.2f; string reason;
+                foreach (var b in Simulation.Buildings)
+                {
+                    float d = Vector2.Distance(new Vector2(cell.x, cell.y), new Vector2(b.Origin.x + (b.Definition.width - 1) * .5f, b.Origin.y + (b.Definition.depth - 1) * .5f - 1));
+                    if (b.NeedsHelp && d < nearest) { nearest = d; calling = b; }
+                }
+                if (calling != null && Simulation.TryHelp(calling.Id, out reason)) { Message = reason; PlayClick(); World.Synchronize(0); Selected = calling; }
+                else Selected = Simulation.At(cell);
+                UI.RefreshSelection();
+            }
         }
         void HandleCamera()
         {

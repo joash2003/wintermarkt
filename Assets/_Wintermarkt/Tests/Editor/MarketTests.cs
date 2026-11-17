@@ -3,6 +3,9 @@ namespace Wintermarkt.Tests
 {
     public sealed class MarketTests
     {
+        [Test] public void HelpedStallIsBoosted() { MarketTestCases.HelpedStallIsBoosted(); }
+        [Test] public void MissedHelpClosesStall() { MarketTestCases.MissedHelpClosesStall(); }
+        [Test] public void HelpCallsGrowWithStalls() { MarketTestCases.HelpCallsGrowWithStalls(); }
         [Test] public void MoodIsRecorded() { MarketTestCases.MoodIsRecorded(); }
         [Test] public void RemoveRefundsAndFreesSpace() { MarketTestCases.RemoveRefundsAndFreesSpace(); }
         [Test] public void MissedWaveTargetEndsFestival() { MarketTestCases.MissedWaveTargetEndsFestival(); }

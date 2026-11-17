@@ -12,24 +12,32 @@
   "varietyBonus": 15,
   "disappointmentLoss": 0.5,
   "maxWishes": 3,
+  "helpIntervalSeconds": 25,
+  "helpWindowSeconds": 8,
+  "boostSeconds": 15,
+  "closedSeconds": 10,
+  "helpTip": 5,
   "waves": [
     {
       "title": "Afternoon",
       "seconds": 150,
       "arrivalFactor": 1.0,
-      "target": 6
+      "target": 6,
+      "helpFactor": 1.0
     },
     {
       "title": "Evening rush",
       "seconds": 240,
       "arrivalFactor": 1.6,
-      "target": 35
+      "target": 35,
+      "helpFactor": 1.4
     },
     {
       "title": "Closing time",
       "seconds": 210,
       "arrivalFactor": 1.2,
-      "target": 60
+      "target": 60,
+      "helpFactor": 1.2
     }
   ],
   "buildings": [
