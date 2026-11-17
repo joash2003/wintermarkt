@@ -56,7 +56,16 @@ namespace Wintermarkt.Core
         public float Reputation { get; private set; }
         public float Remaining { get; private set; }
         public bool Paused { get; set; }
-        public bool Finished { get { return Remaining <= 0; } }
+        /// <summary>Index of the wave being played, time left in it is Remaining.</summary>
+        public int Wave { get; private set; }
+        public int WaveCount { get { return waves.Length; } }
+        public WaveDefinition CurrentWave { get { return waves[Wave]; } }
+        /// <summary>Visitors who left happy during the current wave, counted against its target.</summary>
+        public int WaveHappy { get; private set; }
+        public bool Failed { get; private set; }
+        public bool Won { get; private set; }
+        public bool Finished { get { return Failed || Won; } }
+        readonly WaveDefinition[] waves;
         float arrivalCountdown = 2;
         int nextBuilding = 1, nextVisitor = 1;
         long nextOrder = 1;
@@ -70,7 +79,9 @@ namespace Wintermarkt.Core
         public MarketSimulation(MarketSettings settings, SiteData site)
         {
             settings.Validate(); Settings = settings; Site = new SiteGrid(site);
-            Coins = settings.startingCoins; Reputation = settings.initialReputation; Remaining = settings.festivalSeconds;
+            waves = settings.waves != null && settings.waves.Length > 0 ? settings.waves
+                : new[] { new WaveDefinition { title = "Festival", seconds = settings.festivalSeconds } };
+            Coins = settings.startingCoins; Reputation = settings.initialReputation; Remaining = waves[0].seconds;
         }
 
         public float Attraction
@@ -82,7 +93,7 @@ namespace Wintermarkt.Core
                 return sum + Math.Max(0, categories.Count - 1) * Settings.varietyBonus;
             }
         }
-        public float ArrivalInterval { get { return Math.Max(Settings.minArrivalSeconds, Settings.baseArrivalSeconds / (1 + Attraction * .035f) / (.5f + Reputation / 100)); } }
+        public float ArrivalInterval { get { return Math.Max(Settings.minArrivalSeconds, Settings.baseArrivalSeconds / (1 + Attraction * .035f) / (.5f + Reputation / 100)) / CurrentWave.arrivalFactor; } }
 
         public BuildingDefinition FindDefinition(string id)
         { foreach (var d in Settings.buildings) if (d.id == id) return d; return null; }
@@ -191,6 +202,13 @@ namespace Wintermarkt.Core
                 }
                 foreach (var b in buildings) StartService(b);
                 visitors.RemoveAll(v => v.State == VisitorState.Gone);
+                if (Remaining <= 0)
+                {
+                    // End of a wave: a missed target loses the festival, the last wave passed wins it.
+                    if (WaveHappy < CurrentWave.target) Failed = true;
+                    else if (Wave + 1 >= waves.Length) Won = true;
+                    else { Wave++; WaveHappy = 0; Remaining = CurrentWave.seconds; }
+                }
             }
         }
 
@@ -230,7 +248,7 @@ namespace Wintermarkt.Core
                 v.State = route.Count == 0 ? VisitorState.Waiting : VisitorState.Walking; return;
             }
             if (full) { Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); }
-            else if (v.Wishes.Count == 0) Happy++;
+            else if (v.Wishes.Count == 0) { Happy++; WaveHappy++; }
             else
             {
                 Disappointed++; Reputation = Math.Max(0, Reputation - Settings.disappointmentLoss);

@@ -21,6 +21,7 @@ namespace Wintermarkt
         Cell lastCell = new Cell(-999, -999);
         string lastChoice;
         bool lastValid, previewVisible;
+        int lastWave;
         AudioSource audioSource;
         AudioClip click;
         MarketSettings settings;
@@ -60,7 +61,7 @@ namespace Wintermarkt
         {
             Simulation = new MarketSimulation(settings, site); World.Initialize(Simulation);
             BuildChoice = null; Selected = null; focus = World.World(Simulation.Site.Entrance) * .6f; previewVisible = false; lastChoice = null; lastCell = new Cell(-999, -999);
-            Message = "Choose a stall, then place it on an open plot. Leave room for its queue.";
+            Message = "Choose a stall, then place it on an open plot. Leave room for its queue."; lastWave = 0;
             PlaceCamera();
         }
         public void StartFestival() { ResetSimulation(); State = FestivalState.Playing; UI.Refresh(); }
@@ -97,6 +98,8 @@ namespace Wintermarkt
             HandleCamera();
             float dt = State == FestivalState.Playing ? Time.deltaTime : 0;
             Simulation.Tick(dt); World.Synchronize(dt);
+            if (Simulation.Wave != lastWave)
+            { lastWave = Simulation.Wave; Message = "Wave " + (lastWave + 1) + ": " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick(); }
             if (State == FestivalState.Playing && Simulation.Finished) { State = FestivalState.Results; HidePreview(); UI.Refresh(); return; }
             if (State != FestivalState.Playing) return;
             if (Input.GetMouseButtonDown(1)) CancelBuild();

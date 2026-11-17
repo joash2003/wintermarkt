@@ -12,6 +12,26 @@
   "varietyBonus": 15,
   "disappointmentLoss": 0.5,
   "maxWishes": 3,
+  "waves": [
+    {
+      "title": "Afternoon",
+      "seconds": 150,
+      "arrivalFactor": 1.0,
+      "target": 15
+    },
+    {
+      "title": "Evening rush",
+      "seconds": 240,
+      "arrivalFactor": 1.6,
+      "target": 70
+    },
+    {
+      "title": "Closing time",
+      "seconds": 210,
+      "arrivalFactor": 1.2,
+      "target": 60
+    }
+  ],
   "buildings": [
     {
       "id": "punsch",

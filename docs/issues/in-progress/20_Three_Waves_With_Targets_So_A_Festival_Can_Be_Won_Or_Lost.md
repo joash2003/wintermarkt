@@ -3,7 +3,7 @@ type: feature
 priority: high
 created: 2026-11-17
 assignee:
-branch:
+branch: 20-waves
 ---
 
 # 20 — Three waves with targets so a festival can be won or lost
@@ -30,6 +30,10 @@ A festival is three waves, each with a target number of happy visitors; missing 
 - [ ] WaveDefinition and validation in MarketData.cs; wave state in MarketSimulation.cs.
 - [ ] HUD, results card and menu text in MarketUI.cs; wave banner through MarketGame.Message.
 - [ ] `waves` in market.json; tune targets with `bash tools/balance-bots.sh` together with issue 21.
+
+## Work log
+
+- 2026-11-17: three tests written first (11 compile errors against the old code). WaveDefinition and `MarketSettings.waves`; wave state, `Failed`, `Won` and the arrival factor in MarketSimulation; HUD wave line, win or loss results card, menu text and a wave banner. market.json: Afternoon 150 s target 15, Evening rush 240 s x1.6 target 70, Closing time 210 s x1.2 target 60 (first values, tuned later with issue 21). First bot run: the four single-minded bots lose in wave 1, the two mixed bots win. 14 core tests pass. Not checked yet: the HUD in Unity.
 
 ## Outcome
 
