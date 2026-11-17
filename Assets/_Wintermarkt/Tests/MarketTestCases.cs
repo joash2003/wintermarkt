@@ -225,6 +225,40 @@ namespace Wintermarkt.Tests
             one.Tick(120); two.Tick(120);
             Require(one.MissedHelp > 0 && two.MissedHelp > one.MissedHelp, "Two stalls must call more often than one");
         }
-        public static Action[] All { get { return new Action[] { HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void BurstEventSpawnsVisitors()
+        {
+            var sim = CreateTwoCategories(); string reason;
+            sim.Settings.events = new[] { new EventDefinition { wave = 0, at = 8, kind = "burst", title = "School class", category = "drinks", count = 4, warnSeconds = 3 } };
+            sim.TryPlace("stall", new Cell(2, 2), out reason); sim.TryPlace("drink", new Cell(6, 2), out reason);
+            sim.Tick(4); Require(sim.Upcoming == null && sim.Welcomed == 1, "Too early for the warning");
+            sim.Tick(2); Require(sim.Upcoming != null && sim.UpcomingIn > 1 && sim.UpcomingIn < 3 && sim.EventCount == 0, "The event must be announced before it starts");
+            sim.Tick(2.5f); Require(sim.EventCount == 1 && sim.Upcoming == null, "The event must start on time");
+            sim.Tick(4); Require(sim.Welcomed == 5, "A burst of four must arrive, one after the other");
+            sim.Tick(60); Require(sim.Served == 2 + 4 && sim.Happy == 5, "Burst visitors want only the event's category");
+        }
+        public static void StormShortensPatience()
+        {
+            var calm = Create(); var storm = Create(); string reason;
+            // One visitor every 6 seconds, so the queue never fills and only patience can make anyone leave.
+            foreach (var sim in new[] { calm, storm }) { sim.Settings.baseArrivalSeconds = 6; sim.Settings.minArrivalSeconds = 6; sim.Settings.buildings[0].levels[0].serviceSeconds = 200; sim.TryPlace("stall", new Cell(2, 2), out reason); }
+            storm.Settings.events = new[] { new EventDefinition { wave = 0, at = 0, seconds = 100, kind = "storm", title = "Snowstorm", factor = .5f } };
+            calm.Tick(26); storm.Tick(26);
+            Require(calm.Abandoned == 0 && storm.Abandoned > 0 && storm.ActiveEvent != null && storm.EventRemaining > 70, "In a storm visitors give up sooner");
+            storm.Tick(90); Require(storm.ActiveEvent == null, "The storm must end");
+            var wishes = CreateTwoCategories(); wishes.Settings.maxWishes = 1; wishes.Settings.baseArrivalSeconds = 2; wishes.Settings.minArrivalSeconds = 1;
+            wishes.Settings.events = new[] { new EventDefinition { wave = 0, at = 0, seconds = 100, kind = "storm", title = "Snowstorm", category = "drinks" } };
+            wishes.TryPlace("stall", new Cell(2, 2), out reason); wishes.Settings.buildings[0].levels[0].serviceSeconds = 200; wishes.Tick(6);
+            Require(wishes.Welcomed > 1 && wishes.Visitors.Count > 0, "Setup"); foreach (var v in wishes.Visitors) Require(v.Wishes.Contains("drinks") || v.Mood != VisitorMood.None, "In a storm everyone also wants the event's category");
+        }
+        public static void PowerCutCallsEveryStall()
+        {
+            var sim = Create(); string reason; sim.Settings.helpWindowSeconds = 4;
+            sim.Settings.events = new[] { new EventDefinition { wave = 0, at = 3, kind = "powercut", title = "Power cut", factor = 1.5f } };
+            sim.TryPlace("stall", new Cell(2, 2), out reason); sim.TryPlace("stall", new Cell(6, 2), out reason);
+            sim.Tick(3.3f); foreach (var b in sim.Buildings) Require(b.NeedsHelp && b.HelpRemaining > 5, "A power cut makes every stall call, with extra time");
+            Require(sim.TryHelp(1, out reason), reason);
+            sim.Tick(6.5f); Require(sim.Buildings[0].ClosedRemaining == 0 && sim.Buildings[1].ClosedRemaining > 0 && sim.MissedHelp == 1 && sim.Helped == 1, "Only the stall that was not relit closes");
+        }
+        public static Action[] All { get { return new Action[] { BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }
