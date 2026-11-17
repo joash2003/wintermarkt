@@ -14,6 +14,21 @@ namespace Wintermarkt
         readonly Dictionary<int, Transform> buildings = new Dictionary<int, Transform>();
         readonly Dictionary<int, int> levels = new Dictionary<int, int>();
         readonly Dictionary<int, Transform> people = new Dictionary<int, Transform>();
+        readonly Dictionary<int, Transform> marks = new Dictionary<int, Transform>();
+        readonly Dictionary<int, int> shown = new Dictionary<int, int>();
+        /// <summary>One colour per building category: the stall sign, the wish markers above visitors and the build menu all use it.</summary>
+        public static Color CategoryColor(string category)
+        {
+            switch (category)
+            {
+                case "drinks": return new Color(.9f, .2f, .22f);
+                case "food": return new Color(1f, .62f, .12f);
+                case "crafts": return new Color(.25f, .55f, 1f);
+                case "rides": return new Color(.3f, .85f, .45f);
+                case "landmark": return new Color(.78f, .45f, .95f);
+                default: return new Color(.7f, .7f, .7f);
+            }
+        }
         readonly List<Transform> movingRides = new List<Transform>();
         readonly List<AmbientVehicle> traffic = new List<AmbientVehicle>();
         Transform content, preview;
@@ -62,7 +77,7 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); movingRides.Clear(); traffic.Clear();
+            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -143,7 +158,7 @@ namespace Wintermarkt
             {
                 if (Mathf.Abs(Vector3.Distance(new Vector3(f.points[i * 2], 0, f.points[i * 2 + 1]), gate) - f.width) > 3) continue;
                 Shape("Light post", content, PrimitiveType.Cylinder, edge[i] + Vector3.up * 1.7f, new Vector3(.3f, 1.8f, .3f), post);
-                if (last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 3.4f, edge[i] + Vector3.up * 3.4f, .14f, 0, .14f, Glow(WarmLight));
+                if (last >= 0 && last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 3.4f, edge[i] + Vector3.up * 3.4f, .14f, 0, .14f, Glow(WarmLight));
                 last = i;
             }
         }
@@ -231,10 +246,21 @@ namespace Wintermarkt
                 }
                 person.position = Vector3.Lerp(World(v.Position), World(v.NextCell), v.EdgeProgress);
                 if (v.NextCell != v.Position) person.rotation = Quaternion.LookRotation(World(v.NextCell) - World(v.Position));
-                person.localScale = Vector3.one * (v.State == VisitorState.Serving ? 1.08f : 1);
+                person.localScale = Vector3.one * (v.State == VisitorState.Serving ? 1.5f : 1.4f);
+                // Above the head: one lit cube per remaining wish in its category colour, then a star (happy) or a red block (gave up).
+                int signature = v.Wishes.Count + 10 * (int)v.Mood, old; Transform mark;
+                if (!shown.TryGetValue(v.Id, out old) || old != signature)
+                {
+                    if (marks.TryGetValue(v.Id, out mark)) Destroy(mark.gameObject);
+                    mark = new GameObject("Wishes").transform; mark.SetParent(person, false); mark.localPosition = Vector3.up * 3.4f; marks[v.Id] = mark; shown[v.Id] = signature;
+                    if (v.Mood == VisitorMood.Happy) Shape("Happy", mark, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 1.1f, Glow(new Color(1, .82f, .2f)));
+                    else if (v.Mood == VisitorMood.GaveUp) Shape("Gave up", mark, PrimitiveType.Cube, Vector3.zero, new Vector3(1.2f, .35f, .35f), Glow(new Color(1, .1f, .1f)));
+                    else for (int i = 0; i < v.Wishes.Count; i++) Shape("Wish " + v.Wishes[i], mark, PrimitiveType.Cube, new Vector3((i - (v.Wishes.Count - 1) * .5f) * .95f, 0, 0), Vector3.one * .8f, Glow(CategoryColor(v.Wishes[i])));
+                }
+                marks[v.Id].rotation = Quaternion.Euler(0, 30, 0);   // the row stays level on screen, the camera looks along yaw 30
             }
             var removed = new List<int>(); foreach (var pair in people) if (!active.Contains(pair.Key)) { Destroy(pair.Value.gameObject); removed.Add(pair.Key); }
-            foreach (int id in removed) people.Remove(id);
+            foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
         }
@@ -242,7 +268,7 @@ namespace Wintermarkt
         {
             var root = new GameObject(b.Definition.title + " level " + (b.Level + 1)).transform; root.SetParent(content); root.position = World(b.Origin) + new Vector3((b.Definition.width - 1) * CellSize / 2, 0, -(b.Definition.depth - 1) * CellSize / 2);
             float w = b.Definition.width * CellSize - .5f, d = b.Definition.depth * CellSize - .5f;
-            Color sign = b.Definition.id == "punsch" ? new Color(.57f, .15f, .19f) : b.Definition.id == "pastry" ? new Color(.2f, .37f, .36f) : new Color(.25f, .28f, .48f);
+            Color sign = CategoryColor(b.Definition.category);
             Box("Wooden hut", root, new Vector3(0, 1.8f, 0), new Vector3(w, 3.6f, d), Wood);
             // Pitched roof with the ridge along the front; light strips trace the eaves and ridge like the real huts.
             float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad);
@@ -252,7 +278,8 @@ namespace Wintermarkt
                 Lamp("Eave lights", root, new Vector3(0, 3.55f, side * (d / 2 + .3f)), new Vector3(w + .8f, .15f, .15f));
             }
             Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
-            Box("Sign", root, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .55f, .2f), sign);
+            Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .7f, .2f), Glow(sign));
+            Shape("Roof flag", root, PrimitiveType.Cube, new Vector3(0, 4.6f + rise, 0), Vector3.one * 1.1f, Glow(sign));
             // A warm pool of light on the snow in front of the counter.
             var pool = new GameObject("Counter light", typeof(Light)).GetComponent<Light>(); pool.transform.SetParent(root, false); pool.transform.localPosition = new Vector3(0, 3, -d / 2 - 3);
             pool.type = LightType.Point; pool.color = WarmLight; pool.range = 16; pool.intensity = 1.4f;
