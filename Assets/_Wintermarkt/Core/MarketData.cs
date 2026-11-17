@@ -38,14 +38,15 @@ namespace Wintermarkt.Core
         public float festivalSeconds = 600, baseArrivalSeconds = 12, minArrivalSeconds = 2;
         public float walkSecondsPerCell = .6f, patienceSeconds = 35;
         public float initialReputation = 60, happinessGain = 1, abandonmentLoss = 2;
-        public float varietyBonus = 3;
+        public float varietyBonus = 3, disappointmentLoss = 1;
+        public int maxWishes = 3;
         public BuildingDefinition[] buildings;
 
         public void Validate()
         {
             if (startingCoins < 0 || maxVisitors < 1 || festivalSeconds <= 0 || minArrivalSeconds <= 0 ||
                 baseArrivalSeconds < minArrivalSeconds || walkSecondsPerCell <= 0 || patienceSeconds <= 0 ||
-                initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0)
+                initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1)
                 throw new ArgumentException("Invalid market simulation settings.");
             if (buildings == null || buildings.Length == 0) throw new ArgumentException("At least one building is required.");
             var ids = new HashSet<string>();
