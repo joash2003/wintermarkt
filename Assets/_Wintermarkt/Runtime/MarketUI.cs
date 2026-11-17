@@ -91,7 +91,7 @@ namespace Wintermarkt
             {
                 Label("LINZ\nWINTERMARKT", card, new Vector2(0, 200), new Vector2(600, 140), 54, gold);
                 Label("A little square. A whole city of Christmas.", card, new Vector2(0, 90), new Vector2(590, 45), 21, ink);
-                Label("Every visitor wants two or three different things.\nSend enough of them home happy in each of three waves.\nEarn coins from service and reinvest them.", card, new Vector2(0, -5), new Vector2(580, 125), 20, ink);
+                Label("Every visitor wants two or three different things.\nThree acts, one star each: send enough of them home happy.\nEarn coins from service and reinvest them.", card, new Vector2(0, -5), new Vector2(580, 125), 20, ink);
                 ActionButton("Open the market", card, new Vector2(0, -115), new Vector2(350, 54), game.StartFestival);
                 ActionButton(game.Muted ? "Sound off" : "Sound on", card, new Vector2(-90, -185), new Vector2(170, 45), game.ToggleSound);
                 ActionButton("Quit", card, new Vector2(90, -185), new Vector2(170, 45), game.Quit);
@@ -108,11 +108,18 @@ namespace Wintermarkt
             else
             {
                 var sim = game.Simulation;
-                Label(sim.Won ? "THANK YOU, LINZ" : "THE MARKET CLOSED EARLY", card, new Vector2(0, 210), new Vector2(600, 70), sim.Won ? 42 : 36, gold);
-                Label(sim.Happy + (sim.Happy == 1 ? " happy visitor" : " happy visitors"), card, new Vector2(0, 135), new Vector2(590, 60), 34, ink);
-                Label(sim.Won ? "All " + sim.WaveCount + " waves passed" : "Wave " + (sim.Wave + 1) + ", " + sim.CurrentWave.title + ": " + sim.WaveHappy + " of " + sim.CurrentWave.target + " happy visitors", card, new Vector2(0, 85), new Vector2(590, 40), 22, gold);
-                Label(sim.Welcomed + " arrived  ·  " + sim.Disappointed + " wanted more  ·  " + sim.Abandoned + " gave up\n" + sim.Earned + " coins earned\nFinal reputation: " + Mathf.RoundToInt(sim.Reputation) + "%", card, new Vector2(0, 10), new Vector2(590, 120), 22, ink);
-                ActionButton("Try a new layout", card, new Vector2(0, -120), new Vector2(350, 50), game.StartFestival);
+                string verdict = sim.Failed ? "THE MARKET CLOSED EARLY" : sim.Stars >= 3 ? "THE BEST MARKET LINZ HAS SEEN" : sim.Stars == 2 ? "A GOOD EVENING" : sim.Stars == 1 ? "A LONG, COLD EVENING" : "LINZ WENT HOME HUNGRY";
+                Label(verdict, card, new Vector2(0, 250), new Vector2(620, 60), 34, gold);
+                // Stars as gold or dim diamonds: the built-in font has no star glyph on every platform.
+                for (int i = 0; i < sim.WaveCount; i++)
+                    Panel("Star", card, new Vector2(.5f, .5f), new Vector2((i - (sim.WaveCount - 1) * .5f) * 70, 185), new Vector2(34, 34), i < sim.Stars ? gold : new Color(.25f, .3f, .32f)).localRotation = Quaternion.Euler(0, 0, 45);
+                Label(sim.Happy + (sim.Happy == 1 ? " happy visitor" : " happy visitors"), card, new Vector2(0, 120), new Vector2(590, 50), 32, ink);
+                string acts = "";
+                for (int i = 0; i < sim.WaveResults.Count; i++) acts += (i > 0 ? "   ·   " : "") + sim.Settings.waves[i].title + " " + sim.WaveResults[i] + "/" + sim.Settings.waves[i].target;
+                if (sim.Failed) acts += (acts.Length > 0 ? "   ·   " : "") + "reputation fell to zero in " + sim.CurrentWave.title;
+                Label(acts, card, new Vector2(0, 75), new Vector2(630, 36), 17, gold);
+                Label(sim.Welcomed + " arrived  ·  " + sim.Disappointed + " wanted more  ·  " + sim.Abandoned + " gave up\nYou helped " + sim.Helped + " of " + (sim.Helped + sim.MissedHelp) + " calls  ·  " + sim.Earned + " coins earned\nFinal reputation: " + Mathf.RoundToInt(sim.Reputation) + "%", card, new Vector2(0, 5), new Vector2(600, 100), 20, ink);
+                ActionButton("Play the evening again", card, new Vector2(0, -120), new Vector2(350, 50), game.StartFestival);
                 ActionButton("Main menu", card, new Vector2(0, -190), new Vector2(350, 50), game.Menu);
             }
         }
@@ -131,7 +138,7 @@ namespace Wintermarkt
             if (game.Simulation == null) return;
             var sim = game.Simulation; int remaining = Mathf.CeilToInt(sim.Remaining);
             stats.text = "WAVE " + (sim.Wave + 1) + "/" + sim.WaveCount + "  " + sim.CurrentWave.title.ToUpperInvariant() + "     " + sim.WaveHappy + " / " + sim.CurrentWave.target + " HAPPY     " + remaining / 60 + ":" + (remaining % 60).ToString("00") + "\n"
-                + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total");
+                + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total") + "   ·   stars " + sim.Stars + "/" + sim.WaveCount;
             footer.text = game.Message; if (game.Muted) footer.text += "   ·   Sound off (M)";
             if (game.Selected != null) RefreshSelection();
         }

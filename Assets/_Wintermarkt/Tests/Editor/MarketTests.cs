@@ -8,8 +8,9 @@ namespace Wintermarkt.Tests
         [Test] public void HelpCallsGrowWithStalls() { MarketTestCases.HelpCallsGrowWithStalls(); }
         [Test] public void MoodIsRecorded() { MarketTestCases.MoodIsRecorded(); }
         [Test] public void RemoveRefundsAndFreesSpace() { MarketTestCases.RemoveRefundsAndFreesSpace(); }
-        [Test] public void MissedWaveTargetEndsFestival() { MarketTestCases.MissedWaveTargetEndsFestival(); }
-        [Test] public void MetTargetsAdvanceAndWin() { MarketTestCases.MetTargetsAdvanceAndWin(); }
+        [Test] public void MissedTargetCostsAStarNotTheGame() { MarketTestCases.MissedTargetCostsAStarNotTheGame(); }
+        [Test] public void MetTargetsGiveEveryStar() { MarketTestCases.MetTargetsGiveEveryStar(); }
+        [Test] public void ReputationZeroEndsTheEvening() { MarketTestCases.ReputationZeroEndsTheEvening(); }
         [Test] public void ArrivalFactorSpeedsArrivals() { MarketTestCases.ArrivalFactorSpeedsArrivals(); }
         [Test] public void VisitorVisitsEveryWish() { MarketTestCases.VisitorVisitsEveryWish(); }
         [Test] public void MissingWishDisappoints() { MarketTestCases.MissingWishDisappoints(); }

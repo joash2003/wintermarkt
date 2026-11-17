@@ -129,19 +129,27 @@ namespace Wintermarkt.Tests
                                            new WaveDefinition { title = "Two", seconds = 30, target = 0, arrivalFactor = secondFactor } };
             return new MarketSimulation(basis.Settings, basis.Site.Data);
         }
-        public static void MissedWaveTargetEndsFestival()
+        public static void MissedTargetCostsAStarNotTheGame()
         {
             var sim = CreateWaves(1000); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
             sim.Tick(29); Require(!sim.Finished && sim.Wave == 0, "The first wave ended early");
-            sim.Tick(2); Require(sim.Failed && sim.Finished && !sim.Won && sim.Wave == 0, "A missed target must end the festival as a loss");
-            int welcomed = sim.Welcomed; sim.Tick(30); Require(sim.Welcomed == welcomed, "A lost festival kept running");
+            sim.Tick(2); Require(!sim.Finished && !sim.Failed && sim.Wave == 1 && sim.Stars == 0, "A missed target costs the star, the evening goes on");
+            sim.Tick(31); Require(sim.Won && sim.Finished && !sim.Failed && sim.Stars == 1, "The second wave has no target, so it gives its star");
+            Require(sim.WaveResults.Count == 2 && sim.WaveResults[0] > 0 && sim.WaveResults[0] + sim.WaveResults[1] == sim.Happy, "Happy visitors are recorded per wave");
+            int welcomed = sim.Welcomed; sim.Tick(30); Require(sim.Welcomed == welcomed, "A finished evening kept running");
         }
-        public static void MetTargetsAdvanceAndWin()
+        public static void MetTargetsGiveEveryStar()
         {
             var sim = CreateWaves(1); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
-            sim.Tick(31); Require(!sim.Finished && sim.Wave == 1 && sim.Remaining > 28 && sim.Remaining <= 30, "A met target must start the next wave");
+            sim.Tick(31); Require(!sim.Finished && sim.Wave == 1 && sim.Stars == 1 && sim.Remaining > 28 && sim.Remaining <= 30, "A met target gives a star and starts the next wave");
             Require(sim.WaveHappy < sim.Happy, "The wave count must restart");
-            sim.Tick(31); Require(sim.Won && sim.Finished && !sim.Failed, "Passing the last wave wins");
+            sim.Tick(31); Require(sim.Won && sim.Finished && !sim.Failed && sim.Stars == 2, "Both targets met: both stars");
+        }
+        public static void ReputationZeroEndsTheEvening()
+        {
+            var sim = Create(); sim.Settings.abandonmentLoss = 100; sim.Settings.buildings[0].levels[0].serviceSeconds = 200; string reason;
+            sim.TryPlace("stall", new Cell(2, 2), out reason); sim.Tick(4); Require(!sim.Finished, "Nobody has been lost yet");
+            sim.Tick(40); Require(sim.Failed && sim.Finished && !sim.Won && sim.Reputation == 0, "With no reputation left the market closes");
         }
         public static void ArrivalFactorSpeedsArrivals()
         {
@@ -217,6 +225,6 @@ namespace Wintermarkt.Tests
             one.Tick(120); two.Tick(120);
             Require(one.MissedHelp > 0 && two.MissedHelp > one.MissedHelp, "Two stalls must call more often than one");
         }
-        public static Action[] All { get { return new Action[] { HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedWaveTargetEndsFestival, MetTargetsAdvanceAndWin, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static Action[] All { get { return new Action[] { HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

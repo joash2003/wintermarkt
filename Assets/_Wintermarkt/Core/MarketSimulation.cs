@@ -76,7 +76,14 @@ namespace Wintermarkt.Core
         public WaveDefinition CurrentWave { get { return waves[Wave]; } }
         /// <summary>Visitors who left happy during the current wave, counted against its target.</summary>
         public int WaveHappy { get; private set; }
+        /// <summary>One star per wave that reached its target.</summary>
+        public int Stars { get; private set; }
+        /// <summary>Happy visitors of each finished wave.</summary>
+        public IReadOnlyList<int> WaveResults { get { return waveResults; } }
+        readonly List<int> waveResults = new List<int>();
+        /// <summary>The market closed early: reputation fell to zero.</summary>
         public bool Failed { get; private set; }
+        /// <summary>The evening was played to the end of the last wave.</summary>
         public bool Won { get; private set; }
         public bool Finished { get { return Failed || Won; } }
         readonly WaveDefinition[] waves;
@@ -263,11 +270,13 @@ namespace Wintermarkt.Core
                 visitors.RemoveAll(v => v.State == VisitorState.Gone);
                 if (Remaining <= 0)
                 {
-                    // End of a wave: a missed target loses the festival, the last wave passed wins it.
-                    if (WaveHappy < CurrentWave.target) Failed = true;
-                    else if (Wave + 1 >= waves.Length) Won = true;
+                    // End of a wave: a met target gives a star. The game is played once, so a miss never ends the evening (issue 24).
+                    if (WaveHappy >= CurrentWave.target) Stars++;
+                    waveResults.Add(WaveHappy);
+                    if (Wave + 1 >= waves.Length) Won = true;
                     else { Wave++; WaveHappy = 0; Remaining = CurrentWave.seconds; }
                 }
+                if (Reputation <= 0 && buildings.Count > 0) Failed = true;
             }
         }
 

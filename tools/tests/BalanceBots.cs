@@ -32,16 +32,16 @@ static class BalanceBots
         var grid = new SiteGrid(site); var e = grid.Entrance; cells = new List<Cell>();
         for (int y = 0; y < grid.Height; y++) for (int x = 0; x < grid.Width; x++) if (Math.Abs(x - e.x) + Math.Abs(y - e.y) > 3 && grid.Buildable(new Cell(x, y))) cells.Add(new Cell(x, y));
         cells = cells.OrderBy(c => Math.Abs(c.x - e.x) + Math.Abs(c.y - e.y)).Take(700).ToList();
-        Console.WriteLine("{0,-74}{1,-16}{2,8}{3,7}{4,8}{5,8}{6,5}{7,7}{8,6}{9,6}", "strategy", "result", "arrived", "happy", "wanted+", "gave up", "rep", "coins", "bldgs", "helped");
+        Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5}{7,7}{8,6}{9,6}", "strategy", "result", "arrived", "happy", "wanted+", "gave up", "rep", "coins", "bldgs", "helped");
         foreach (var pair in Strategies)
         {
-            var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site); var perWave = new List<string>(); int wave = 0, happy = 0;
-            bool can = true; string r = null;
+            var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site); var perWave = new List<string>();
             while (!s.Finished) {
                 // A person notices a call after about 3 seconds and misses one in four; strategies marked "never helps" ignore them.
                 if (!pair.Key.Contains("never helps")) foreach (var b in s.Buildings) if (b.NeedsHelp && b.HelpRemaining <= s.Settings.helpWindowSeconds - 3 && (b.Id + s.Helped + s.MissedHelp) % 4 != 0) { string why; s.TryHelp(b.Id, out why); }
-                pair.Value(s); happy = s.WaveHappy; wave = s.Wave; if (s.Remaining < 1.5f && s.Coins >= 100) can = cells.Any(c => s.CanPlace("punsch", c, out r)); s.Tick(1); if (s.Wave != wave || s.Finished) perWave.Add((s.Finished && s.Wave == wave ? s.WaveHappy : happy) + "/" + s.Settings.waves[wave].target); }
-            Console.WriteLine("{0,-74}{1,-16}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,6}", pair.Key, (s.Won ? "WON " : "lost ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, s.Helped + "/" + (s.Helped + s.MissedHelp));
+                pair.Value(s); s.Tick(1); }
+            for (int w = 0; w < s.WaveResults.Count; w++) perWave.Add(s.WaveResults[w] + "/" + s.Settings.waves[w].target);
+            Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,6}", pair.Key, (s.Failed ? "closed act " + (s.Wave + 1) + " " : s.Stars + " stars ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, s.Helped + "/" + (s.Helped + s.MissedHelp));
         }
         return 0;
     }
