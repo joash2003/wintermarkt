@@ -259,6 +259,22 @@ namespace Wintermarkt.Tests
             Require(sim.TryHelp(1, out reason), reason);
             sim.Tick(6.5f); Require(sim.Buildings[0].ClosedRemaining == 0 && sim.Buildings[1].ClosedRemaining > 0 && sim.MissedHelp == 1 && sim.Helped == 1, "Only the stall that was not relit closes");
         }
-        public static Action[] All { get { return new Action[] { BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void KrampusScaresAndIsDrivenOff()
+        {
+            var sim = Create(); string reason; sim.Settings.buildings[0].levels[0].serviceSeconds = 60; sim.Settings.baseArrivalSeconds = 6; sim.Settings.minArrivalSeconds = 6;
+            sim.Settings.events = new[] { new EventDefinition { wave = 0, at = 10, kind = "krampus", title = "Krampus run", count = 1, factor = 2 } };
+            sim.TryPlace("stall", new Cell(5, 4), out reason);
+            sim.Tick(9); Require(sim.Krampuses.Count == 0 && sim.Scared == 0, "Too early");
+            sim.Tick(25); Require(sim.Krampuses.Count == 1 && sim.Scared > 0, "A Krampus must reach the queue and scare visitors away");
+            foreach (var v in sim.Visitors) Require(v.Mood != VisitorMood.Scared || v.State == VisitorState.Leaving, "A scared visitor leaves");
+            var k = sim.Krampuses[0];
+            Require(!sim.TryHit(new Cell(k.Position.x + 6, k.Position.y), out reason), "A snowball far away must miss");
+            Require(sim.TryHit(k.Position, out reason) && !k.Fleeing, "The first hit does not drive it off");
+            Require(sim.TryHit(k.Position, out reason) && k.Fleeing && sim.DrivenOff == 1, "The second hit drives it off");
+            Require(!sim.TryHit(k.Position, out reason), "A fleeing Krampus cannot be hit again");
+            int scared = sim.Scared; sim.Tick(20);
+            Require(sim.Krampuses.Count == 0 && sim.Scared == scared, "A fleeing Krampus leaves the market and scares nobody");
+        }
+        public static Action[] All { get { return new Action[] { KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

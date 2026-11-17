@@ -5,7 +5,7 @@ namespace Wintermarkt.Core
 {
     public enum VisitorState { Walking, Waiting, Serving, Leaving, Gone }
     /// <summary>How a visit ended; None while the visitor is still on their way round.</summary>
-    public enum VisitorMood { None, Happy, Disappointed, GaveUp }
+    public enum VisitorMood { None, Happy, Disappointed, GaveUp, Scared }
 
     public sealed class MarketBuilding
     {
@@ -41,6 +41,20 @@ namespace Wintermarkt.Core
         public int RouteIndex { get; internal set; }
         public float EdgeProgress { get; internal set; }
         internal long QueueOrder;
+        public Cell NextCell { get { return Route != null && RouteIndex < Route.Count ? Route[RouteIndex] : Position; } }
+    }
+
+    /// <summary>A Krampus of the finale: walks towards visitors and scares them away until snowballs drive it off.</summary>
+    public sealed class MarketKrampus
+    {
+        public int Id { get; internal set; }
+        public Cell Position { get; internal set; }
+        public int Hits { get; internal set; }
+        public bool Fleeing { get; internal set; }
+        public List<Cell> Route { get; internal set; }
+        public int RouteIndex { get; internal set; }
+        public float EdgeProgress { get; internal set; }
+        internal float Retarget;
         public Cell NextCell { get { return Route != null && RouteIndex < Route.Count ? Route[RouteIndex] : Position; } }
     }
 
@@ -98,6 +112,14 @@ namespace Wintermarkt.Core
         public int EventCount { get; private set; }
         readonly HashSet<EventDefinition> fired = new HashSet<EventDefinition>();
         int burstLeft; float burstCountdown; string burstCategory;
+        readonly List<MarketKrampus> krampuses = new List<MarketKrampus>();
+        public IReadOnlyList<MarketKrampus> Krampuses { get { return krampuses; } }
+        /// <summary>Visitors a Krampus scared away, and Krampus driven off with snowballs.</summary>
+        public int Scared { get; private set; }
+        public int DrivenOff { get; private set; }
+        /// <summary>Snowball hits that drive a Krampus off, from the event that started the run.</summary>
+        public int KrampusHits { get; private set; }
+        int krampusLeft, nextKrampus = 1; float krampusCountdown;
         float arrivalCountdown = 2;
         int nextBuilding = 1, nextVisitor = 1;
         long nextOrder = 1;
@@ -285,6 +307,7 @@ namespace Wintermarkt.Core
                     if (Wave + 1 >= waves.Length) Won = true;
                     else { Wave++; WaveHappy = 0; Remaining = CurrentWave.seconds; }
                 }
+                RunKrampus(dt);
                 if (Reputation <= 0 && buildings.Count > 0) Failed = true;
             }
         }
@@ -302,8 +325,55 @@ namespace Wintermarkt.Core
                 fired.Add(e); LastEvent = e; EventCount++;
                 if (e.kind == "burst") { burstLeft += e.count; burstCategory = e.category; burstCountdown = 0; }
                 else if (e.kind == "storm") { ActiveEvent = e; EventRemaining = e.seconds; }
+                else if (e.kind == "krampus") { krampusLeft += e.count; KrampusHits = Math.Max(1, (int)e.factor); krampusCountdown = 0; }
                 else if (e.kind == "powercut") foreach (var b in buildings) if (b.ClosedRemaining <= 0) b.HelpRemaining = Settings.helpWindowSeconds * e.factor;
             }
+        }
+
+        static int Apart(Cell a, Cell b) { return Math.Max(Math.Abs(a.x - b.x), Math.Abs(a.y - b.y)); }
+
+        // The finale: Krampus enter at the gate one after the other, walk to the nearest visitor and scare everyone within two cells.
+        // Visitors at a stall the player has just helped (boosted) stay.
+        void RunKrampus(float dt)
+        {
+            if (krampusLeft > 0 && (krampusCountdown -= dt) <= 0) { krampuses.Add(new MarketKrampus { Id = nextKrampus++, Position = Site.Entrance }); krampusLeft--; krampusCountdown = 4; }
+            foreach (var k in krampuses)
+            {
+                if (!k.Fleeing && (k.Route == null || k.RouteIndex >= k.Route.Count || (k.Retarget -= dt) <= 0))
+                {
+                    MarketVisitor target = null; int nearest = int.MaxValue; k.Retarget = 2;
+                    foreach (var v in visitors)
+                        if (v.Mood == VisitorMood.None && v.State != VisitorState.Leaving && v.State != VisitorState.Gone && Apart(v.Position, k.Position) < nearest) { nearest = Apart(v.Position, k.Position); target = v; }
+                    var route = target != null ? Site.Path(k.Position, target.Position, occupied) : null;
+                    if (route != null) { k.Route = route; k.RouteIndex = 0; }
+                }
+                if (k.Route != null && k.RouteIndex < k.Route.Count)
+                {
+                    k.EdgeProgress += dt / (Settings.krampusSecondsPerCell * (k.Fleeing ? .4f : 1));
+                    while (k.EdgeProgress >= 1 && k.RouteIndex < k.Route.Count) { k.Position = k.Route[k.RouteIndex++]; k.EdgeProgress -= 1; }
+                    if (k.RouteIndex >= k.Route.Count) k.EdgeProgress = 0;
+                }
+                if (k.Fleeing) continue;
+                foreach (var v in visitors)
+                {
+                    if (v.Mood != VisitorMood.None || v.State == VisitorState.Leaving || v.State == VisitorState.Gone || Apart(v.Position, k.Position) > 2) continue;
+                    if (v.Destination != null && v.Destination.BoostRemaining > 0 && v.State != VisitorState.Walking) continue;
+                    v.Mood = VisitorMood.Scared; Scared++; Reputation = Math.Max(0, Reputation - Settings.scareLoss); v.Slot = -1; Leave(v);
+                }
+            }
+            krampuses.RemoveAll(k => k.Fleeing && k.RouteIndex >= k.Route.Count);
+        }
+
+        /// <summary>A snowball thrown at a cell: hits the nearest Krampus within two cells; enough hits drive it off through the gate.</summary>
+        public bool TryHit(Cell cell, out string reason)
+        {
+            MarketKrampus hit = null; reason = "";
+            if (Paused || Finished) return false;
+            foreach (var k in krampuses) if (!k.Fleeing && Apart(k.Position, cell) <= 2 && (hit == null || Apart(k.Position, cell) < Apart(hit.Position, cell))) hit = k;
+            if (hit == null) return false;
+            if (++hit.Hits < KrampusHits) { reason = "Hit! " + (KrampusHits - hit.Hits) + " more."; return true; }
+            hit.Fleeing = true; hit.EdgeProgress = 0; hit.RouteIndex = 0; hit.Route = Site.Path(hit.Position, Site.Entrance, occupied) ?? new List<Cell>(); DrivenOff++;
+            reason = "A Krampus runs off!"; return true;
         }
 
         void SpawnVisitor(string only = null)

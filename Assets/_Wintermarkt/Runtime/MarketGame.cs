@@ -120,6 +120,9 @@ namespace Wintermarkt
             var plane = new Plane(Vector3.up, Vector3.zero); var ray = view.ScreenPointToRay(Input.mousePosition); float distance;
             if (!plane.Raycast(ray, out distance)) { HidePreview(); return; }
             Cell cell = World.Grid(ray.GetPoint(distance));
+            // During the Krampus run a click near a Krampus throws a snowball, whatever else the player was doing.
+            string thrown;
+            if (Input.GetMouseButtonDown(0) && Simulation.Krampuses.Count > 0 && Simulation.TryHit(cell, out thrown)) { Message = thrown; PlayClick(); World.Synchronize(0); return; }
             if (BuildChoice != null)
             {
                 string reason; bool valid = Simulation.CanPlace(BuildChoice, cell, out reason); Message = reason;
