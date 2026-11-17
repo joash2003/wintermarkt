@@ -40,6 +40,63 @@
       "helpFactor": 1.2
     }
   ],
+  "events": [
+    {
+      "wave": 0,
+      "count": 6,
+      "at": 60,
+      "seconds": 0,
+      "warnSeconds": 10,
+      "factor": 1,
+      "kind": "burst",
+      "title": "A full tram arrives",
+      "category": ""
+    },
+    {
+      "wave": 1,
+      "count": 12,
+      "at": 40,
+      "seconds": 0,
+      "warnSeconds": 20,
+      "factor": 1,
+      "kind": "burst",
+      "title": "School class: 12 children want FOOD",
+      "category": "food"
+    },
+    {
+      "wave": 1,
+      "count": 0,
+      "at": 110,
+      "seconds": 45,
+      "warnSeconds": 15,
+      "factor": 0.6,
+      "kind": "storm",
+      "title": "Snowstorm: everyone wants a hot DRINK",
+      "category": "drinks"
+    },
+    {
+      "wave": 1,
+      "count": 0,
+      "at": 190,
+      "seconds": 0,
+      "warnSeconds": 0,
+      "factor": 1.5,
+      "kind": "powercut",
+      "title": "Power cut: click every stall to relight it!",
+      "category": ""
+    },
+    {
+      "wave": 2,
+      "count": 10,
+      "at": 30,
+      "seconds": 0,
+      "warnSeconds": 10,
+      "factor": 1,
+      "kind": "burst",
+      "title": "The last tram is packed",
+      "category": ""
+    }
+  ],
   "buildings": [
     {
       "id": "punsch",

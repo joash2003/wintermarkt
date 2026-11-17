@@ -44,10 +44,14 @@ namespace Wintermarkt
             ActionButton("Remove", selection, new Vector2(57, -140), new Vector2(108, 44), game.Remove);
             var bottom = Panel("Status", hud, new Vector2(.5f, 0), new Vector2(0, 38), new Vector2(1560, 56), navy);
             footer = Label("", bottom, Vector2.zero, new Vector2(1510, 48), 17, ink);
+            bannerPanel = Panel("Event banner", hud, new Vector2(.5f, 1), new Vector2(60, -128), new Vector2(820, 50), new Color(.6f, .13f, .15f, .95f));
+            banner = Label("", bannerPanel, Vector2.zero, new Vector2(800, 44), 24, ink); bannerPanel.gameObject.SetActive(false);
             // Add definition buttons after the simulation has been initialized by MarketGame.
             BuildMenu = build;
         }
-        Transform BuildMenu;
+        Transform BuildMenu, bannerPanel;
+        Text banner;
+        int seenEvents; float flashUntil;
         bool buildButtonsReady;
         RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
         {
@@ -139,6 +143,12 @@ namespace Wintermarkt
             var sim = game.Simulation; int remaining = Mathf.CeilToInt(sim.Remaining);
             stats.text = "WAVE " + (sim.Wave + 1) + "/" + sim.WaveCount + "  " + sim.CurrentWave.title.ToUpperInvariant() + "     " + sim.WaveHappy + " / " + sim.CurrentWave.target + " HAPPY     " + remaining / 60 + ":" + (remaining % 60).ToString("00") + "\n"
                 + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total") + "   ·   stars " + sim.Stars + "/" + sim.WaveCount;
+            // Event banner: a running event with its time left, else a warning of the next one, else the one that just happened.
+            if (sim.EventCount != seenEvents) { if (sim.EventCount > seenEvents) { flashUntil = Time.unscaledTime + 5; game.PlayClick(); } seenEvents = sim.EventCount; }
+            string news = sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s"
+                : sim.Upcoming != null ? "In " + Mathf.CeilToInt(sim.UpcomingIn) + "s   " + sim.Upcoming.title
+                : sim.LastEvent != null && Time.unscaledTime < flashUntil ? sim.LastEvent.title : null;
+            bannerPanel.gameObject.SetActive(news != null); if (news != null) banner.text = news;
             footer.text = game.Message; if (game.Muted) footer.text += "   ·   Sound off (M)";
             if (game.Selected != null) RefreshSelection();
         }

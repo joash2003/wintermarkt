@@ -33,7 +33,7 @@ namespace Wintermarkt
         }
         readonly List<Transform> movingRides = new List<Transform>();
         readonly List<AmbientVehicle> traffic = new List<AmbientVehicle>();
-        Transform content, preview;
+        Transform content, preview, snow;
         public MarketSimulation Simulation { get; private set; }
         public Vector3 World(Cell c) { return new Vector3((c.x - (Simulation.Site.Width - 1) * .5f) * CellSize, 0, ((Simulation.Site.Height - 1) * .5f - c.y) * CellSize); }
         public float CellSize { get { return Simulation.Site.Data.metersPerCell; } }
@@ -266,6 +266,23 @@ namespace Wintermarkt
             foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
+            Snowfall(Simulation.ActiveEvent != null && Simulation.ActiveEvent.kind == "storm", dt);
+        }
+        // The snowstorm event: plain falling cubes, because a particle shader may be missing from a build (see issue 8).
+        void Snowfall(bool storm, float dt)
+        {
+            if (!storm) { if (snow) { Destroy(snow.gameObject); snow = null; } return; }
+            if (!snow)
+            {
+                snow = new GameObject("Snowstorm").transform; snow.SetParent(content);
+                for (int i = 0; i < 420; i++)
+                    Shape("Flake", snow, PrimitiveType.Cube, new Vector3(Mathf.Repeat(i * 61.8f, 200) - 100, Mathf.Repeat(i * 17.3f, 50), Mathf.Repeat(i * 37.1f, 200) - 100), Vector3.one * .55f, Glow(new Color(.9f, .93f, 1f)));
+            }
+            foreach (Transform flake in snow)
+            {
+                Vector3 p = flake.localPosition + new Vector3(9, -16, 3) * dt; if (p.y < 0) { p.y += 50; p.x -= 28; p.z -= 9; }
+                flake.localPosition = p;
+            }
         }
         // Above the roof: a pulsing yellow ball with a shrinking red ring while the stall calls for help, a dark slab while it is closed, a green light while boosted.
         void Signal(MarketBuilding b)

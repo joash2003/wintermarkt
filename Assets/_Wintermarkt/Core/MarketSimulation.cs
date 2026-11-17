@@ -87,6 +87,17 @@ namespace Wintermarkt.Core
         public bool Won { get; private set; }
         public bool Finished { get { return Failed || Won; } }
         readonly WaveDefinition[] waves;
+        /// <summary>The event whose effect is running (a storm), or null.</summary>
+        public EventDefinition ActiveEvent { get; private set; }
+        public float EventRemaining { get; private set; }
+        /// <summary>The next event of this wave once its warning time has begun, and the seconds until it starts.</summary>
+        public EventDefinition Upcoming { get; private set; }
+        public float UpcomingIn { get; private set; }
+        /// <summary>The event that started last and how many have started: the UI announces a change of EventCount.</summary>
+        public EventDefinition LastEvent { get; private set; }
+        public int EventCount { get; private set; }
+        readonly HashSet<EventDefinition> fired = new HashSet<EventDefinition>();
+        int burstLeft; float burstCountdown; string burstCategory;
         float arrivalCountdown = 2;
         int nextBuilding = 1, nextVisitor = 1;
         long nextOrder = 1;
@@ -229,6 +240,7 @@ namespace Wintermarkt.Core
             while (seconds > .00001f && !Finished)
             {
                 float dt = Math.Min(.1f, Math.Min(seconds, Remaining)); seconds -= dt; Remaining = Math.Max(0, Remaining - dt);
+                RunEvents(dt);
                 // Nobody arrives at an empty market: the festival score and reputation start with the first building.
                 if (buildings.Count > 0) arrivalCountdown -= dt;
                 if (arrivalCountdown <= 0) { if (visitors.Count < Settings.maxVisitors) SpawnVisitor(); arrivalCountdown = ArrivalInterval; }
@@ -238,7 +250,7 @@ namespace Wintermarkt.Core
                     if (v.State == VisitorState.Waiting)
                     {
                         v.Waited += dt;
-                        if (v.Waited >= Settings.patienceSeconds) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
+                        if (v.Waited >= Settings.patienceSeconds * (ActiveEvent != null && ActiveEvent.kind == "storm" ? ActiveEvent.factor : 1)) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
                     }
                     if (v.State == VisitorState.Serving)
                     {
@@ -254,17 +266,14 @@ namespace Wintermarkt.Core
                 foreach (var b in buildings)
                 {
                     if (b.BoostRemaining > 0) b.BoostRemaining = Math.Max(0, b.BoostRemaining - dt);
-                    if (Settings.helpIntervalSeconds > 0)
+                    if (b.ClosedRemaining > 0) b.ClosedRemaining = Math.Max(0, b.ClosedRemaining - dt);
+                    else if (b.NeedsHelp)
                     {
-                        if (b.ClosedRemaining > 0) b.ClosedRemaining = Math.Max(0, b.ClosedRemaining - dt);
-                        else if (b.NeedsHelp)
-                        {
-                            b.HelpRemaining -= dt;
-                            if (b.HelpRemaining <= 0) { b.HelpRemaining = 0; b.ClosedRemaining = Settings.closedSeconds; b.Calls++; ScheduleHelp(b); MissedHelp++; }
-                        }
-                        // A stall only calls while visitors are waiting for it: an idle stall has nothing to pour.
-                        else if ((b.NextHelp -= dt) <= 0 && QueueCount(b) > 0) b.HelpRemaining = Settings.helpWindowSeconds;
+                        b.HelpRemaining -= dt;
+                        if (b.HelpRemaining <= 0) { b.HelpRemaining = 0; b.ClosedRemaining = Settings.closedSeconds; b.Calls++; ScheduleHelp(b); MissedHelp++; }
                     }
+                    // A stall only calls while visitors are waiting for it: an idle stall has nothing to pour.
+                    else if (Settings.helpIntervalSeconds > 0 && (b.NextHelp -= dt) <= 0 && QueueCount(b) > 0) b.HelpRemaining = Settings.helpWindowSeconds;
                     StartService(b);
                 }
                 visitors.RemoveAll(v => v.State == VisitorState.Gone);
@@ -280,7 +289,24 @@ namespace Wintermarkt.Core
             }
         }
 
-        void SpawnVisitor()
+        // Timed events of the current wave: announced warnSeconds ahead, started when the wave reaches their second.
+        void RunEvents(float dt)
+        {
+            float elapsed = CurrentWave.seconds - Remaining; Upcoming = null;
+            if (ActiveEvent != null && (EventRemaining -= dt) <= 0) { ActiveEvent = null; EventRemaining = 0; }
+            if (burstLeft > 0 && (burstCountdown -= dt) <= 0) { if (visitors.Count < Settings.maxVisitors) SpawnVisitor(burstCategory); burstLeft--; burstCountdown = .6f; }
+            foreach (var e in Settings.events ?? new EventDefinition[0])
+            {
+                if (e.wave != Wave || fired.Contains(e) || buildings.Count == 0) continue;
+                if (elapsed < e.at) { if (e.at - elapsed <= e.warnSeconds && (Upcoming == null || e.at < Upcoming.at)) { Upcoming = e; UpcomingIn = e.at - elapsed; } continue; }
+                fired.Add(e); LastEvent = e; EventCount++;
+                if (e.kind == "burst") { burstLeft += e.count; burstCategory = e.category; burstCountdown = 0; }
+                else if (e.kind == "storm") { ActiveEvent = e; EventRemaining = e.seconds; }
+                else if (e.kind == "powercut") foreach (var b in buildings) if (b.ClosedRemaining <= 0) b.HelpRemaining = Settings.helpWindowSeconds * e.factor;
+            }
+        }
+
+        void SpawnVisitor(string only = null)
         {
             var v = new MarketVisitor { Id = nextVisitor++, Position = Site.Entrance, State = VisitorState.Leaving, Slot = -1 };
             // Two or three different wishes from the categories the player can build right now; the pattern repeats so runs are deterministic.
@@ -288,6 +314,9 @@ namespace Wintermarkt.Core
             foreach (var d in Settings.buildings) if (Welcomed >= d.unlockVisitors && !unlocked.Contains(d.category)) unlocked.Add(d.category);
             int count = Math.Max(1, Math.Min(unlocked.Count, Settings.maxWishes - v.Id % 2));
             for (int i = 0; i < count && unlocked.Count > 0; i++) v.Wishes.Add(unlocked[(v.Id * 7 + i) % unlocked.Count]);
+            // A burst event sends visitors who want one thing; in a storm everyone also wants the storm's category.
+            if (!string.IsNullOrEmpty(only)) { v.Wishes.Clear(); v.Wishes.Add(only); }
+            if (ActiveEvent != null && ActiveEvent.kind == "storm" && !string.IsNullOrEmpty(ActiveEvent.category) && !v.Wishes.Contains(ActiveEvent.category)) v.Wishes.Add(ActiveEvent.category);
             Welcomed++; visitors.Add(v); Continue(v);
         }
 

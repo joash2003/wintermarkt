@@ -40,6 +40,16 @@ namespace Wintermarkt.Core
         public int target;
     }
 
+    /// <summary>A timed change of the rules (issue 25). kind: burst (count visitors arrive, all wanting category if set),
+    /// storm (for seconds: patience times factor, everyone also wants category), powercut (every stall calls for help, window times factor).</summary>
+    [Serializable]
+    public sealed class EventDefinition
+    {
+        public int wave, count;
+        public float at, seconds, warnSeconds, factor = 1;
+        public string kind, title, category;
+    }
+
     [Serializable]
     public sealed class MarketSettings
     {
@@ -54,6 +64,7 @@ namespace Wintermarkt.Core
         public int helpTip = 5;
         /// <summary>Empty means one wave of festivalSeconds without a target.</summary>
         public WaveDefinition[] waves = new WaveDefinition[0];
+        public EventDefinition[] events = new EventDefinition[0];
         public BuildingDefinition[] buildings;
 
         public void Validate()
@@ -65,6 +76,9 @@ namespace Wintermarkt.Core
                 throw new ArgumentException("Invalid market simulation settings.");
             foreach (var w in waves ?? new WaveDefinition[0])
                 if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.helpFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
+            foreach (var e in events ?? new EventDefinition[0])
+                if (e == null || e.wave < 0 || e.at < 0 || e.seconds < 0 || e.warnSeconds < 0 || e.count < 0 || e.factor <= 0 ||
+                    (e.kind != "burst" && e.kind != "storm" && e.kind != "powercut")) throw new ArgumentException("Invalid event.");
             if (buildings == null || buildings.Length == 0) throw new ArgumentException("At least one building is required.");
             var ids = new HashSet<string>();
             foreach (var b in buildings)
