@@ -8,7 +8,7 @@ namespace Wintermarkt
     /// <summary>Original geometric art. Park, streets and buildings come from site.json (tools/build_site.py), an approximate blockout, not surveyed geometry.</summary>
     public sealed class MarketWorld : MonoBehaviour
     {
-        static readonly Color Wood = new Color(.42f, .27f, .15f), WarmLight = new Color(1f, .78f, .42f), CaptionColor = new Color(.93f, .9f, .8f);
+        static readonly Color Wood = new Color(.42f, .27f, .15f), Snow = new Color(.8f, .8f, .8f), WarmLight = new Color(1f, .78f, .42f), CaptionColor = new Color(.93f, .9f, .8f);
         readonly Dictionary<(Color, float), Material> materials = new Dictionary<(Color, float), Material>();
         readonly Dictionary<Color, Material> glows = new Dictionary<Color, Material>();
         readonly Dictionary<int, Transform> buildings = new Dictionary<int, Transform>();
@@ -33,7 +33,7 @@ namespace Wintermarkt
         }
         Material Glow(Color c)
         {
-            Material m; if (!glows.TryGetValue(c, out m)) { m = new Material(Resources.Load<Material>("Wintermarkt/Glow")); m.color = c; m.SetColor("_EmissionColor", c * 1.5f); glows[c] = m; }
+            Material m; if (!glows.TryGetValue(c, out m)) { m = new Material(Resources.Load<Material>("Wintermarkt/Glow")); m.color = c * .2f; m.SetColor("_EmissionColor", c); glows[c] = m; }
             return m;
         }
         Transform Shape(string title, Transform parent, PrimitiveType shape, Vector3 position, Vector3 size, Material material)
@@ -66,11 +66,13 @@ namespace Wintermarkt
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
-            Box("City ground", content, new Vector3(0, -.55f, 0), new Vector3(width + 400, 1, height + 400), new Color(.15f, .16f, .18f));
+            Box("City ground", content, new Vector3(0, -.55f, 0), new Vector3(width + 400, 1, height + 400), new Color(.21f, .22f, .26f));
+            SiteFeature park = null; foreach (var f in site.Data.features ?? new SiteFeature[0]) if (f.kind == "park") park = f;
+            if (park != null) Lawn(park);
             for (int y = 0; y < site.Height; y++)
             {
                 // Each row is drawn as runs of equal ground, so the full-size park stays a few hundred objects.
-                for (int x = 1, start = 0; x <= site.Width; x++)
+                for (int x = 1, start = 0; park == null && x <= site.Width; x++)
                 {
                     char ground = Ground(site.Data.rows[y][start]);
                     if (x < site.Width && Ground(site.Data.rows[y][x]) == ground) continue;
@@ -85,6 +87,7 @@ namespace Wintermarkt
             {
                 var pts = new List<Vector3>(); for (int i = 0; i + 1 < f.points.Length; i += 2) pts.Add(new Vector3(f.points[i], 0, f.points[i + 1]));
                 if (f.kind == "street") Street(f, pts);
+                else if (f.kind == "path") Strip("Path", pts, f.width, .1f, .08f, Material(new Color(.42f, .34f, .27f), .4f));
                 else if (f.kind == "building") Building(f, pts[0], pts[1]);
                 else if (f.kind == "label") Caption(f.name, content, pts[0] + Vector3.up * 3, 1.1f);
                 else if (f.kind == "tram") traffic.Add(new AmbientVehicle(Tram(), pts, f.stopAt, 9, 6));
@@ -96,20 +99,42 @@ namespace Wintermarkt
         void Dusk()
         {
             // Evening market from the reference photos: dim blue sky, the warm lamps carry the scene.
-            RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = new Color(.46f, .48f, .6f);
+            RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = new Color(.36f, .38f, .48f);
             if (Camera.main) { Camera.main.clearFlags = CameraClearFlags.SolidColor; Camera.main.backgroundColor = new Color(.1f, .13f, .22f); }
-            var moon = FindFirstObjectByType<Light>(); if (moon) { moon.color = new Color(.72f, .78f, 1f); moon.intensity = .85f; }
+            var moon = FindFirstObjectByType<Light>(); if (moon) { moon.color = new Color(.8f, .85f, 1f); moon.intensity = .8f; moon.shadows = LightShadows.Soft; moon.shadowStrength = .55f; }
+            QualitySettings.shadowDistance = 600; QualitySettings.pixelLightCount = 8;
         }
         void Street(SiteFeature f, List<Vector3> pts)
         {
-            var asphalt = Material(new Color(.22f, .23f, .26f), .5f);
-            for (int i = 1; i < pts.Count; i++) Segment("Street " + f.name, pts[i - 1], pts[i], f.width, -.06f, .1f, asphalt);
-            for (int i = 1; i < pts.Count - 1; i++) Shape("Street corner", content, PrimitiveType.Cylinder, pts[i] - Vector3.up * .03f, new Vector3(f.width, .05f, f.width), asphalt);
+            Strip("Street " + f.name, pts, f.width, -.06f, .1f, Material(new Color(.12f, .13f, .16f), .5f));
             if (!string.IsNullOrEmpty(f.name)) Caption(f.name.ToUpperInvariant(), content, (pts[0] + pts[1]) / 2 + Vector3.up * 2, .5f);
         }
+        void Strip(string title, List<Vector3> pts, float width, float y, float height, Material m)
+        {
+            for (int i = 1; i < pts.Count; i++) Segment(title, pts[i - 1], pts[i], width, y, height, m);
+            for (int i = 1; i < pts.Count - 1; i++) Shape(title + " corner", content, PrimitiveType.Cylinder, pts[i] + Vector3.up * (y + height / 2), new Vector3(width, height / 2, width), m);
+        }
+        // The park outline as one smooth snow-covered polygon (a fan from the centre: the outline is close to convex) with a stone kerb.
+        void Lawn(SiteFeature f)
+        {
+            int n = f.points.Length / 2; var v = new Vector3[n + 1]; var triangles = new int[n * 3]; float area = 0;
+            for (int i = 0; i < n; i++) { v[i] = new Vector3(f.points[i * 2], .08f, f.points[i * 2 + 1]); v[n] += v[i] / n; }
+            // Grid cells belong to the park by their centre, so the drawn lawn reaches half a cell further out.
+            for (int i = 0; i < n; i++) { v[i] = v[n] + (v[i] - v[n]) * 1.02f; }
+            for (int i = 0; i < n; i++) { Vector3 a = v[i], b = v[(i + 1) % n]; area += a.x * b.z - b.x * a.z; }
+            for (int i = 0; i < n; i++) { int j = (i + 1) % n; triangles[i * 3] = n; triangles[i * 3 + 1] = area > 0 ? j : i; triangles[i * 3 + 2] = area > 0 ? i : j; }
+            var mesh = new Mesh { vertices = v, triangles = triangles }; mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            var lawn = new GameObject("Snowy lawn", typeof(MeshFilter), typeof(MeshRenderer)); lawn.transform.SetParent(content, false);
+            lawn.GetComponent<MeshFilter>().sharedMesh = mesh; lawn.GetComponent<MeshRenderer>().sharedMaterial = Material(Snow);
+            var kerb = Material(new Color(.42f, .42f, .46f));
+            for (int i = 0; i < n; i++) Segment("Park kerb", v[i] - Vector3.up * .08f, v[(i + 1) % n] - Vector3.up * .08f, .8f, 0, .4f, kerb);
+        }
+        static readonly Color[] Plaster = { new Color(.56f, .47f, .38f), new Color(.5f, .43f, .42f), new Color(.45f, .47f, .52f), new Color(.6f, .53f, .42f) };
         void Building(SiteFeature f, Vector3 a, Vector3 b)
         {
-            Segment("Building " + f.name, a, b, f.width, 0, f.height, Material(new Color(.36f, .36f, .39f)));
+            Color wall = f.name == "Musiktheater" ? new Color(.7f, .68f, .64f) : Plaster[(int)(Mathf.Abs(a.x) + Mathf.Abs(a.z)) % Plaster.Length];
+            Segment("Building " + f.name, a, b, f.width, 0, f.height, Material(wall));
+            Segment("Roof", a, b, f.width + 1, f.height, .6f, Material(new Color(.36f, .38f, .44f)));
             // Lit windows on both long sides; the pattern is deterministic so every session looks the same.
             Vector3 along = (b - a).normalized, across = Vector3.Cross(Vector3.up, along); float length = Vector3.Distance(a, b);
             for (float s = 3; s < length - 2; s += 5)
@@ -124,7 +149,8 @@ namespace Wintermarkt
         {
             float s = .85f + Mathf.Repeat(p.x * 3.1f + p.z * 1.7f, 1) * .5f;
             Shape("Trunk", content, PrimitiveType.Cylinder, p + Vector3.up * 2.5f * s, new Vector3(.7f, 2.5f * s, .7f), new Color(.2f, .15f, .11f));
-            Shape("Crown", content, PrimitiveType.Sphere, p + Vector3.up * 7 * s, new Vector3(7, 5.5f, 7) * s, new Color(.16f, .19f, .14f));
+            Shape("Crown", content, PrimitiveType.Sphere, p + Vector3.up * 7 * s, new Vector3(7, 5.5f, 7) * s, new Color(.13f, .25f, .19f));
+            Shape("Snow cap", content, PrimitiveType.Sphere, p + Vector3.up * 8.6f * s, new Vector3(4.6f, 3, 4.6f) * s, Snow);
             for (int i = 0; i < 8; i++)
             {
                 float angle = i * 2.4f + p.x;
@@ -199,11 +225,14 @@ namespace Wintermarkt
             float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad);
             for (int side = -1; side <= 1; side += 2)
             {
-                Box("Roof", root, new Vector3(0, 3.6f + rise / 2, side * d / 4), new Vector3(w + .8f, .25f, d / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .6f), new Color(.3f, .19f, .11f)).localRotation = Quaternion.Euler(side * pitch, 0, 0);
+                Box("Roof", root, new Vector3(0, 3.6f + rise / 2, side * d / 4), new Vector3(w + .8f, .25f, d / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .6f), Snow).localRotation = Quaternion.Euler(side * pitch, 0, 0);
                 Lamp("Eave lights", root, new Vector3(0, 3.55f, side * (d / 2 + .3f)), new Vector3(w + .8f, .15f, .15f));
             }
             Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
             Box("Sign", root, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .55f, .2f), sign);
+            // A warm pool of light on the snow in front of the counter.
+            var pool = new GameObject("Counter light", typeof(Light)).GetComponent<Light>(); pool.transform.SetParent(root, false); pool.transform.localPosition = new Vector3(0, 3, -d / 2 - 3);
+            pool.type = LightType.Point; pool.color = WarmLight; pool.range = 16; pool.intensity = 1.4f;
             Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
             if (b.Definition.id == "carousel" || b.Definition.id == "wheel")
             {

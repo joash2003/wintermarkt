@@ -96,7 +96,9 @@ def build():
         lengths = [math.dist(a, b) for a, b in zip(pts, pts[1:])]
         along = min((sum(lengths[:i]) + math.dist(pts[i], stop), i) for i in range(len(lengths)))[0]
         return {"kind": kind, "name": name, "points": world(pts), "stopAt": round(along / sum(lengths), 3)}
-    features = ([{"kind": "street", "name": n, "points": world(line), "width": w} for n, line, w in STREETS]
+    features = ([{"kind": "park", "name": "", "points": world(PARK)}]
+                + [{"kind": "path", "name": "", "points": world(line), "width": 5} for line in PATHS]
+                + [{"kind": "street", "name": n, "points": world(line), "width": w} for n, line, w in STREETS]
                 + [{"kind": "building", "name": n, "points": world(line), "width": d, "height": h} for n, line, d, h in BUILDINGS]
                 + [{"kind": "label", "name": n, "points": world([p])} for n, p in LABELS]
                 + [route("tram", "Tram, Goethekreuzung stop", TRAM), route("bus", "Bus, Bahnhofstraße stop", BUS)])
