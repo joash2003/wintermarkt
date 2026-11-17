@@ -68,7 +68,11 @@ namespace Wintermarkt
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
             Box("City ground", content, new Vector3(0, -.55f, 0), new Vector3(width + 400, 1, height + 400), new Color(.21f, .22f, .26f));
             SiteFeature park = null; foreach (var f in site.Data.features ?? new SiteFeature[0]) if (f.kind == "park") park = f;
-            if (park != null) Lawn(park);
+            if (park != null)
+            {
+                var edge = Ground(park, "Snowy lawn", .08f, 1.02f, Snow); var kerb = Material(new Color(.42f, .42f, .46f));
+                for (int i = 0; i < edge.Length; i++) Segment("Park kerb", edge[i] - Vector3.up * .08f, edge[(i + 1) % edge.Length] - Vector3.up * .08f, .8f, 0, .4f, kerb);
+            }
             for (int y = 0; y < site.Height; y++)
             {
                 // Each row is drawn as runs of equal ground, so the full-size park stays a few hundred objects.
@@ -87,6 +91,8 @@ namespace Wintermarkt
             {
                 var pts = new List<Vector3>(); for (int i = 0; i + 1 < f.points.Length; i += 2) pts.Add(new Vector3(f.points[i], 0, f.points[i + 1]));
                 if (f.kind == "street") Street(f, pts);
+                else if (f.kind == "plot") Plot(f);
+                else if (f.kind == "tree") foreach (var p in pts) Tree(p);
                 else if (f.kind == "path") Strip("Path", pts, f.width, .1f, .08f, Material(new Color(.42f, .34f, .27f), .4f));
                 else if (f.kind == "building") Building(f, pts[0], pts[1]);
                 else if (f.kind == "label") Caption(f.name, content, pts[0] + Vector3.up * 3, 1.1f);
@@ -114,20 +120,32 @@ namespace Wintermarkt
             for (int i = 1; i < pts.Count; i++) Segment(title, pts[i - 1], pts[i], width, y, height, m);
             for (int i = 1; i < pts.Count - 1; i++) Shape(title + " corner", content, PrimitiveType.Cylinder, pts[i] + Vector3.up * (y + height / 2), new Vector3(width, height / 2, width), m);
         }
-        // The park outline as one smooth snow-covered polygon (a fan from the centre: the outline is close to convex) with a stone kerb.
-        void Lawn(SiteFeature f)
+        // A site polygon as one smooth mesh (a fan from the centre: the outlines are close to convex). Returns the drawn outline.
+        Vector3[] Ground(SiteFeature f, string title, float y, float scale, Color color)
         {
             int n = f.points.Length / 2; var v = new Vector3[n + 1]; var triangles = new int[n * 3]; float area = 0;
-            for (int i = 0; i < n; i++) { v[i] = new Vector3(f.points[i * 2], .08f, f.points[i * 2 + 1]); v[n] += v[i] / n; }
-            // Grid cells belong to the park by their centre, so the drawn lawn reaches half a cell further out.
-            for (int i = 0; i < n; i++) { v[i] = v[n] + (v[i] - v[n]) * 1.02f; }
+            for (int i = 0; i < n; i++) { v[i] = new Vector3(f.points[i * 2], y, f.points[i * 2 + 1]); v[n] += v[i] / n; }
+            // Grid cells belong to an area by their centre, so the drawn ground reaches half a cell further out.
+            for (int i = 0; i < n; i++) { v[i] = v[n] + (v[i] - v[n]) * scale; }
             for (int i = 0; i < n; i++) { Vector3 a = v[i], b = v[(i + 1) % n]; area += a.x * b.z - b.x * a.z; }
             for (int i = 0; i < n; i++) { int j = (i + 1) % n; triangles[i * 3] = n; triangles[i * 3 + 1] = area > 0 ? j : i; triangles[i * 3 + 2] = area > 0 ? i : j; }
             var mesh = new Mesh { vertices = v, triangles = triangles }; mesh.RecalculateNormals(); mesh.RecalculateBounds();
-            var lawn = new GameObject("Snowy lawn", typeof(MeshFilter), typeof(MeshRenderer)); lawn.transform.SetParent(content, false);
-            lawn.GetComponent<MeshFilter>().sharedMesh = mesh; lawn.GetComponent<MeshRenderer>().sharedMaterial = Material(Snow);
-            var kerb = Material(new Color(.42f, .42f, .46f));
-            for (int i = 0; i < n; i++) Segment("Park kerb", v[i] - Vector3.up * .08f, v[(i + 1) % n] - Vector3.up * .08f, .8f, 0, .4f, kerb);
+            var ground = new GameObject(title, typeof(MeshFilter), typeof(MeshRenderer)); ground.transform.SetParent(content, false);
+            ground.GetComponent<MeshFilter>().sharedMesh = mesh; ground.GetComponent<MeshRenderer>().sharedMaterial = Material(color);
+            var outline = new Vector3[n]; System.Array.Copy(v, outline, n); return outline;
+        }
+        // The playable market: trodden snow, with a string of lights on posts along its open edge (f.width is the plot radius).
+        void Plot(SiteFeature f)
+        {
+            var edge = Ground(f, "Market ground", .1f, 1.03f, new Color(.7f, .66f, .6f)); Vector3 gate = World(Simulation.Site.Entrance);
+            var post = Material(new Color(.2f, .15f, .11f)); int last = -1;
+            for (int i = 0; i < edge.Length; i++)
+            {
+                if (Mathf.Abs(Vector3.Distance(new Vector3(f.points[i * 2], 0, f.points[i * 2 + 1]), gate) - f.width) > 3) continue;
+                Shape("Light post", content, PrimitiveType.Cylinder, edge[i] + Vector3.up * 1.7f, new Vector3(.3f, 1.8f, .3f), post);
+                if (last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 3.4f, edge[i] + Vector3.up * 3.4f, .14f, 0, .14f, Glow(WarmLight));
+                last = i;
+            }
         }
         static readonly Color[] Plaster = { new Color(.56f, .47f, .38f), new Color(.5f, .43f, .42f), new Color(.45f, .47f, .52f), new Color(.6f, .53f, .42f) };
         void Building(SiteFeature f, Vector3 a, Vector3 b)
@@ -194,6 +212,11 @@ namespace Wintermarkt
                     if (buildings.ContainsKey(b.Id)) { buildings[b.Id].gameObject.SetActive(false); Destroy(buildings[b.Id].gameObject); }
                     buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level;
                 }
+            }
+            if (buildings.Count != Simulation.Buildings.Count)
+            {
+                var standing = new HashSet<int>(); foreach (var b in Simulation.Buildings) standing.Add(b.Id);
+                foreach (int id in new List<int>(buildings.Keys)) if (!standing.Contains(id)) { movingRides.Remove(buildings[id].Find("Ride motion")); Destroy(buildings[id].gameObject); buildings.Remove(id); levels.Remove(id); }
             }
             var active = new HashSet<int>();
             foreach (var v in Simulation.Visitors)

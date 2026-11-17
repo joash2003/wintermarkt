@@ -40,7 +40,8 @@ namespace Wintermarkt
             selection = Panel("Selected building", hud, new Vector2(1, 1), new Vector2(-150, -283), new Vector2(260, 365), navy);
             Label("YOUR ATTRACTION", selection, new Vector2(0, 148), new Vector2(240, 32), 19, gold);
             details = Label("Select a building to inspect it.", selection, new Vector2(0, 20), new Vector2(230, 210), 18, ink);
-            upgrade = ActionButton("Upgrade", selection, new Vector2(0, -140), new Vector2(220, 44), game.Upgrade);
+            upgrade = ActionButton("Upgrade", selection, new Vector2(-57, -140), new Vector2(108, 44), game.Upgrade);
+            ActionButton("Remove", selection, new Vector2(57, -140), new Vector2(108, 44), game.Remove);
             var bottom = Panel("Status", hud, new Vector2(.5f, 0), new Vector2(0, 38), new Vector2(1560, 56), navy);
             footer = Label("", bottom, Vector2.zero, new Vector2(1510, 48), 17, ink);
             // Add definition buttons after the simulation has been initialized by MarketGame.
@@ -120,7 +121,7 @@ namespace Wintermarkt
             selection.gameObject.SetActive(b != null);
             if (b == null) return;
             bool max = b.Level + 1 >= b.Definition.levels.Length;
-            details.text = b.Definition.title + "\n" + game.Simulation.QueueCount(b) + " visitors waiting/in line\nLEVEL " + (b.Level + 1) + " / " + b.Definition.levels.Length + "\n\n" + b.Stats.income + " coins / visitor\n" + b.Stats.serviceSeconds.ToString("0.#") + "s service · " + b.Stats.capacity + " at once\nAttraction +" + b.Stats.attraction.ToString("0.#") + "\n" + (max ? "Fully upgraded" : "Next upgrade: " + b.Definition.levels[b.Level + 1].cost + " coins");
+            details.text = b.Definition.title + "\n" + game.Simulation.QueueCount(b) + " visitors waiting/in line\nLEVEL " + (b.Level + 1) + " / " + b.Definition.levels.Length + "\n\n" + b.Stats.income + " coins / visitor\n" + b.Stats.serviceSeconds.ToString("0.#") + "s service · " + b.Stats.capacity + " at once\nAttraction +" + b.Stats.attraction.ToString("0.#") + "\n" + (max ? "Fully upgraded" : "Next upgrade: " + b.Definition.levels[b.Level + 1].cost + " coins") + "\nRemove: +" + game.Simulation.Refund(b) + " coins";
             upgrade.interactable = !max && game.State == FestivalState.Playing && game.Simulation.Coins >= b.Definition.levels[b.Level + 1].cost;
         }
         void Update()

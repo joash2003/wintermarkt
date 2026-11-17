@@ -17,13 +17,13 @@
       "title": "Afternoon",
       "seconds": 150,
       "arrivalFactor": 1.0,
-      "target": 15
+      "target": 6
     },
     {
       "title": "Evening rush",
       "seconds": 240,
       "arrivalFactor": 1.6,
-      "target": 70
+      "target": 35
     },
     {
       "title": "Closing time",
@@ -45,21 +45,21 @@
         {
           "cost": 100,
           "capacity": 1,
-          "income": 9,
+          "income": 4,
           "serviceSeconds": 7,
           "attraction": 5
         },
         {
           "cost": 75,
           "capacity": 2,
-          "income": 12,
+          "income": 6,
           "serviceSeconds": 5.6000000000000005,
           "attraction": 6.5
         },
         {
           "cost": 120,
           "capacity": 3,
-          "income": 15,
+          "income": 8,
           "serviceSeconds": 4.2,
           "attraction": 8.5
         }
@@ -77,21 +77,21 @@
         {
           "cost": 120,
           "capacity": 1,
-          "income": 12,
+          "income": 6,
           "serviceSeconds": 9,
           "attraction": 6
         },
         {
           "cost": 90,
           "capacity": 2,
-          "income": 15,
+          "income": 8,
           "serviceSeconds": 7.2,
           "attraction": 7.800000000000001
         },
         {
           "cost": 144,
           "capacity": 3,
-          "income": 18,
+          "income": 9,
           "serviceSeconds": 5.3999999999999995,
           "attraction": 10.2
         }
@@ -109,21 +109,21 @@
         {
           "cost": 160,
           "capacity": 1,
-          "income": 18,
+          "income": 9,
           "serviceSeconds": 12,
           "attraction": 8
         },
         {
           "cost": 120,
           "capacity": 2,
-          "income": 21,
+          "income": 10,
           "serviceSeconds": 9.600000000000001,
           "attraction": 10.4
         },
         {
           "cost": 192,
           "capacity": 3,
-          "income": 24,
+          "income": 12,
           "serviceSeconds": 7.199999999999999,
           "attraction": 13.6
         }
@@ -141,21 +141,21 @@
         {
           "cost": 260,
           "capacity": 1,
-          "income": 15,
+          "income": 8,
           "serviceSeconds": 10,
           "attraction": 18
         },
         {
           "cost": 195,
           "capacity": 2,
-          "income": 18,
+          "income": 9,
           "serviceSeconds": 8.0,
           "attraction": 23.400000000000002
         },
         {
           "cost": 312,
           "capacity": 3,
-          "income": 21,
+          "income": 10,
           "serviceSeconds": 6.0,
           "attraction": 30.599999999999998
         }
@@ -173,21 +173,21 @@
         {
           "cost": 480,
           "capacity": 1,
-          "income": 24,
+          "income": 12,
           "serviceSeconds": 14,
           "attraction": 32
         },
         {
           "cost": 360,
           "capacity": 2,
-          "income": 27,
+          "income": 14,
           "serviceSeconds": 11.200000000000001,
           "attraction": 41.6
         },
         {
           "cost": 576,
           "capacity": 3,
-          "income": 30,
+          "income": 15,
           "serviceSeconds": 8.4,
           "attraction": 54.4
         }
