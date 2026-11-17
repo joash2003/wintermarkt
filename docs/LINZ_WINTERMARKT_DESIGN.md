@@ -21,8 +21,8 @@ The main decision is whether to spend on attracting more people or serving the c
 - Start with coins, one entrance and a clear walking area. Build, inspect and upgrade with mouse clicks. Pause and restart are available.
 - Three stall categories: hot drinks, pastries and crafts. Two rides: carousel and Ferris wheel. Unlock the larger ride after the market has welcomed enough visitors.
 - Each building has three visible levels in the first version. Upgrades change appearance, attraction, capacity or service rate. Data supports additional levels later; no unbounded upgrade system in the first prototype.
-- One visitor behavior system. Visitors choose reachable attractions, queue, receive service, optionally visit another category, and leave. No complex per-visitor economy or daily routines.
-- End screen reports visitors served (primary score, changed from visitors welcomed on 17 Nov 2026), visitors who arrived, visitors who left unserved, coins earned and final reputation. A visitor who is turned away or gives up does not count towards the score.
+- One visitor behavior system. Visitors arrive with two or three wishes, visit a building for each, queue, receive service, and leave. No complex per-visitor economy or daily routines.
+- End screen reports happy visitors (primary score since 17 Nov 2026, issue 19; before that visitors welcomed), visitors who arrived, who wanted more, who gave up, coins earned and final reputation.
 
 All numbers, building counts and level limits above are provisional scope choices.
 
@@ -40,27 +40,29 @@ A new ride increases attraction but consumes space and money. An upgraded pastry
 
 This is what the simulation actually calculates. The values are in `Resources/Wintermarkt/market.json`.
 
-- **Score: visitors served.** The festival lasts 10 minutes (`festivalSeconds` 600). Every visitor who is served counts once. Coins are not the score; they are only what you build with.
-- **Coins.** You start with 350. A visitor pays the building's `income` at the moment service finishes (9 to 30 coins depending on building and level). Nothing else earns or costs coins except building and upgrading.
-- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `8 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one every 0.5 s. More attraction and a better reputation both mean more visitors.
-- **Attraction.** The sum of every building's attraction value, plus 15 for each different category beyond the first (drinks, food, crafts, rides, landmark). Rides have the most; upgrades add some.
-- **What a visitor does.** They pick the building where queue time plus walking time is shortest, walk there, wait, get served, pay and leave. They visit one building. Each building has a fixed number of queue places (4 to 8).
-- **Reputation (the HAPPY % in the HUD).** Starts at 60, stays between 0 and 100. Each served visitor adds 0.5. Each visitor who waits longer than 35 s and gives up, or arrives when every queue place is taken, removes 3. So one lost visitor undoes six served ones.
+- **Score: happy visitors.** The festival lasts 10 minutes (`festivalSeconds` 600). A visitor is happy when they leave having got everything they wanted. Coins are not the score; they are only what you build with.
+- **Wishes.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), taken in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest from where they stand.
+- **How a visit ends.** Got everything: happy, score +1. Something they wanted is not built: they leave having "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: they "gave up", reputation -3.
+- **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (9 to 30 coins), so a visitor with three wishes pays three times.
+- **Arrivals.** Nobody arrives until the first building stands. After that a new visitor arrives every `10 / (1 + attraction x 0.035) / (0.5 + reputation / 100)` seconds, never faster than one per second.
+- **Attraction.** The sum of every building's attraction value, plus 15 for each different category beyond the first.
+- **Reputation.** Starts at 60, stays between 0 and 100. Each service adds 0.5; see above for the losses.
 - **Capacity.** A building serves `capacity` visitors at once, each taking `serviceSeconds`. An upgrade raises capacity (1, 2, 3), shortens service and raises income.
-- **The decision.** Attraction brings more people; capacity turns them into score and coins. Attraction without capacity fills the queues, visitors are lost, reputation falls and arrivals slow down.
+- **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too.
+- **The decisions.** What to build next (what visitors miss), where (they walk between stops), and when to stop adding and start upgrading (queues).
 
 Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site):
 
-| Strategy | Arrived | Served (score) | Left unserved | Reputation | Coins earned |
-|---|---|---|---|---|---|
-| One stall, then nothing | 100 | 83 | 13 | 63 | 747 |
-| Cheapest stall, repeatedly | 347 | 327 | 0 | 100 | 2943 |
-| Attractions only, no upgrades | 396 | 276 | 55 | 33 | 4632 |
-| Upgrade the busiest first | 306 | 296 | 0 | 100 | 4440 |
-| Variety first, then upgrades | 566 | 535 | 13 | 100 | 9933 |
-| Serve when busy, else attract | 503 | 478 | 0 | 100 | 7068 |
+| Strategy | Arrived | Happy (score) | Wanted more | Gave up | Reputation | Coins earned |
+|---|---|---|---|---|---|---|
+| One stall, then nothing | 74 | 0 | 73 | 0 | 52 | 504 |
+| Cheapest stall, repeatedly | 136 | 0 | 134 | 0 | 37 | 783 |
+| Attractions only, no upgrades | 311 | 77 | 91 | 101 | 1 | 7131 |
+| Upgrade the busiest first | 119 | 0 | 119 | 0 | 41 | 1176 |
+| One of each, then upgrades | 363 | 219 | 0 | 124 | 48 | 14871 |
+| Build what visitors miss, serve when busy, else attract | 464 | 361 | 12 | 52 | 100 | 20544 |
 
-Mixed strategies now beat single-minded ones. These are bots that react perfectly, not people: no human playtest supports the numbers yet. Known weak points: reputation still reaches 100 easily for any careful strategy, visitors ignore attraction when choosing where to queue (so nobody needs to ride the rides), and late in the festival coins pile up with nothing left to buy.
+A market of one kind of stall now scores nothing, attractions alone score little, and the player who builds what visitors miss scores most. These are bots that react perfectly, not people: no human playtest supports the numbers yet. Known weak points: income was not reduced although visitors now pay up to three times, so coins pile up; a visitor's wishes are not visible on the visitor; the park is far larger than the market needs; queue positions still do not move up (issue 14).
 
 ## Placement and navigation
 

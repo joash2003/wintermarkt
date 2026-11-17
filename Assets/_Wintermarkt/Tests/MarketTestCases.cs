@@ -92,6 +92,35 @@ namespace Wintermarkt.Tests
             string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
             sim.Tick(10); Require(sim.Welcomed > 0, "No arrivals after the first building");
         }
-        public static Action[] All { get { return new Action[] { NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        // One visitor (arrivals are switched off after the first) in a market with two categories: food and drinks.
+        static MarketSimulation CreateTwoCategories()
+        {
+            var sim = Create(); sim.Settings.baseArrivalSeconds = 1000; sim.Settings.minArrivalSeconds = 1000;
+            var drink = new BuildingDefinition { id = "drink", title = "Drink", category = "drinks", width = 2, depth = 2, queueSlots = 4,
+                levels = new[] { new BuildingLevel { cost = 100, capacity = 1, income = 7, serviceSeconds = 2, attraction = 5 } } };
+            sim.Settings.buildings = new[] { sim.Settings.buildings[0], drink };
+            return sim;
+        }
+        public static void VisitorVisitsEveryWish()
+        {
+            var sim = CreateTwoCategories(); string reason;
+            Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason); Require(sim.TryPlace("drink", new Cell(6, 2), out reason), reason);
+            sim.Tick(60);
+            Require(sim.Welcomed == 1 && sim.Served == 2, "The visitor must be served at both buildings");
+            Require(sim.Happy == 1 && sim.Disappointed == 0 && sim.Abandoned == 0, "A visitor who got everything is happy");
+            Require(sim.Earned == 17, "Each stop pays once");
+        }
+        public static void MissingWishDisappoints()
+        {
+            var sim = CreateTwoCategories(); string reason;
+            Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            sim.Tick(60);
+            Require(sim.Welcomed == 1 && sim.Served == 1, "The visitor is still served where possible");
+            Require(sim.Happy == 0 && sim.Disappointed == 1 && sim.Abandoned == 0, "A missing category disappoints, it is not a queue loss");
+            Require(sim.Reputation == sim.Settings.initialReputation + sim.Settings.happinessGain - sim.Settings.disappointmentLoss, "Reputation: one service, one disappointment");
+            Require(sim.MostWanted == "drinks", "The missing category is reported");
+            Require(sim.TryPlace("drink", new Cell(6, 2), out reason), reason); Require(sim.MostWanted == null, "Building it clears the report");
+        }
+        public static Action[] All { get { return new Action[] { VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

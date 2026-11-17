@@ -22,6 +22,8 @@ namespace Wintermarkt.Core
         public Cell Position { get; internal set; }
         public MarketBuilding Destination { get; internal set; }
         public int Slot { get; internal set; }
+        /// <summary>Building categories this visitor still wants to visit.</summary>
+        public List<string> Wishes { get; internal set; }
         public float Waited { get; internal set; }
         public float ServiceRemaining { get; internal set; }
         public List<Cell> Route { get; internal set; }
@@ -46,6 +48,10 @@ namespace Wintermarkt.Core
         public int Welcomed { get; private set; }
         public int Served { get; private set; }
         public int Abandoned { get; private set; }
+        /// <summary>The score: visitors who left having got everything they wanted.</summary>
+        public int Happy { get; private set; }
+        /// <summary>Visitors who left because something they wanted was not built.</summary>
+        public int Disappointed { get; private set; }
         public int Earned { get; private set; }
         public float Reputation { get; private set; }
         public float Remaining { get; private set; }
@@ -53,6 +59,13 @@ namespace Wintermarkt.Core
         public bool Finished { get { return Remaining <= 0; } }
         float arrivalCountdown = 2;
         int nextBuilding = 1, nextVisitor = 1;
+        long nextOrder = 1;
+        readonly Dictionary<string, int> missed = new Dictionary<string, int>();
+        /// <summary>The category most visitors left without since it was last built, or null.</summary>
+        public string MostWanted
+        {
+            get { string best = null; int most = 0; foreach (var pair in missed) if (pair.Value > most) { most = pair.Value; best = pair.Key; } return best; }
+        }
 
         public MarketSimulation(MarketSettings settings, SiteData site)
         {
@@ -126,6 +139,7 @@ namespace Wintermarkt.Core
             Coins -= b.Stats.cost; buildings.Add(b);
             for (int y = 0; y < d.depth; y++) for (int x = 0; x < d.width; x++) occupied.Add(new Cell(origin.x + x, origin.y + y));
             for (int i = 0; i < d.queueSlots; i++) reserved.Add(b.QueueCell(i));
+            missed.Remove(d.category);
             reason = d.title + " opened!"; return true;
         }
 
@@ -170,7 +184,8 @@ namespace Wintermarkt.Core
                         if (v.ServiceRemaining <= 0)
                         {
                             int income = v.Destination.Stats.income; Coins += income; Earned += income; Served++;
-                            Reputation = Math.Min(100, Reputation + Settings.happinessGain); Leave(v);
+                            Reputation = Math.Min(100, Reputation + Settings.happinessGain);
+                            v.Wishes.Remove(v.Destination.Definition.category); v.Slot = -1; Continue(v);
                         }
                     }
                 }
@@ -182,22 +197,46 @@ namespace Wintermarkt.Core
         void SpawnVisitor()
         {
             var v = new MarketVisitor { Id = nextVisitor++, Position = Site.Entrance, State = VisitorState.Leaving, Slot = -1 };
-            Welcomed++; visitors.Add(v);
-            MarketBuilding chosen = null; int slot = -1; List<Cell> route = null; float best = float.MaxValue;
+            // Two or three different wishes from the categories the player can build right now; the pattern repeats so runs are deterministic.
+            var unlocked = new List<string>(); v.Wishes = new List<string>();
+            foreach (var d in Settings.buildings) if (Welcomed >= d.unlockVisitors && !unlocked.Contains(d.category)) unlocked.Add(d.category);
+            int count = Math.Max(1, Math.Min(unlocked.Count, Settings.maxWishes - v.Id % 2));
+            for (int i = 0; i < count && unlocked.Count > 0; i++) v.Wishes.Add(unlocked[(v.Id * 7 + i) % unlocked.Count]);
+            Welcomed++; visitors.Add(v); Continue(v);
+        }
+
+        // Next stop: the wanted building with the shortest queue plus walk. With nothing left to visit the visitor goes home.
+        void Continue(MarketVisitor v)
+        {
+            MarketBuilding chosen = null; int slot = -1; List<Cell> route = null; float best = float.MaxValue; bool full = false;
             foreach (var b in buildings)
             {
+                if (!v.Wishes.Contains(b.Definition.category)) continue;
+                bool free = false;
                 for (int i = 0; i < b.Definition.queueSlots; i++)
                 {
                     if (SlotTaken(b, i)) continue;
-                    var path = Site.Path(Site.Entrance, b.QueueCell(i), occupied); if (path == null) continue;
+                    free = true;
+                    var path = Site.Path(v.Position, b.QueueCell(i), occupied); if (path == null) continue;
                     float score = QueueCount(b) * b.Stats.serviceSeconds / b.Stats.capacity + path.Count * Settings.walkSecondsPerCell;
                     if (score < best) { best = score; chosen = b; slot = i; route = path; }
                     break;
                 }
+                if (!free) full = true;
             }
-            if (chosen == null) { Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); v.State = VisitorState.Gone; return; }
-            v.Destination = chosen; v.Slot = slot; v.Route = route; v.State = route.Count == 0 ? VisitorState.Waiting : VisitorState.Walking;
-            v.QueueOrder = v.Id;
+            if (chosen != null)
+            {
+                v.Destination = chosen; v.Slot = slot; v.Route = route; v.RouteIndex = 0; v.EdgeProgress = 0; v.Waited = 0; v.QueueOrder = nextOrder++;
+                v.State = route.Count == 0 ? VisitorState.Waiting : VisitorState.Walking; return;
+            }
+            if (full) { Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); }
+            else if (v.Wishes.Count == 0) Happy++;
+            else
+            {
+                Disappointed++; Reputation = Math.Max(0, Reputation - Settings.disappointmentLoss);
+                foreach (string wish in v.Wishes) { int n; missed.TryGetValue(wish, out n); missed[wish] = n + 1; }
+            }
+            Leave(v);
         }
 
         void Move(MarketVisitor v, float dt)

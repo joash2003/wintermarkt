@@ -1,15 +1,17 @@
 {
-  "startingCoins": 350,
+  "startingCoins": 400,
   "maxVisitors": 200,
   "festivalSeconds": 600,
-  "baseArrivalSeconds": 8,
-  "minArrivalSeconds": 0.5,
+  "baseArrivalSeconds": 10,
+  "minArrivalSeconds": 1,
   "walkSecondsPerCell": 0.65,
   "patienceSeconds": 35,
   "initialReputation": 60,
   "happinessGain": 0.5,
   "abandonmentLoss": 3,
   "varietyBonus": 15,
+  "disappointmentLoss": 0.5,
+  "maxWishes": 3,
   "buildings": [
     {
       "id": "punsch",
@@ -114,7 +116,7 @@
       "width": 3,
       "depth": 3,
       "queueSlots": 6,
-      "unlockVisitors": 10,
+      "unlockVisitors": 25,
       "levels": [
         {
           "cost": 260,
@@ -146,7 +148,7 @@
       "width": 4,
       "depth": 3,
       "queueSlots": 8,
-      "unlockVisitors": 35,
+      "unlockVisitors": 80,
       "levels": [
         {
           "cost": 480,
