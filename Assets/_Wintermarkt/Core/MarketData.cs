@@ -36,7 +36,7 @@ namespace Wintermarkt.Core
     public sealed class WaveDefinition
     {
         public string title;
-        public float seconds, arrivalFactor = 1, helpFactor = 1;
+        public float seconds, arrivalFactor = 1, helpFactor = 1, patienceFactor = 1;
         public int target;
     }
 
@@ -63,6 +63,10 @@ namespace Wintermarkt.Core
         /// <summary>Help calls (issue 23): a stall with a queue calls every helpIntervalSeconds; 0 switches calls off.</summary>
         public float helpIntervalSeconds, helpWindowSeconds = 8, boostSeconds = 15, closedSeconds = 10;
         public int helpTip = 5;
+        /// <summary>Tap to cook (issue 32): a stall serves only from its stock. A tap cooks one batch of `capacity` portions in `serviceSeconds`;
+        /// handing a portion to a visitor takes handoverSeconds. Off, stalls serve by themselves as before.</summary>
+        public bool tapToCook;
+        public float handoverSeconds = .8f;
         /// <summary>The Krampus run (issue 26): how fast a Krampus walks and what a scared visitor costs in reputation.</summary>
         public float krampusSecondsPerCell = .9f, scareLoss = .5f;
         /// <summary>Empty means one wave of festivalSeconds without a target.</summary>
@@ -75,10 +79,10 @@ namespace Wintermarkt.Core
             if (startingCoins < 0 || maxVisitors < 1 || festivalSeconds <= 0 || minArrivalSeconds <= 0 ||
                 baseArrivalSeconds < minArrivalSeconds || walkSecondsPerCell <= 0 || patienceSeconds <= 0 ||
                 initialReputation < 0 || initialReputation > 100 || happinessGain < 0 || abandonmentLoss < 0 || varietyBonus < 0 || disappointmentLoss < 0 || maxWishes < 1 ||
-                helpIntervalSeconds < 0 || helpWindowSeconds <= 0 || boostSeconds < 0 || closedSeconds < 0 || helpTip < 0 || krampusSecondsPerCell <= 0 || scareLoss < 0)
+                helpIntervalSeconds < 0 || helpWindowSeconds <= 0 || boostSeconds < 0 || closedSeconds < 0 || helpTip < 0 || krampusSecondsPerCell <= 0 || scareLoss < 0 || handoverSeconds <= 0)
                 throw new ArgumentException("Invalid market simulation settings.");
             foreach (var w in waves ?? new WaveDefinition[0])
-                if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.helpFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
+                if (w == null || w.seconds <= 0 || w.arrivalFactor <= 0 || w.helpFactor <= 0 || w.patienceFactor <= 0 || w.target < 0) throw new ArgumentException("Invalid wave.");
             foreach (var e in events ?? new EventDefinition[0])
                 if (e == null || e.wave < 0 || e.at < 0 || e.seconds < 0 || e.warnSeconds < 0 || e.count < 0 || e.factor <= 0 ||
                     (e.kind != "burst" && e.kind != "storm" && e.kind != "powercut" && e.kind != "krampus")) throw new ArgumentException("Invalid event.");
@@ -90,7 +94,7 @@ namespace Wintermarkt.Core
                     b.queueSlots < 1 || b.unlockVisitors < 0 || b.levels == null || b.levels.Length == 0)
                     throw new ArgumentException("Invalid or duplicate building definition.");
                 foreach (var l in b.levels)
-                    if (l == null || l.cost < 0 || l.capacity < 1 || l.capacity > b.queueSlots || l.income < 0 ||
+                    if (l == null || l.cost < 0 || l.capacity < 1 || (!tapToCook && l.capacity > b.queueSlots) || l.income < 0 ||
                         l.serviceSeconds <= 0 || l.attraction < 0)
                         throw new ArgumentException("Invalid level values for " + b.id);
             }

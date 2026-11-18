@@ -287,6 +287,39 @@ namespace Wintermarkt.Tests
             Require(sim.SnowPiles.Count == 0 && sim.Swept == 3, "Sweeping removes the snow and is counted");
             sim.Tick(6); Require(sim.Abandoned == 1 && sim.Visitors.Count == 2, "A swept spot can be queued on again");
         }
-        public static Action[] All { get { return new Action[] { SnowBuriesQueueSpotsUntilSwept, KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        // The one-stall market where nothing is served unless the player taps: batches of two, three seconds to cook.
+        static MarketSimulation CreateTap()
+        {
+            var sim = Create(); sim.Settings.tapToCook = true; sim.Settings.handoverSeconds = .5f;
+            sim.Settings.buildings[0].levels[0].capacity = 2; sim.Settings.buildings[0].levels[0].serviceSeconds = 3;
+            return sim;
+        }
+        public static void TapCooksABatchThatIsHandedOut()
+        {
+            var sim = CreateTap(); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason); var b = sim.Buildings[0];
+            sim.Tick(10); Require(sim.Served == 0 && sim.QueueCount(b) > 1, "Nothing is served until the player taps");
+            Require(sim.TryCook(1, out reason), reason); Require(!sim.TryCook(1, out reason), "A stall that is cooking cannot be tapped again");
+            sim.Tick(2.8f); Require(sim.Served == 0 && b.CookRemaining > 0 && b.Stock == 0, "The batch takes its cooking time");
+            sim.Tick(1.5f); Require(sim.Served == 2 && b.Stock == 0 && b.CookRemaining == 0 && sim.Cooked == 1, "The whole batch goes to the queue without further clicks");
+            int served = sim.Served, earned = sim.Earned; sim.Tick(6); Require(sim.Served == served && sim.Earned == earned, "No stock, no service");
+        }
+        public static void FullStallCannotBeTappedAndUpgradesGrowTheBatch()
+        {
+            var sim = CreateTap(); string reason; sim.Settings.baseArrivalSeconds = 1000; sim.Settings.minArrivalSeconds = 1000;
+            sim.TryPlace("stall", new Cell(2, 2), out reason); var b = sim.Buildings[0];
+            Require(sim.TryCook(1, out reason), reason); sim.Tick(4); Require(b.Stock == 1 && sim.Served == 1, "One visitor took one of the two portions");
+            Require(sim.TryCook(1, out reason), "A stall that is not full can cook again: " + reason); sim.Tick(4); Require(b.Stock == 2, "Cooking fills the stall up to its batch size, not beyond");
+            Require(!sim.TryCook(1, out reason), "A full stall cannot be tapped");
+            sim.Settings.buildings[0].levels[1].capacity = 4; Require(sim.TryUpgrade(1, out reason), reason); Require(b.Batch == 4, "An upgrade raises the batch size");
+        }
+        public static void LaterDaysAreLessPatient()
+        {
+            var calm = Create(); var late = Create(); string reason;
+            late.Settings.waves = new[] { new WaveDefinition { title = "Late", seconds = 300, patienceFactor = .5f } }; late = new MarketSimulation(late.Settings, late.Site.Data);
+            foreach (var sim in new[] { calm, late }) { sim.Settings.baseArrivalSeconds = 6; sim.Settings.minArrivalSeconds = 6; sim.Settings.buildings[0].levels[0].serviceSeconds = 200; sim.TryPlace("stall", new Cell(2, 2), out reason); }
+            calm.Tick(26); late.Tick(26);
+            Require(calm.Abandoned == 0 && late.Abandoned > 0, "A day with a lower patience factor makes visitors give up sooner");
+        }
+        public static Action[] All { get { return new Action[] { TapCooksABatchThatIsHandedOut, FullStallCannotBeTappedAndUpgradesGrowTheBatch, LaterDaysAreLessPatient, SnowBuriesQueueSpotsUntilSwept, KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }
