@@ -3,7 +3,7 @@ type: feature
 priority: high
 created: 2026-11-18
 assignee:
-branch:
+branch: 27-four-days
 ---
 
 # 27 — Four short days with real dates instead of three acts, and fireworks at the end
@@ -28,6 +28,12 @@ The evening becomes four short days (First Advent, Krampus night, Christmas Eve,
 - [ ] Tests first where Core changes.
 - [ ] Data, simulation and what the player sees.
 - [ ] Bots, design spec, Play Mode render.
+
+## Work log
+
+- 2026-11-18: market.json now has four waves: First Advent (120 s), Krampus night (150 s, x1.3), Christmas Eve (180 s, x1.6), New Year's Eve (150 s, x1.3), 600 s in total. Events: tram on day 1; four Krampus on day 2 (they run off when the day ends); school class and snowstorm on day 3; last tram and power cut on day 4. HUD and messages say "day", the ending card shows four stars and the days on two lines, and the verdict scales with the number of days. Fireworks (bursts of lit cubes) play over the market once the last day ends, and the ending overlay is lighter then so they can be seen. No Core rule changed except the Krampus leaving at day end, so no new test.
+- Star targets from a bot run with targets at zero (the two mixed bots scored 7/30/75/72 and 10/24/71/78 happy per day): 5, 18, 48, 48, about two thirds of the weaker bot.
+- Not checked yet: the fireworks and the four-star card in Unity (render follows with issue 28).
 
 ## Outcome
 
