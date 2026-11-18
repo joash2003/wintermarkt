@@ -47,6 +47,11 @@ The market, its visitors and the park look detailed and cosy enough that a first
 - This departs from "original buildings and art" in the design spec for the listed props; the spec's rule against copying Clash of Clans or Stardew assets is untouched.
 - Checked with Play Mode renders (close, wide, snowstorm, Krampus run) and a full four-day run at 8x: no exceptions, models at the intended size. Not checked: a player build (the models load from Resources, so they should be included, but no build was made), frame rate, the look of upgraded stalls and of the rides, which are still primitives.
 - Still open in this ticket: proper models for the rides, visitors with a walk cycle, the Krampus, the city buildings, effects (steam, coin pop-ups), themed UI, and the team's decision on art direction.
+- 2026-11-18, second slice, done without waiting for the team at Joash's request: visitors are six animated characters from Kenney's Mini Characters (walk and idle clips mixed by a playable graph per visitor; the models import without an Animator, so one is added at runtime); unnamed city blocks are rows of town houses from the City Kit, scaled to each block's height, with a lit shop front; the tram is two cars from the Train Kit; panels, buttons and the event banner use three images from UI Pack Adventure, sliced at runtime, with dark text on the cream panels. Every piece falls back to the old shapes when its asset is missing. All four packs are CC0 and credited. About 6 MB of assets were added.
+- `com.unity.modules.animation` was added to Packages/manifest.json (a built-in engine module, not an external package). The quick compile check had passed without it and only the Unity import failed: filed as its own ticket.
+- Checked with Play Mode renders: close-ups of a waiting and a walking visitor (the walk pose shows), the default and wide views with the houses and tram, the wooden HUD (two texts that touched the frame were moved), and a full four-day run at 8x without exceptions.
+- Not checked: frame rate with up to 200 animated visitors, a player build, the menus and ending card in the new style beyond the HUD, the look at 1280x720.
+- Still primitives: the two rides, the Krampus, the bus, the Musiktheater and the Arbeiterkammer. No free pack found so far has a carousel or a Ferris wheel.
 
 ## Outcome
 

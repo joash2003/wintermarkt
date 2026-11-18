@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 using UnityEngine.Rendering;
 using Wintermarkt.Core;
 
@@ -58,7 +60,7 @@ namespace Wintermarkt
             Material m; if (!glows.TryGetValue(c, out m)) { m = new Material(Resources.Load<Material>("Wintermarkt/Glow")); m.color = c * .2f; m.SetColor("_EmissionColor", c); glows[c] = m; }
             return m;
         }
-        Material kitMaterial; float kitUnit;
+        readonly Dictionary<Material, Material> kitMaterials = new Dictionary<Material, Material>(); float kitUnit;
         // A model from the CC0 Kenney Holiday Kit (Resources/Wintermarkt/Kit, see ASSET_CREDITS.md), scaled so one kit unit is `unit` metres.
         // Returns null when the model is missing, and the caller draws its primitive version instead.
         Transform Prop(string model, Transform parent, Vector3 localPosition, float unit, float yaw = 0)
@@ -74,11 +76,36 @@ namespace Wintermarkt
             holder.localPosition = localPosition; holder.localRotation = Quaternion.Euler(0, yaw, 0); holder.localScale = Vector3.one * unit / kitUnit;
             foreach (var renderer in Instantiate(prefab, holder, false).GetComponentsInChildren<Renderer>())
             {
-                // Every kit model uses the same colour-map texture: one matte material for all of them.
-                if (!kitMaterial) { kitMaterial = new Material(renderer.sharedMaterial); kitMaterial.SetFloat("_Glossiness", .08f); }
-                renderer.sharedMaterial = kitMaterial;
+                // Every model of one kit uses the same colour-map texture: one matte material per kit.
+                Material matte; var imported = renderer.sharedMaterial; if (!imported) continue;
+                if (!kitMaterials.TryGetValue(imported, out matte)) { matte = new Material(imported); matte.SetFloat("_Glossiness", .08f); kitMaterials[imported] = matte; }
+                renderer.sharedMaterial = matte;
             }
             return holder;
+        }
+        // Visitors are animated characters from Kenney's Mini Characters: the walk and idle clips of the model are mixed by a small playable graph each.
+        static readonly string[] People = { "character-female-a", "character-male-a", "character-female-c", "character-male-c", "character-female-e", "character-male-f" };
+        struct Walker { public PlayableGraph graph; public AnimationMixerPlayable mixer; public AnimationClipPlayable walk, idle; public float walkLength, idleLength; }
+        readonly Dictionary<int, Walker> walkers = new Dictionary<int, Walker>();
+        readonly Dictionary<string, AnimationClip> clips = new Dictionary<string, AnimationClip>();
+        AnimationClip Clip(string model, string take)
+        {
+            AnimationClip clip;
+            if (clips.TryGetValue(model + "/" + take, out clip)) return clip;
+            foreach (var c in Resources.LoadAll<AnimationClip>("Wintermarkt/Kit/" + model)) if (!c.name.StartsWith("__preview") && c.name.EndsWith(take)) clip = c;
+            clips[model + "/" + take] = clip; return clip;
+        }
+        void Animate(int id, Transform body, string model)
+        {
+            AnimationClip walk = Clip(model, "walk"), idle = Clip(model, "idle");
+            if (!walk || !idle || body.childCount == 0) return;
+            // The models are imported without an avatar, so they carry no Animator; generic clips only need one on the model's root.
+            var animator = body.GetComponentInChildren<Animator>(); if (!animator) animator = body.GetChild(0).gameObject.AddComponent<Animator>();
+            animator.applyRootMotion = false;
+            var w = new Walker { graph = PlayableGraph.Create("Visitor " + id), walkLength = walk.length, idleLength = idle.length };
+            w.mixer = AnimationMixerPlayable.Create(w.graph, 2); w.walk = AnimationClipPlayable.Create(w.graph, walk); w.idle = AnimationClipPlayable.Create(w.graph, idle);
+            w.graph.Connect(w.walk, 0, w.mixer, 0); w.graph.Connect(w.idle, 0, w.mixer, 1);
+            AnimationPlayableOutput.Create(w.graph, "Pose", animator).SetSourcePlayable(w.mixer); w.graph.Play(); walkers[id] = w;
         }
         Transform Shape(string title, Transform parent, PrimitiveType shape, Vector3 position, Vector3 size, Material material)
         {
@@ -106,7 +133,8 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
+            foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy();
+            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -204,9 +232,26 @@ namespace Wintermarkt
                 last = i;
             }
         }
+        // An unnamed city block as a row of town houses from Kenney's City Kit, squashed or stretched to the block's height, with a lit shop front on both sides.
+        bool Terrace(SiteFeature f, Vector3 a, Vector3 b)
+        {
+            Vector3 along = (b - a).normalized, across = Vector3.Cross(Vector3.up, along); float length = Vector3.Distance(a, b);
+            int count = Mathf.Max(1, Mathf.RoundToInt(length / f.width)); float step = length / count, unit = Mathf.Min(step, f.width) * 1.08f, yaw = Mathf.Atan2(along.x, along.z) * Mathf.Rad2Deg + 90;
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 p = a + along * (i + .5f) * step;
+                var house = Prop("City/building-" + "abcdefgh"[(i * 3 + (int)Mathf.Abs(a.x)) % 8], content, p, unit, yaw + (i % 2) * 180);
+                if (!house) return false;
+                house.localScale = Vector3.Scale(house.localScale, new Vector3(1, f.height / (1.29f * unit), 1));
+                for (int side = -1; side <= 1; side += 2)
+                    Lamp("Shop front", content, p + across * side * (unit * .46f) + Vector3.up * 1.9f, new Vector3(.12f, 2.2f, unit * .45f)).rotation = Quaternion.LookRotation(along);
+            }
+            return true;
+        }
         static readonly Color[] Plaster = { new Color(.56f, .47f, .38f), new Color(.5f, .43f, .42f), new Color(.45f, .47f, .52f), new Color(.6f, .53f, .42f) };
         void Building(SiteFeature f, Vector3 a, Vector3 b)
         {
+            if (string.IsNullOrEmpty(f.name) && f.width <= 32 && Terrace(f, a, b)) return;
             Color wall = f.name == "Musiktheater" ? new Color(.7f, .68f, .64f) : Plaster[(int)(Mathf.Abs(a.x) + Mathf.Abs(a.z)) % Plaster.Length];
             Segment("Building " + f.name, a, b, f.width, 0, f.height, Material(wall));
             Segment("Roof", a, b, f.width + 1, f.height, .6f, Material(new Color(.36f, .38f, .44f)));
@@ -243,6 +288,13 @@ namespace Wintermarkt
         Transform Tram()
         {
             var tram = new GameObject("Ambient tram").transform; tram.SetParent(content);
+            // Two coupled cars from Kenney's Train Kit, with a strip of lit windows; the box tram is the fallback.
+            if (Prop("Train/train-tram-modern", tram, new Vector3(0, 0, 3.5f), 2.5f))
+            {
+                Prop("Train/train-tram-modern", tram, new Vector3(0, 0, -3.5f), 2.5f, 180);
+                for (int car = -1; car <= 1; car += 2) Lamp("Lit windows", tram, new Vector3(0, 2.3f, car * 3.5f), new Vector3(2.86f, .7f, 4.6f));
+                return tram;
+            }
             for (int i = -1; i <= 1; i++)
             {
                 Box("Articulated body", tram, new Vector3(0, 2, i * 6.2f), new Vector3(2.7f, 3.2f, 6), new Color(.92f, .93f, .89f));
@@ -291,12 +343,24 @@ namespace Wintermarkt
                 if (!people.TryGetValue(v.Id, out person))
                 {
                     person = new GameObject("Visitor " + v.Id).transform; person.SetParent(content); people[v.Id] = person;
+                    string model = "People/" + People[v.Id % People.Length]; var body = Prop(model, person, Vector3.zero, 3.3f);
+                    if (body) { Animate(v.Id, body, model); goto dressed; }
                     Color coat = Color.HSVToRGB((v.Id * .137f) % 1, .6f, .7f);
                     Shape("Coat", person, PrimitiveType.Capsule, Vector3.up * 1.1f, new Vector3(.75f, .8f, .75f), coat);
                     Shape("Head", person, PrimitiveType.Sphere, Vector3.up * 2.05f, Vector3.one * .65f, new Color(.95f, .76f, .52f));
                     Shape("Scarf", person, PrimitiveType.Cylinder, Vector3.up * 1.72f, new Vector3(.66f, .09f, .66f), Color.HSVToRGB((v.Id * .53f) % 1, .75f, .95f));
                     Shape("Beanie", person, PrimitiveType.Sphere, Vector3.up * 2.28f, new Vector3(.7f, .45f, .7f), Color.HSVToRGB((v.Id * .31f) % 1, .7f, .85f));
                     Shape("Pom-pom", person, PrimitiveType.Sphere, Vector3.up * 2.56f, Vector3.one * .24f, Color.white);
+                    dressed:;
+                }
+                Walker walker;
+                if (walkers.TryGetValue(v.Id, out walker))
+                {
+                    // The clips are not imported as looping, so wrap their time here; walking shows while the visitor is on the move.
+                    bool moving = v.State == VisitorState.Walking || v.State == VisitorState.Leaving;
+                    walker.mixer.SetInputWeight(0, moving ? 1 : 0); walker.mixer.SetInputWeight(1, moving ? 0 : 1);
+                    if (walker.walk.GetTime() >= walker.walkLength) walker.walk.SetTime(walker.walk.GetTime() % walker.walkLength);
+                    if (walker.idle.GetTime() >= walker.idleLength) walker.idle.SetTime(walker.idle.GetTime() % walker.idleLength);
                 }
                 person.position = Vector3.Lerp(World(v.Position), World(v.NextCell), v.EdgeProgress);
                 if (v.NextCell != v.Position) person.rotation = Quaternion.LookRotation(World(v.NextCell) - World(v.Position));
@@ -315,7 +379,7 @@ namespace Wintermarkt
                 marks[v.Id].rotation = Quaternion.Euler(0, 30, 0);   // the row stays level on screen, the camera looks along yaw 30
             }
             var removed = new List<int>(); foreach (var pair in people) if (!active.Contains(pair.Key)) { Destroy(pair.Value.gameObject); removed.Add(pair.Key); }
-            foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); }
+            foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); Walker gone; if (walkers.TryGetValue(id, out gone)) { if (gone.graph.IsValid()) gone.graph.Destroy(); walkers.Remove(id); } }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
             Beasts();
@@ -488,7 +552,7 @@ namespace Wintermarkt
             }
             return root;
         }
-        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); if (kitMaterial) Destroy(kitMaterial); }
+        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); foreach (var m in kitMaterials.Values) if (m) Destroy(m); foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy(); }
 
         sealed class AmbientVehicle
         {
