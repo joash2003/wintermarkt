@@ -535,14 +535,17 @@ namespace Wintermarkt
             var root = new GameObject(b.Definition.title + " level " + (b.Level + 1)).transform; root.SetParent(content); root.position = World(b.Origin) + new Vector3((b.Definition.width - 1) * CellSize / 2, 0, -(b.Definition.depth - 1) * CellSize / 2);
             float w = b.Definition.width * CellSize - .5f, d = b.Definition.depth * CellSize - .5f;
             Color sign = CategoryColor(b.Definition.category);
-            // A stall is a one-tile log cabin from the kit: serving window with awning at the front, wreath at the back, snowy gabled roof.
-            // The kit's proportions are tall, so the cabin is squashed to about two thirds of its height.
-            // Three levels, three buildings (issue 44): a low shed, the proper Hütte, then a bigger, taller grand Hütte. Dressing stays at the level-2 spots (e = 5).
+            // Each category is its own building (issue 44, Joash on 18 Nov): the Punsch Hütte is a log cabin from the kit, the bakery a gingerbread house and the
+            // crafts stall an open booth. Each has three levels that look like three buildings. `rise` is how far the roof reaches above the 4.6 m flag line.
+            // The cabin: serving window with awning at the front, wreath at the back, snowy gabled roof; the kit's proportions are tall, so it is squashed.
+            // A low shed, the proper Hütte, then a bigger, taller grand Hütte. Dressing stays at the level-2 spots (e = 5).
             int level = b.Level; const float e = 5;
             float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), u = 4.5f + .75f * level, squash = level == 0 ? .55f : level == 1 ? .65f : .8f;
             bool carousel = b.Definition.id == "carousel", isRide = carousel || b.Definition.id == "wheel";
             var hut = new GameObject("Cabin").transform; hut.SetParent(root, false); hut.localScale = new Vector3(1, squash, 1);
-            if (!isRide && Prop("cabin-window-large", hut, Vector3.zero, u, 180) != null)
+            if (!isRide && b.Definition.category == "food") rise = Bakery(root, level, sign, w, d);
+            else if (!isRide && b.Definition.category == "crafts") rise = Crafts(root, level, sign, w, d);
+            else if (!isRide && Prop("cabin-window-large", hut, Vector3.zero, u, 180) != null)
             {
                 Prop(level == 0 ? "cabin-wall" : "cabin-wall-wreath", hut, Vector3.zero, u); Prop("cabin-wall", hut, Vector3.zero, u, 90); Prop("cabin-wall", hut, Vector3.zero, u, 270);
                 for (int corner = 0; corner < 4; corner++) Prop("cabin-corner", hut, Vector3.zero, u, corner * 90);
@@ -574,12 +577,12 @@ namespace Wintermarkt
                 }
                 Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
                 Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .7f, .2f), Glow(sign));
+                Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
             }
             if (!isRide) Shape("Roof flag", root, PrimitiveType.Cube, new Vector3(0, 4.6f + rise, 0), Vector3.one * 1.1f, Glow(sign));
             // A warm pool of light on the snow in front of the counter.
             var pool = new GameObject("Counter light", typeof(Light)).GetComponent<Light>(); pool.transform.SetParent(root, false); pool.transform.localPosition = new Vector3(0, 3, -d / 2 - 3);
             pool.type = LightType.Point; pool.color = WarmLight; pool.range = 16; pool.intensity = 1.4f;
-            if (hut.childCount == 0 && !isRide) Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
             if (isRide)
             {
                 var ride = new GameObject("Ride motion").transform; ride.SetParent(root, false);
@@ -593,6 +596,83 @@ namespace Wintermarkt
                 Box("Queue marker", root, marker, new Vector3(1.1f, .1f, 1.1f), new Color(.75f, .64f, .4f));
             }
             return root;
+        }
+        // The Sweet Bakery is a gingerbread house: warm brown walls with white icing along the eaves and ridge, a chimney with smoke, a red-and-white awning over
+        // the counter and trays of pastries. Level 1 is a bakery cart on wheels; 2 the house with lit windows and candy canes; 3 a bigger house with two chimneys,
+        // gumdrops along the front eave and a snowman outside. Returns how far the roof reaches above the 4.6 m flag line.
+        float Bakery(Transform root, int level, Color sign, float w, float d)
+        {
+            Color ginger = new Color(.6f, .36f, .18f), dark = new Color(.45f, .25f, .12f), icing = new Color(.97f, .96f, .92f), red = new Color(.8f, .15f, .12f);
+            Color[] gumdrops = { new Color(.85f, .15f, .15f), new Color(.2f, .6f, .3f), new Color(1, .8f, .25f) };
+            float bw = level == 0 ? 4.2f : level == 1 ? 6 : w, bd = level == 0 ? 2.6f : level == 1 ? 5 : 6, bh = level == 0 ? 2.4f : level == 1 ? 3.4f : 4, lift = level == 0 ? .7f : 0;
+            float pitch = 30, rise = bd / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), eave = lift + bh, front = -bd / 2;
+            Box("Walls", root, new Vector3(0, lift + bh / 2, 0), new Vector3(bw, bh, bd), ginger);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Box("Roof", root, new Vector3(0, eave + rise / 2, side * bd / 4), new Vector3(bw + .6f, .22f, bd / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .5f), dark).localRotation = Quaternion.Euler(side * pitch, 0, 0);
+                Box("Icing", root, new Vector3(0, eave + .05f, side * (bd / 2 + .25f)), new Vector3(bw + .7f, .3f, .3f), icing);
+            }
+            Box("Ridge icing", root, new Vector3(0, eave + rise + .1f, 0), new Vector3(bw + .7f, .3f, .35f), icing);
+            for (int c = 0; c < (level == 2 ? 2 : 1); c++)
+            {
+                float cx = level == 2 ? (c == 0 ? -1 : 1) * bw * .3f : bw * .3f;
+                Box("Chimney", root, new Vector3(cx, eave + rise * .6f + .6f, bd * .15f), new Vector3(.8f, 1.6f, .8f), dark);
+                for (int s = 0; s < 3; s++) Shape("Smoke", root, PrimitiveType.Sphere, new Vector3(cx + s * .25f, eave + rise * .6f + 1.8f + s * .7f, bd * .15f), Vector3.one * (.5f + s * .25f), icing);
+            }
+            Box("Awning", root, new Vector3(0, eave - .2f, front - .8f), new Vector3(bw * .9f, .12f, 1.8f), red).localRotation = Quaternion.Euler(-20, 0, 0);
+            Box("Awning edge", root, new Vector3(0, eave - .5f, front - 1.6f), new Vector3(bw * .9f, .25f, .12f), icing);
+            Box("Counter", root, new Vector3(0, lift + .5f, front - .3f), new Vector3(bw * .9f, 1, .7f), Wood);
+            for (int p = 0; p < 3 + level; p++) Shape("Pastry", root, PrimitiveType.Sphere, new Vector3((p - (2 + level) / 2f) * .7f, lift + 1.1f, front - .3f), new Vector3(.45f, .3f, .45f), new Color(.85f, .6f, .3f));
+            if (level == 0) for (int side = -1; side <= 1; side += 2) Shape("Cart wheel", root, PrimitiveType.Cylinder, new Vector3(side * (bw / 2 + .12f), .6f, 0), new Vector3(1.2f, .12f, 1.2f), Material(Wood)).localRotation = Quaternion.Euler(0, 0, 90);
+            if (level >= 1)
+            {
+                for (int side = -1; side <= 1; side += 2) Lamp("Window", root, new Vector3(side * bw * .3f, lift + bh * .55f, front - .03f), new Vector3(1.1f, 1, .06f));
+                Prop("candy-cane-red", root, new Vector3(-w * .42f, 0, -d * .42f), 3.2f, 20); Prop("candy-cane-red", root, new Vector3(w * .42f, 0, -d * .42f), 3.2f, -20);
+            }
+            if (level >= 2)
+            {
+                for (int i = 0; i < 7; i++) Shape("Gumdrop", root, PrimitiveType.Sphere, new Vector3((i - 3) * bw / 7, eave + .35f, front - .3f), Vector3.one * .4f, gumdrops[i % 3]);
+                Prop("snowman", root, new Vector3(w * .4f, 0, d * .3f), 3, -30); Prop("present-b-round", root, new Vector3(-w * .42f, 0, d * .35f), 2.8f, 70);
+            }
+            Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, eave + rise + .9f, front + .2f), new Vector3(bw * .6f, .7f, .16f), Glow(sign));
+            return eave + rise + .9f - 4.6f;
+        }
+        // Christmas Crafts is an open market booth: poles holding a canvas roof with a white edge, a display table with a cloth in the stall colour and baubles
+        // hanging in a row under the eave. Level 1 is a table under a flat canopy; 2 a booth with wooden walls, a pitched canvas roof, a wreath and a lantern;
+        // 3 a wider, taller booth with two rows of baubles, a lit beam across the front, a star on top, a nutcracker and a tree.
+        float Crafts(Transform root, int level, Color sign, float w, float d)
+        {
+            Color canvas = new Color(.3f, .45f, .7f), trim = new Color(.97f, .96f, .92f); Color[] baubles = { new Color(.85f, .15f, .15f), new Color(1, .8f, .25f), new Color(.2f, .6f, .3f) };
+            float bw = level == 0 ? 4.5f : level == 1 ? 6 : w, bd = level == 0 ? 3.5f : level == 1 ? 5 : 6, h = level == 0 ? 2.8f : level == 1 ? 3.2f : 3.8f, pitch = 25;
+            float rise = level == 0 ? .2f : bd / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), front = -bd / 2;
+            for (int x = -1; x <= 1; x += 2) for (int z = -1; z <= 1; z += 2) Shape("Pole", root, PrimitiveType.Cylinder, new Vector3(x * (bw / 2 - .2f), h / 2, z * (bd / 2 - .2f)), new Vector3(.2f, h / 2, .2f), Wood);
+            if (level >= 1)
+            {
+                Box("Back wall", root, new Vector3(0, h / 2, bd / 2 - .15f), new Vector3(bw, h, .3f), Wood);
+                for (int side = -1; side <= 1; side += 2) Box("Side wall", root, new Vector3(side * (bw / 2 - .15f), h / 2, bd * .1f), new Vector3(.3f, h, bd * .8f), Wood);
+                for (int side = -1; side <= 1; side += 2) Box("Canvas roof", root, new Vector3(0, h + rise / 2, side * bd / 4), new Vector3(bw + .6f, .15f, bd / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .4f), canvas).localRotation = Quaternion.Euler(side * pitch, 0, 0);
+            }
+            else Box("Canopy", root, new Vector3(0, h + .1f, 0), new Vector3(bw + .4f, .15f, bd + .4f), canvas);
+            Box("Front trim", root, new Vector3(0, h - .1f, front - .2f), new Vector3(bw + .6f, .35f, .1f), trim);
+            Box("Table", root, new Vector3(0, .5f, front + .6f), new Vector3(bw - .6f, .9f, 1.1f), Wood);
+            Box("Cloth", root, new Vector3(0, .97f, front + .6f), new Vector3(bw - .5f, .06f, 1.25f), sign);
+            int row = 4 + 2 * level;
+            for (int r = 0; r <= (level == 2 ? 1 : 0); r++) for (int i = 0; i < row; i++)
+            {
+                float x = (i - (row - 1) / 2f) * (bw - 1) / (row - 1);
+                Shape("String", root, PrimitiveType.Cube, new Vector3(x, h - .45f - r * .9f, front - .2f), new Vector3(.03f, .5f, .03f), trim);
+                Shape("Bauble", root, PrimitiveType.Sphere, new Vector3(x, h - .85f - r * .9f, front - .2f), Vector3.one * .38f, baubles[(i + r) % 3]);
+            }
+            for (int i = 0; i < 2 + level; i++) Prop(i % 2 == 0 ? "present-a-cube" : "present-b-round", root, new Vector3((i - (1 + level) / 2f) * 1.1f, 1, front + .6f), 1.3f, i * 40);
+            if (level >= 1) { Prop("wreath-decorated", root, new Vector3(0, h * .55f, bd / 2 - .4f), 2.4f, 180); Prop("lantern", root, new Vector3(bw / 2 - .4f, 0, front - .5f), 3); }
+            if (level >= 2)
+            {
+                Lamp("Lit beam", root, new Vector3(0, h + .3f, front - .25f), new Vector3(bw + .4f, .18f, .18f));
+                Shape("Star", root, PrimitiveType.Sphere, new Vector3(0, h + rise + .7f, 0), Vector3.one * .8f, Glow(new Color(1, .85f, .3f)));
+                Prop("nutcracker", root, new Vector3(-w * .45f, 0, -d * .35f), 3.4f, 160); Prop("tree-decorated-snow", root, new Vector3(w * .42f, 0, d * .38f), 4, 40);
+            }
+            Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, h + rise + (level == 2 ? 1.5f : .8f), front + .3f), new Vector3(bw * .55f, .65f, .16f), Glow(sign));
+            return h + rise + 1 - 4.6f;
         }
         // A fairground galloper after Joash's reference picture (issue 44): a round deck with a red rim, chrome poles, the kit's reindeer instead of horses,
         // a cream canopy with a white dome and warm bulbs along the eave. Level 1 is a small plain one with four animals; 2 is wider with six, painted
