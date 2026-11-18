@@ -24,9 +24,10 @@ At a glance the player can tell a level-1, level-2 and level-3 building apart by
 
 - [ ] No gold balls above buildings; the name label says "Level N".
 - [ ] Stalls (Punsch, pastry, crafts): level 1 is a low shed, level 2 the proper Hütte, level 3 a bigger, taller grand Hütte with extra dressing. All stay inside their footprint.
-- [ ] The carousel and the Ferris wheel gain seats, cabins and lights at each level.
+- [ ] The carousel is a fairground galloper after Joash's reference picture of 18 Nov (reindeer on chrome poles, a cream canopy with a white dome and warm bulbs along the eave, a red-rimmed deck) and grows from four to eight animals, with painted panels, lit poles, a second tier and a gold crown at the top levels.
+- [ ] The Ferris wheel (Joash, 18 Nov: "do the same for the ferris wheel") stands on a low platform with a ticket booth instead of a hut: two A-frames meet at the axle, the gondolas hang upright as it turns, and it grows from eight to sixteen gondolas with lit spokes, rings of bulbs, lit frames and a glowing hub.
 - [ ] On upgrade the new building grows out of a burst of sparks over about half a second; newly placed buildings appear as before.
-- [ ] `bash tools/unity.sh shots` saves close-ups of the Punsch Hütte at each level and one frame mid-upgrade.
+- [ ] `bash tools/unity.sh shots` saves close-ups of the Punsch Hütte, a carousel and a wheel at each level and one frame mid-upgrade.
 - [ ] Core tests and balance bots unchanged.
 - [ ] Joash has upgraded a stall by hand in Play Mode and agrees the three looks and the animation work.
 
@@ -42,6 +43,9 @@ At a glance the player can tell a level-1, level-2 and level-3 building apart by
 - 2026-11-18: three cabin looks (4.5 m low shed without lights; 5.25 m Hütte with lights on three sides, candy cane and lantern; 6 m grand Hütte with wreath, presents, nutcracker, tree and a bigger sign), carousel 6/8/12 seats, wheel 8/12/16 cabins, gold balls removed, caption "Level N". Upgrade pop: the new model grows with an ease-out-back over 0.6 s out of 24 sparks; the spark update is now shared with the fireworks.
 - Checked with `bash tools/unity.sh shots` on Windows: level-1/2/3 close-ups of the Punsch Hütte look different, nothing is outside the footprint, the whole evening still runs to the ending. A first try left level 1 without a roof (the snow-point piece is the roof); fixed. Core tests 25/25; balance bots identical to main (the table in the design doc was already stale before this change).
 - Not checked: the pop animation itself. The shots run at a few frames per second, so the mid-pop frame shows the finished building and no sparks. The carousel and wheel levels were not pictured (the demo never builds them). Joash has not upgraded by hand yet.
+- 2026-11-18, later: Joash sent a photo of a real fairground carousel (white ornate canopy, painted panels, string lights, horses on chrome poles) and asked for the wheel to get the same treatment. Both rides lose the hut underneath. Carousel: cream deck with a red rim, chrome poles, the kit's reindeer as the animals (facing the way the deck turns), cream frieze, white dome, 16/24/32 bulbs on the eave; level 2 adds painted panels and a gold finial, level 3 lit poles, a second tier and a glowing crown; 4/6/8 animals, radius 4/4.6/5.2 m. Wheel: low platform with a ticket booth, two A-frames, half-length spokes, gondolas hanging upright (rotation reset each frame in `Synchronize`); 8/12/16 gondolas on a 5/6/7 m wheel; level 2 lights the spokes and hub and adds a ring of bulbs, level 3 lights the frames, adds a second ring and a big hub star. `PlayModeShots` now also places a carousel and (once 80 visitors are welcomed) a wheel, with coins topped up through reflection, and pictures each level.
+- Checked on a scratch copy of the project (the editor had the real one open): `carousel-1..3`, `wheel-1..3` and the pop frames; all three levels of each ride are clearly different, nothing leaves the footprint, the mid-pop frame of the carousel caught the sparks, and the evening still runs to the ending. The core compile passes. The first scratch run failed with a "missing script" because the Library was copied from the running editor; a fresh import fixed it.
+- Not checked: the rides in the real project in Play Mode, the wheel at a distance, and how close the carousel feels to the photo for Joash. Rides still turn at 20°/s, which is fast for a Ferris wheel.
 
 ## Outcome
 
