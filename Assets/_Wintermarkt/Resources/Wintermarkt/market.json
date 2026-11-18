@@ -21,25 +21,32 @@
   "scareLoss": 0.5,
   "waves": [
     {
-      "title": "Afternoon",
-      "seconds": 150,
+      "title": "First Advent",
+      "seconds": 120,
       "arrivalFactor": 1.0,
-      "target": 6,
-      "helpFactor": 1.0
+      "helpFactor": 1.0,
+      "target": 5
     },
     {
-      "title": "Evening rush",
-      "seconds": 240,
+      "title": "Krampus night",
+      "seconds": 150,
+      "arrivalFactor": 1.3,
+      "helpFactor": 1.2,
+      "target": 18
+    },
+    {
+      "title": "Christmas Eve",
+      "seconds": 180,
       "arrivalFactor": 1.6,
-      "target": 35,
-      "helpFactor": 1.4
+      "helpFactor": 1.4,
+      "target": 48
     },
     {
-      "title": "Closing time",
-      "seconds": 210,
-      "arrivalFactor": 1.2,
-      "target": 60,
-      "helpFactor": 1.2
+      "title": "New Year's Eve",
+      "seconds": 150,
+      "arrivalFactor": 1.3,
+      "helpFactor": 1.2,
+      "target": 48
     }
   ],
   "events": [
@@ -56,8 +63,19 @@
     },
     {
       "wave": 1,
+      "count": 4,
+      "at": 50,
+      "seconds": 0,
+      "warnSeconds": 20,
+      "factor": 3,
+      "kind": "krampus",
+      "title": "The Krampus run is coming: click them to throw snowballs!",
+      "category": ""
+    },
+    {
+      "wave": 2,
       "count": 12,
-      "at": 40,
+      "at": 30,
       "seconds": 0,
       "warnSeconds": 20,
       "factor": 1,
@@ -66,9 +84,9 @@
       "category": "food"
     },
     {
-      "wave": 1,
+      "wave": 2,
       "count": 0,
-      "at": 110,
+      "at": 95,
       "seconds": 45,
       "warnSeconds": 15,
       "factor": 0.6,
@@ -77,36 +95,25 @@
       "category": "drinks"
     },
     {
-      "wave": 1,
+      "wave": 3,
+      "count": 10,
+      "at": 20,
+      "seconds": 0,
+      "warnSeconds": 10,
+      "factor": 1,
+      "kind": "burst",
+      "title": "The last tram of the year is packed",
+      "category": ""
+    },
+    {
+      "wave": 3,
       "count": 0,
-      "at": 190,
+      "at": 75,
       "seconds": 0,
       "warnSeconds": 0,
       "factor": 1.5,
       "kind": "powercut",
       "title": "Power cut: click every stall to relight it!",
-      "category": ""
-    },
-    {
-      "wave": 2,
-      "count": 10,
-      "at": 30,
-      "seconds": 0,
-      "warnSeconds": 10,
-      "factor": 1,
-      "kind": "burst",
-      "title": "The last tram is packed",
-      "category": ""
-    },
-    {
-      "wave": 2,
-      "count": 5,
-      "at": 100,
-      "seconds": 0,
-      "warnSeconds": 20,
-      "factor": 3,
-      "kind": "krampus",
-      "title": "The Krampus run is coming: click them to throw snowballs!",
       "category": ""
     }
   ],
