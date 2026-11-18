@@ -5,6 +5,7 @@
 [Bb]uilds/
 UserSettings/
 .vs/
+.idea/
 *.csproj
 *.sln
 .DS_Store
