@@ -16,13 +16,13 @@ namespace Wintermarkt
         readonly Dictionary<int, Transform> buildings = new Dictionary<int, Transform>();
         readonly Dictionary<int, int> levels = new Dictionary<int, int>();
         readonly Dictionary<int, Transform> people = new Dictionary<int, Transform>();
-        readonly Dictionary<int, Transform> marks = new Dictionary<int, Transform>();
         readonly Dictionary<int, Transform> signals = new Dictionary<int, Transform>();
         readonly Dictionary<int, Transform> beasts = new Dictionary<int, Transform>();
         readonly Dictionary<int, int> beastHits = new Dictionary<int, int>();
         readonly Dictionary<int, int> signalState = new Dictionary<int, int>();
-        readonly Dictionary<int, int> shown = new Dictionary<int, int>();
-        /// <summary>One colour per building category: the stall sign, the wish markers above visitors and the build menu all use it.</summary>
+        // An upgraded stall pops up from nothing (issue 44): its new model and the seconds since the upgrade.
+        readonly Dictionary<Transform, float> popping = new Dictionary<Transform, float>();
+        /// <summary>One colour per building category: the stall sign and the build menu both use it.</summary>
         public static Color CategoryColor(string category)
         {
             switch (category)
@@ -134,7 +134,7 @@ namespace Wintermarkt
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
             foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy();
-            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
+            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); popping.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -351,11 +351,14 @@ namespace Wintermarkt
             {
                 if (!buildings.ContainsKey(b.Id) || levels[b.Id] != b.Level)
                 {
-                    if (buildings.ContainsKey(b.Id)) { buildings[b.Id].gameObject.SetActive(false); Destroy(buildings[b.Id].gameObject); }
+                    bool upgraded = buildings.ContainsKey(b.Id);
+                    if (upgraded) { popping.Remove(buildings[b.Id]); buildings[b.Id].gameObject.SetActive(false); Destroy(buildings[b.Id].gameObject); }
                     buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level; signals.Remove(b.Id); signalState.Remove(b.Id);
+                    if (upgraded) { buildings[b.Id].localScale = Vector3.zero; popping[buildings[b.Id]] = 0; Burst(buildings[b.Id].position + Vector3.up * 4); }
                 }
                 Signal(b);
             }
+            Pop(Time.unscaledDeltaTime); TickSparks(Time.unscaledDeltaTime);
             if (buildings.Count != Simulation.Buildings.Count)
             {
                 var standing = new HashSet<int>(); foreach (var b in Simulation.Buildings) standing.Add(b.Id);
@@ -390,21 +393,9 @@ namespace Wintermarkt
                 person.position = Vector3.Lerp(World(v.Position), World(v.NextCell), v.EdgeProgress);
                 if (v.NextCell != v.Position) person.rotation = Quaternion.LookRotation(World(v.NextCell) - World(v.Position));
                 person.localScale = Vector3.one * (v.State == VisitorState.Serving ? 1.5f : 1.4f);
-                // Above the head: one lit cube per remaining wish in its category colour, then a star (happy) or a red block (gave up).
-                int signature = v.Wishes.Count + 10 * (int)v.Mood, old; Transform mark;
-                if (!shown.TryGetValue(v.Id, out old) || old != signature)
-                {
-                    if (marks.TryGetValue(v.Id, out mark)) Destroy(mark.gameObject);
-                    mark = new GameObject("Wishes").transform; mark.SetParent(person, false); mark.localPosition = Vector3.up * 3.4f; marks[v.Id] = mark; shown[v.Id] = signature;
-                    if (v.Mood == VisitorMood.Happy) Shape("Happy", mark, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 1.1f, Glow(new Color(1, .82f, .2f)));
-                    else if (v.Mood == VisitorMood.Scared) Shape("Scared", mark, PrimitiveType.Cube, Vector3.zero, new Vector3(.4f, 1.3f, .4f), Glow(new Color(.6f, .8f, 1f)));
-                    else if (v.Mood == VisitorMood.GaveUp) Shape("Gave up", mark, PrimitiveType.Cube, Vector3.zero, new Vector3(1.2f, .35f, .35f), Glow(new Color(1, .1f, .1f)));
-                    else for (int i = 0; i < v.Wishes.Count; i++) Shape("Wish " + v.Wishes[i], mark, PrimitiveType.Cube, new Vector3((i - (v.Wishes.Count - 1) * .5f) * .95f, 0, 0), Vector3.one * .8f, Glow(CategoryColor(v.Wishes[i])));
-                }
-                marks[v.Id].rotation = Quaternion.Euler(0, 30, 0);   // the row stays level on screen, the camera looks along yaw 30
             }
             var removed = new List<int>(); foreach (var pair in people) if (!active.Contains(pair.Key)) { Destroy(pair.Value.gameObject); removed.Add(pair.Key); }
-            foreach (int id in removed) { people.Remove(id); marks.Remove(id); shown.Remove(id); Walker gone; if (walkers.TryGetValue(id, out gone)) { if (gone.graph.IsValid()) gone.graph.Destroy(); walkers.Remove(id); } }
+            foreach (int id in removed) { people.Remove(id); Walker gone; if (walkers.TryGetValue(id, out gone)) { if (gone.graph.IsValid()) gone.graph.Destroy(); walkers.Remove(id); } }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
             Beasts();
@@ -436,10 +427,36 @@ namespace Wintermarkt
                     sparks.Add(Shape("Spark", content, PrimitiveType.Cube, centre, Vector3.one * .9f, Glow(colour))); sparkSpeed.Add(new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r) * 16); sparkLife.Add(1.3f);
                 }
             }
+        }
+        // Fireworks and upgrade bursts: every spark flies, falls and shrinks until its life runs out.
+        void TickSparks(float dt)
+        {
             for (int i = sparks.Count - 1; i >= 0; i--)
             {
                 sparkLife[i] -= dt; sparkSpeed[i] += Vector3.down * 9 * dt; sparks[i].position += sparkSpeed[i] * dt; sparks[i].localScale = Vector3.one * Mathf.Max(.2f, sparkLife[i] * 1.6f);
                 if (sparkLife[i] <= 0) { Destroy(sparks[i].gameObject); sparks.RemoveAt(i); sparkSpeed.RemoveAt(i); sparkLife.RemoveAt(i); }
+            }
+        }
+        // An upgrade: a fountain of gold and white sparks out of the stall, like a building finishing in Clash of Clans.
+        void Burst(Vector3 centre)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                float a = i * 2.4f, up = .6f + (i % 4) * .15f;   // golden-angle spread, mostly upwards
+                sparks.Add(Shape("Upgrade spark", content, PrimitiveType.Cube, centre, Vector3.one * .6f, Glow(i % 3 == 0 ? Color.white : new Color(1, .8f, .25f))));
+                sparkSpeed.Add(new Vector3(Mathf.Cos(a), up * 2, Mathf.Sin(a)) * 6); sparkLife.Add(.9f);
+            }
+        }
+        // The new model grows from nothing, overshoots a little and settles, over 0.6 seconds.
+        void Pop(float dt)
+        {
+            const float length = .6f, back = 1.70158f;
+            foreach (var shop in new List<Transform>(popping.Keys))
+            {
+                if (!shop) { popping.Remove(shop); continue; }
+                float t = Mathf.Min(1, (popping[shop] += dt) / length) - 1;
+                shop.localScale = Vector3.one * (1 + (back + 1) * t * t * t + back * t * t);   // ease-out-back
+                if (t >= 0) popping.Remove(shop);
             }
         }
         // The Krampus of the finale: a dark horned figure with glowing eyes; each snowball that hit it shows as a white ball above its head.
@@ -518,21 +535,31 @@ namespace Wintermarkt
             Color sign = CategoryColor(b.Definition.category);
             // A stall is a one-tile log cabin from the kit: serving window with awning at the front, wreath at the back, snowy gabled roof.
             // The kit's proportions are tall, so the cabin is squashed to about two thirds of its height.
-            float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), u = 5, squash = .65f;
+            // Three levels, three buildings (issue 44): a low shed, the proper Hütte, then a bigger, taller grand Hütte. Dressing stays at the level-2 spots (e = 5).
+            int level = b.Level; const float e = 5;
+            float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), u = 4.5f + .75f * level, squash = level == 0 ? .55f : level == 1 ? .65f : .8f;
             bool isRide = b.Definition.id == "carousel" || b.Definition.id == "wheel";
             var hut = new GameObject("Cabin").transform; hut.SetParent(root, false); hut.localScale = new Vector3(1, squash, 1);
             if (!isRide && Prop("cabin-window-large", hut, Vector3.zero, u, 180) != null)
             {
-                Prop("cabin-wall-wreath", hut, Vector3.zero, u); Prop("cabin-wall", hut, Vector3.zero, u, 90); Prop("cabin-wall", hut, Vector3.zero, u, 270);
+                Prop(level == 0 ? "cabin-wall" : "cabin-wall-wreath", hut, Vector3.zero, u); Prop("cabin-wall", hut, Vector3.zero, u, 90); Prop("cabin-wall", hut, Vector3.zero, u, 270);
                 for (int corner = 0; corner < 4; corner++) Prop("cabin-corner", hut, Vector3.zero, u, corner * 90);
                 Prop("cabin-wall-roof-center", hut, Vector3.up * u, u); Prop("cabin-wall-roof-center", hut, Vector3.up * u, u, 180);
                 Prop("cabin-roof-snow-point", hut, Vector3.up * u, u);
-                Prop("lights-colored", hut, new Vector3(0, u * .98f, -u * .68f), u);
-                // Each level dresses the stall up further.
-                if (b.Level >= 1) { Prop("lights-colored", hut, new Vector3(-u * .68f, u * .98f, 0), u, 90); Prop("lights-colored", hut, new Vector3(u * .68f, u * .98f, 0), u, 90); Prop("candy-cane-red", root, new Vector3(-u * .75f, 0, -u * .8f), 3.4f, 20); }
-                if (b.Level >= 2) { Prop("wreath-decorated", hut, new Vector3(-u * .1f, u * 1.25f, -u * .56f), u * .9f, 180); Prop("present-a-cube", root, new Vector3(u * .8f, 0, -u * .85f), 3.2f, 30); Prop("present-b-round", root, new Vector3(u * .95f, 0, -u * .45f), 2.8f, 70); }
+                if (level >= 1)
+                {
+                    // The bare shed of level 1 has no lights.
+                    Prop("lights-colored", hut, new Vector3(0, u * .98f, -u * .68f), u);
+                    Prop("lights-colored", hut, new Vector3(-u * .68f, u * .98f, 0), u, 90); Prop("lights-colored", hut, new Vector3(u * .68f, u * .98f, 0), u, 90);
+                    Prop("candy-cane-red", root, new Vector3(-e * .75f, 0, -e * .8f), 3.4f, 20); Prop("lantern", root, new Vector3(e * .55f, 0, -e * .8f), 3);
+                }
+                if (level >= 2)
+                {
+                    Prop("wreath-decorated", hut, new Vector3(-u * .1f, u * 1.25f, -u * .56f), u * .9f, 180); Prop("present-a-cube", root, new Vector3(e * .8f, 0, -e * .85f), 3.2f, 30); Prop("present-b-round", root, new Vector3(e * .95f, 0, -e * .45f), 2.8f, 70);
+                    Prop("nutcracker", root, new Vector3(-e * .85f, 0, -e * .35f), 3.4f, 160); Prop("tree-decorated-snow", root, new Vector3(e * .7f, 0, e * .65f), 4.5f, 40);
+                }
                 rise = u * squash * 1.44f - .9f;
-                Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, u * squash + .75f, -u * .53f), new Vector3(u * .46f, .6f, .16f), Glow(sign));
+                Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, u * squash + .75f, -u * .53f), new Vector3(u * (level == 2 ? .62f : .46f), level == 2 ? .8f : .6f, .16f), Glow(sign));
             }
             else
             {
@@ -556,20 +583,29 @@ namespace Wintermarkt
                 var ride = new GameObject("Ride motion").transform; ride.SetParent(root, false); ride.localPosition = Vector3.up * 5;
                 if (b.Definition.id == "carousel")
                 {
+                    // Level 1: six seats under a plain canopy; 2: eight seats and a lit rim; 3: twelve seats, a second tier and a glowing crown.
+                    int seats = level == 0 ? 6 : level == 1 ? 8 : 12; float reach = level == 2 ? 3.6f : 3;
                     Shape("Carousel canopy", ride, PrimitiveType.Cylinder, Vector3.up * 2, new Vector3(w * .9f, .4f, w * .9f), sign);
-                    for (int i = 0; i < 6; i++) { float a = i * Mathf.PI / 3; Lamp("Ride seat", ride, new Vector3(Mathf.Cos(a) * 3, 0, Mathf.Sin(a) * 3), new Vector3(1, 1.2f, 1)); }
+                    for (int i = 0; i < seats; i++) { float a = i * 2 * Mathf.PI / seats; Lamp("Ride seat", ride, new Vector3(Mathf.Cos(a) * reach, 0, Mathf.Sin(a) * reach), new Vector3(1, 1.2f, 1)); }
+                    if (level >= 1) Shape("Canopy lights", ride, PrimitiveType.Cylinder, Vector3.up * 1.75f, new Vector3(w * .93f, .14f, w * .93f), Glow(WarmLight));
+                    if (level >= 2) { Shape("Upper canopy", ride, PrimitiveType.Cylinder, Vector3.up * 3, new Vector3(w * .55f, .35f, w * .55f), sign); Shape("Crown", ride, PrimitiveType.Sphere, Vector3.up * 3.9f, Vector3.one * 1.2f, Glow(sign)); }
                 }
                 else
                 {
-                    // Local Y rotation becomes world Z rotation for this wheel plane.
+                    // Level 1: eight cabins; 2: twelve on a bigger wheel; 3: sixteen cabins inside a ring of lights. Local Y rotation becomes world Z rotation for this wheel plane.
+                    int cabins = level == 0 ? 8 : level == 1 ? 12 : 16; float radius = level == 0 ? 5 : level == 1 ? 6 : 6.5f;
                     ride.localRotation = Quaternion.Euler(90, 0, 0); ride.localPosition = Vector3.up * 12;
-                    for (int i = 0; i < 12; i++) { float a = i * Mathf.PI / 6; var spoke = Lamp("Lit spoke", ride, Vector3.zero, new Vector3(.18f, .18f, 12)); spoke.localRotation = Quaternion.Euler(0, i * 30, 0); Shape("Cabin", ride, PrimitiveType.Sphere, new Vector3(Mathf.Sin(a) * 6, 0, Mathf.Cos(a) * 6), new Vector3(1.7f, 1.3f, 1.7f), sign); }
-                    Box("Wheel support", root, Vector3.up * 7, new Vector3(.8f, 14, .8f), new Color(.8f, .67f, .34f));
+                    for (int i = 0; i < cabins; i++)
+                    {
+                        float a = i * 2 * Mathf.PI / cabins; var spoke = Lamp("Lit spoke", ride, Vector3.zero, new Vector3(.18f, .18f, radius * 2)); spoke.localRotation = Quaternion.Euler(0, i * 360f / cabins, 0);
+                        Shape("Cabin", ride, PrimitiveType.Sphere, new Vector3(Mathf.Sin(a) * radius, 0, Mathf.Cos(a) * radius), new Vector3(1.7f, 1.3f, 1.7f), sign);
+                    }
+                    if (level >= 2) for (int i = 0; i < 32; i++) { float a = i * Mathf.PI / 16; Lamp("Rim light", ride, new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a)) * (radius + .9f), Vector3.one * .45f); }
+                    Box("Wheel support", root, Vector3.up * 7, new Vector3(level == 2 ? 1.1f : .8f, 14, level == 2 ? 1.1f : .8f), new Color(.8f, .67f, .34f));
                 }
                 movingRides.Add(ride);
             }
-            for (int i = 0; i <= b.Level; i++) Shape("Upgrade star", root, PrimitiveType.Sphere, new Vector3(-w / 3 + i * 1.3f, 4.9f + rise, -d / 4), Vector3.one * .65f, Glow(new Color(1, .77f, .2f)));
-            Caption(b.Definition.title + "  " + (b.Level + 1), root, root.position + new Vector3(0, 6 + rise, -d / 2 - 1), .38f);
+            Caption(b.Definition.title + " · Level " + (b.Level + 1), root, root.position + new Vector3(0, 6 + rise, -d / 2 - 1), .38f);
             for (int i = 0; i < b.Definition.queueSlots; i++)
             {
                 Vector3 marker = root.InverseTransformPoint(World(b.QueueCell(i)) + Vector3.up * .08f);

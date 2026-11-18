@@ -16,7 +16,7 @@ namespace Wintermarkt.Editor
     static class PlayModeShots
     {
         static readonly HashSet<string> done = new HashSet<string>();
-        static bool placed; static double endAt;
+        static bool placed; static double endAt, upgradedAt;
         static bool Has(string flag) { return System.Array.IndexOf(System.Environment.GetCommandLineArgs(), flag) >= 0; }
         static PlayModeShots() { if (Has("-shot")) EditorApplication.update += Tick; }
 
@@ -40,6 +40,18 @@ namespace Wintermarkt.Editor
                 cam.transform.position = new Vector3(-30, 0, -60) - cam.transform.forward * 220; cam.orthographicSize = 110; Save(cam, "park");
                 cam.transform.position = home; cam.orthographicSize = zoom;
             }
+            // Issue 44: upgrade the Punsch Hütte whenever coins allow, and picture every level and one mid-pop frame close up.
+            MarketBuilding punsch = null; foreach (var b in sim.Buildings) if (b.Definition.id == "punsch") punsch = b;
+            if (punsch != null && done.Contains("market") && !sim.Finished)
+            {
+                double since = EditorApplication.timeSinceStartup - upgradedAt;
+                if (upgradedAt > 0 && since > .2 && since < .5) Close(cam, game, punsch, "upgrade-pop-" + (punsch.Level + 1));
+                if (upgradedAt == 0 || since > 1.5)
+                {
+                    Close(cam, game, punsch, "level-" + (punsch.Level + 1));
+                    if (punsch.Level < punsch.Definition.levels.Length - 1 && sim.TryUpgrade(punsch.Id, out reason)) upgradedAt = EditorApplication.timeSinceStartup;
+                }
+            }
             MarketBuilding calling = null; foreach (var b in sim.Buildings) if (b.NeedsHelp) calling = b;
             int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
             if (calling != null && calling.HelpRemaining < 6) Save(cam, "help-call");
@@ -56,6 +68,14 @@ namespace Wintermarkt.Editor
 
             if (sim.Finished && endAt == 0) endAt = EditorApplication.timeSinceStartup + 4;   // let the fireworks start
             if (sim.Finished && EditorApplication.timeSinceStartup > endAt) { Save(cam, "ending"); EditorApplication.Exit(0); }
+        }
+
+        static void Close(Camera cam, MarketGame game, MarketBuilding b, string name)
+        {
+            if (done.Contains(name)) return;
+            Vector3 home = cam.transform.position; float zoom = cam.orthographicSize;
+            cam.transform.position = game.World.World(b.Origin) + Vector3.up * 3 - cam.transform.forward * 220; cam.orthographicSize = 13; Save(cam, name);
+            cam.transform.position = home; cam.orthographicSize = zoom;
         }
 
         static void Save(Camera cam, string name)
