@@ -24,4 +24,3 @@ Everything needed is in the repository; nothing has to be copied from the old ma
 6. **Checks.** `bash tools/test-market-core.sh` (rules), `bash tools/balance-bots.sh` (scripted players), `bash tools/unity.sh shots` (plays the evening at 8x with the editor closed and writes pictures to Logs/shots).
 7. **Where things stand.** `python3 tools/issue.py list` shows every open and planned piece of work; `docs/LINZ_WINTERMARKT_DESIGN.md`, section "How the numbers work", describes the rules as built; ASSET_CREDITS.md lists the third-party assets.
 8. **Claude Code, optional.** `claude plugin install unity@claude-plugins-official` adds Unity's skills. An assistant's chat history does not move with the repo: the tickets and the design spec are the record.
-
