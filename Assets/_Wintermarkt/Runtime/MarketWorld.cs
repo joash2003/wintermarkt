@@ -58,6 +58,28 @@ namespace Wintermarkt
             Material m; if (!glows.TryGetValue(c, out m)) { m = new Material(Resources.Load<Material>("Wintermarkt/Glow")); m.color = c * .2f; m.SetColor("_EmissionColor", c); glows[c] = m; }
             return m;
         }
+        Material kitMaterial; float kitUnit;
+        // A model from the CC0 Kenney Holiday Kit (Resources/Wintermarkt/Kit, see ASSET_CREDITS.md), scaled so one kit unit is `unit` metres.
+        // Returns null when the model is missing, and the caller draws its primitive version instead.
+        Transform Prop(string model, Transform parent, Vector3 localPosition, float unit, float yaw = 0)
+        {
+            var prefab = Resources.Load<GameObject>("Wintermarkt/Kit/" + model); if (!prefab) return null;
+            if (kitUnit == 0)
+            {
+                // The imported size depends on the FBX unit settings, so measure the one-unit-wide wall once.
+                var wall = Resources.Load<GameObject>("Wintermarkt/Kit/cabin-wall"); kitUnit = 1;
+                if (wall) { var probe = Instantiate(wall); var r = probe.GetComponentInChildren<Renderer>(); if (r) kitUnit = Mathf.Max(r.bounds.size.x, r.bounds.size.z); probe.SetActive(false); Destroy(probe); }
+            }
+            var holder = new GameObject(model).transform; holder.SetParent(parent, false);
+            holder.localPosition = localPosition; holder.localRotation = Quaternion.Euler(0, yaw, 0); holder.localScale = Vector3.one * unit / kitUnit;
+            foreach (var renderer in Instantiate(prefab, holder, false).GetComponentsInChildren<Renderer>())
+            {
+                // Every kit model uses the same colour-map texture: one matte material for all of them.
+                if (!kitMaterial) { kitMaterial = new Material(renderer.sharedMaterial); kitMaterial.SetFloat("_Glossiness", .08f); }
+                renderer.sharedMaterial = kitMaterial;
+            }
+            return holder;
+        }
         Transform Shape(string title, Transform parent, PrimitiveType shape, Vector3 position, Vector3 size, Material material)
         {
             var obj = GameObject.CreatePrimitive(shape); obj.name = title; obj.transform.SetParent(parent, false);
@@ -95,6 +117,10 @@ namespace Wintermarkt
                 var edge = Ground(park, "Snowy lawn", .08f, 1.02f, Snow); var kerb = Material(new Color(.42f, .42f, .46f));
                 for (int i = 0; i < edge.Length; i++) Segment("Park kerb", edge[i] - Vector3.up * .08f, edge[(i + 1) % edge.Length] - Vector3.up * .08f, .8f, 0, .4f, kerb);
             }
+            // The tree nearest the middle of the market is its decorated Christmas tree.
+            Cell star = new Cell(-1, -1); float nearest = float.MaxValue;
+            for (int y = 0; y < site.Height; y++) for (int x = 0; x < site.Width; x++)
+                if (site.Data.rows[y][x] == 'T' && World(new Cell(x, y)).sqrMagnitude < nearest) { nearest = World(new Cell(x, y)).sqrMagnitude; star = new Cell(x, y); }
             for (int y = 0; y < site.Height; y++)
             {
                 // Each row is drawn as runs of equal ground, so the full-size park stays a few hundred objects.
@@ -107,14 +133,22 @@ namespace Wintermarkt
                     else if (ground == '.') Box("Lawn", content, (a + b) / 2 + Vector3.up * .02f, new Vector3(b.x - a.x + CellSize, .1f, CellSize), new Color(.25f, .35f, .26f));
                     start = x;
                 }
-                for (int x = 0; x < site.Width; x++) if (site.Data.rows[y][x] == 'T') Tree(World(new Cell(x, y)));
+                for (int x = 0; x < site.Width; x++) if (site.Data.rows[y][x] == 'T') Tree(World(new Cell(x, y)), new Cell(x, y) == star);
             }
             foreach (var f in site.Data.features ?? new SiteFeature[0])
             {
                 var pts = new List<Vector3>(); for (int i = 0; i + 1 < f.points.Length; i += 2) pts.Add(new Vector3(f.points[i], 0, f.points[i + 1]));
                 if (f.kind == "street") Street(f, pts);
                 else if (f.kind == "plot") Plot(f);
-                else if (f.kind == "tree") foreach (var p in pts) Tree(p);
+                else if (f.kind == "tree")
+                    for (int i = 0; i < pts.Count; i++)
+                    {
+                        // Park scenery: firs, with a snowman, a bench or a reindeer beside some of them.
+                        Tree(pts[i]);
+                        if (i % 5 == 0) Prop(i % 2 == 0 ? "snowman" : "snowman-hat", content, pts[i] + new Vector3(4.5f, 0, 2), 3.2f, i * 70);
+                        if (i % 7 == 3) Prop("bench", content, pts[i] + new Vector3(-4.5f, 0, 3), 3.4f, i * 40);
+                        if (i % 11 == 5) Prop("reindeer", content, pts[i] + new Vector3(3.5f, 0, -4.5f), 3.2f, i * 55);
+                    }
                 else if (f.kind == "path") Strip("Path", pts, f.width, .1f, .08f, Material(new Color(.42f, .34f, .27f), .4f));
                 else if (f.kind == "building") Building(f, pts[0], pts[1]);
                 else if (f.kind == "label") Caption(f.name, content, pts[0] + Vector3.up * 3, 1.1f);
@@ -164,8 +198,9 @@ namespace Wintermarkt
             for (int i = 0; i < edge.Length; i++)
             {
                 if (Mathf.Abs(Vector3.Distance(new Vector3(f.points[i * 2], 0, f.points[i * 2 + 1]), gate) - f.width) > 3) continue;
-                Shape("Light post", content, PrimitiveType.Cylinder, edge[i] + Vector3.up * 1.7f, new Vector3(.3f, 1.8f, .3f), post);
-                if (last >= 0 && last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 3.4f, edge[i] + Vector3.up * 3.4f, .14f, 0, .14f, Glow(WarmLight));
+                if (Prop("lantern", content, edge[i], 3.2f, i * 90) == null) Shape("Light post", content, PrimitiveType.Cylinder, edge[i] + Vector3.up * 1.7f, new Vector3(.3f, 1.8f, .3f), post);
+                else Lamp("Lantern glow", content, edge[i] + Vector3.up * 4.7f, Vector3.one * .7f);
+                if (last >= 0 && last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 4.2f, edge[i] + Vector3.up * 4.2f, .14f, 0, .14f, Glow(WarmLight));
                 last = i;
             }
         }
@@ -185,17 +220,25 @@ namespace Wintermarkt
                         Lamp("Lit window", content, a + along * s + across * side * (f.width / 2 + .05f) + Vector3.up * h, new Vector3(.1f, 2, 2.4f)).rotation = Quaternion.LookRotation(along);
                     }
         }
-        void Tree(Vector3 p)
+        static readonly string[] Firs = { "tree-snow-a", "tree-snow-b", "tree-snow-c" };
+        // A snowy fir from the kit with a few fairy lights; `big` is the decorated Christmas tree of the market.
+        void Tree(Vector3 p, bool big = false)
         {
-            float s = .85f + Mathf.Repeat(p.x * 3.1f + p.z * 1.7f, 1) * .5f;
-            Shape("Trunk", content, PrimitiveType.Cylinder, p + Vector3.up * 2.5f * s, new Vector3(.7f, 2.5f * s, .7f), new Color(.2f, .15f, .11f));
-            Shape("Crown", content, PrimitiveType.Sphere, p + Vector3.up * 7 * s, new Vector3(7, 5.5f, 7) * s, new Color(.13f, .25f, .19f));
-            Shape("Snow cap", content, PrimitiveType.Sphere, p + Vector3.up * 8.6f * s, new Vector3(4.6f, 3, 4.6f) * s, Snow);
-            for (int i = 0; i < 8; i++)
+            float s = big ? 2 : .85f + Mathf.Repeat(p.x * 3.1f + p.z * 1.7f, 1) * .5f;
+            if (Prop(big ? "tree-decorated-snow" : Firs[(int)Mathf.Repeat(p.x * .7f + p.z * 1.3f, 3)], content, p, 4.6f * s, Mathf.Repeat(p.x * 37 + p.z * 11, 360)) == null)
             {
-                float angle = i * 2.4f + p.x;
-                Lamp("Fairy light", content, p + new Vector3(Mathf.Cos(angle) * 3.2f * s, (5.4f + i % 3 * 1.2f) * s, Mathf.Sin(angle) * 3.2f * s), Vector3.one * .6f);
+                Shape("Trunk", content, PrimitiveType.Cylinder, p + Vector3.up * 2.5f * s, new Vector3(.7f, 2.5f * s, .7f), new Color(.2f, .15f, .11f));
+                Shape("Crown", content, PrimitiveType.Sphere, p + Vector3.up * 7 * s, new Vector3(7, 5.5f, 7) * s, new Color(.13f, .25f, .19f));
+                Shape("Snow cap", content, PrimitiveType.Sphere, p + Vector3.up * 8.6f * s, new Vector3(4.6f, 3, 4.6f) * s, Snow);
             }
+            for (int i = 0; i < (big ? 16 : 6); i++)
+            {
+                float angle = i * 2.4f + p.x, height = (1.6f + i % 4 * 1.5f) * s, radius = (2.5f - i % 4 * .45f) * s;
+                Lamp("Fairy light", content, p + new Vector3(Mathf.Cos(angle) * radius, height, Mathf.Sin(angle) * radius), Vector3.one * (big ? .7f : .45f));
+            }
+            if (!big) return;
+            string[] gifts = { "present-a-cube", "present-b-round", "candy-cane-red", "present-a-cube", "nutcracker", "present-b-round", "sled" };
+            for (int i = 0; i < gifts.Length; i++) Prop(gifts[i], content, p + new Vector3(Mathf.Cos(i * .9f) * 6.5f, 0, Mathf.Sin(i * .9f) * 6.5f), 3.2f, i * 50);
         }
         Transform Tram()
         {
@@ -250,7 +293,10 @@ namespace Wintermarkt
                     person = new GameObject("Visitor " + v.Id).transform; person.SetParent(content); people[v.Id] = person;
                     Color coat = Color.HSVToRGB((v.Id * .137f) % 1, .6f, .7f);
                     Shape("Coat", person, PrimitiveType.Capsule, Vector3.up * 1.1f, new Vector3(.75f, .8f, .75f), coat);
-                    Shape("Hat", person, PrimitiveType.Sphere, Vector3.up * 2.05f, Vector3.one * .65f, new Color(.95f, .76f, .52f));
+                    Shape("Head", person, PrimitiveType.Sphere, Vector3.up * 2.05f, Vector3.one * .65f, new Color(.95f, .76f, .52f));
+                    Shape("Scarf", person, PrimitiveType.Cylinder, Vector3.up * 1.72f, new Vector3(.66f, .09f, .66f), Color.HSVToRGB((v.Id * .53f) % 1, .75f, .95f));
+                    Shape("Beanie", person, PrimitiveType.Sphere, Vector3.up * 2.28f, new Vector3(.7f, .45f, .7f), Color.HSVToRGB((v.Id * .31f) % 1, .7f, .85f));
+                    Shape("Pom-pom", person, PrimitiveType.Sphere, Vector3.up * 2.56f, Vector3.one * .24f, Color.white);
                 }
                 person.position = Vector3.Lerp(World(v.Position), World(v.NextCell), v.EdgeProgress);
                 if (v.NextCell != v.Position) person.rotation = Quaternion.LookRotation(World(v.NextCell) - World(v.Position));
@@ -275,7 +321,12 @@ namespace Wintermarkt
             Beasts();
             // Snow piles on queue spots (issue 28): one white mound per buried cell.
             foreach (Cell pile in Simulation.SnowPiles)
-                if (!mounds.ContainsKey(pile)) mounds[pile] = Shape("Snow pile", content, PrimitiveType.Sphere, World(pile) + Vector3.up * .5f, new Vector3(3.6f, 1.9f, 3.6f), Material(new Color(.97f, .98f, 1f)));
+                if (!mounds.ContainsKey(pile))
+                {
+                    var mound = Prop("snow-pile", content, World(pile) + Vector3.up * .12f, 3.4f, pile.x * 40);
+                    if (mound) mound.localScale = Vector3.Scale(mound.localScale, new Vector3(1, 4, 1));
+                    mounds[pile] = mound ? mound : Shape("Snow pile", content, PrimitiveType.Sphere, World(pile) + Vector3.up * .5f, new Vector3(3.6f, 1.9f, 3.6f), Material(new Color(.97f, .98f, 1f)));
+                }
             if (mounds.Count != Simulation.SnowPiles.Count)
                 foreach (Cell pile in new List<Cell>(mounds.Keys)) if (!((ICollection<Cell>)Simulation.SnowPiles).Contains(pile)) { Destroy(mounds[pile].gameObject); mounds.Remove(pile); }
             if (Simulation.Won) Fireworks(Time.unscaledDeltaTime);
@@ -376,22 +427,42 @@ namespace Wintermarkt
             var root = new GameObject(b.Definition.title + " level " + (b.Level + 1)).transform; root.SetParent(content); root.position = World(b.Origin) + new Vector3((b.Definition.width - 1) * CellSize / 2, 0, -(b.Definition.depth - 1) * CellSize / 2);
             float w = b.Definition.width * CellSize - .5f, d = b.Definition.depth * CellSize - .5f;
             Color sign = CategoryColor(b.Definition.category);
-            Box("Wooden hut", root, new Vector3(0, 1.8f, 0), new Vector3(w, 3.6f, d), Wood);
-            // Pitched roof with the ridge along the front; light strips trace the eaves and ridge like the real huts.
-            float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad);
-            for (int side = -1; side <= 1; side += 2)
+            // A stall is a one-tile log cabin from the kit: serving window with awning at the front, wreath at the back, snowy gabled roof.
+            // The kit's proportions are tall, so the cabin is squashed to about two thirds of its height.
+            float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), u = 5, squash = .65f;
+            bool isRide = b.Definition.id == "carousel" || b.Definition.id == "wheel";
+            var hut = new GameObject("Cabin").transform; hut.SetParent(root, false); hut.localScale = new Vector3(1, squash, 1);
+            if (!isRide && Prop("cabin-window-large", hut, Vector3.zero, u, 180) != null)
             {
-                Box("Roof", root, new Vector3(0, 3.6f + rise / 2, side * d / 4), new Vector3(w + .8f, .25f, d / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .6f), Snow).localRotation = Quaternion.Euler(side * pitch, 0, 0);
-                Lamp("Eave lights", root, new Vector3(0, 3.55f, side * (d / 2 + .3f)), new Vector3(w + .8f, .15f, .15f));
+                Prop("cabin-wall-wreath", hut, Vector3.zero, u); Prop("cabin-wall", hut, Vector3.zero, u, 90); Prop("cabin-wall", hut, Vector3.zero, u, 270);
+                for (int corner = 0; corner < 4; corner++) Prop("cabin-corner", hut, Vector3.zero, u, corner * 90);
+                Prop("cabin-wall-roof-center", hut, Vector3.up * u, u); Prop("cabin-wall-roof-center", hut, Vector3.up * u, u, 180);
+                Prop("cabin-roof-snow-point", hut, Vector3.up * u, u);
+                Prop("lights-colored", hut, new Vector3(0, u * .98f, -u * .68f), u);
+                // Each level dresses the stall up further.
+                if (b.Level >= 1) { Prop("lights-colored", hut, new Vector3(-u * .68f, u * .98f, 0), u, 90); Prop("lights-colored", hut, new Vector3(u * .68f, u * .98f, 0), u, 90); Prop("candy-cane-red", root, new Vector3(-u * .75f, 0, -u * .8f), 3.4f, 20); }
+                if (b.Level >= 2) { Prop("wreath-decorated", hut, new Vector3(-u * .1f, u * 1.25f, -u * .56f), u * .9f, 180); Prop("present-a-cube", root, new Vector3(u * .8f, 0, -u * .85f), 3.2f, 30); Prop("present-b-round", root, new Vector3(u * .95f, 0, -u * .45f), 2.8f, 70); }
+                rise = u * squash * 1.44f - .9f;
+                Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, u * squash + .75f, -u * .53f), new Vector3(u * .46f, .6f, .16f), Glow(sign));
             }
-            Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
-            Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .7f, .2f), Glow(sign));
+            else
+            {
+                Box("Wooden hut", root, new Vector3(0, 1.8f, 0), new Vector3(w, 3.6f, d), Wood);
+                // Pitched roof with the ridge along the front; light strips trace the eaves and ridge like the real huts.
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    Box("Roof", root, new Vector3(0, 3.6f + rise / 2, side * d / 4), new Vector3(w + .8f, .25f, d / 2 / Mathf.Cos(pitch * Mathf.Deg2Rad) + .6f), Snow).localRotation = Quaternion.Euler(side * pitch, 0, 0);
+                    Lamp("Eave lights", root, new Vector3(0, 3.55f, side * (d / 2 + .3f)), new Vector3(w + .8f, .15f, .15f));
+                }
+                Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
+                Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .7f, .2f), Glow(sign));
+            }
             Shape("Roof flag", root, PrimitiveType.Cube, new Vector3(0, 4.6f + rise, 0), Vector3.one * 1.1f, Glow(sign));
             // A warm pool of light on the snow in front of the counter.
             var pool = new GameObject("Counter light", typeof(Light)).GetComponent<Light>(); pool.transform.SetParent(root, false); pool.transform.localPosition = new Vector3(0, 3, -d / 2 - 3);
             pool.type = LightType.Point; pool.color = WarmLight; pool.range = 16; pool.intensity = 1.4f;
-            Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
-            if (b.Definition.id == "carousel" || b.Definition.id == "wheel")
+            if (hut.childCount == 0) Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
+            if (isRide)
             {
                 var ride = new GameObject("Ride motion").transform; ride.SetParent(root, false); ride.localPosition = Vector3.up * 5;
                 if (b.Definition.id == "carousel")
@@ -417,7 +488,7 @@ namespace Wintermarkt
             }
             return root;
         }
-        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); }
+        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); if (kitMaterial) Destroy(kitMaterial); }
 
         sealed class AmbientVehicle
         {
