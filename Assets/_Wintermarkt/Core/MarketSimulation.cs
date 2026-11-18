@@ -120,6 +120,11 @@ namespace Wintermarkt.Core
         /// <summary>Snowball hits that drive a Krampus off, from the event that started the run.</summary>
         public int KrampusHits { get; private set; }
         int krampusLeft, nextKrampus = 1; float krampusCountdown;
+        readonly HashSet<Cell> piles = new HashSet<Cell>();
+        /// <summary>Queue spots buried by the snowstorm, and how many the player has swept clear.</summary>
+        public IReadOnlyCollection<Cell> SnowPiles { get { return piles; } }
+        public int Swept { get; private set; }
+        int pilesLeft, pileCursor; float pileCountdown, pileInterval;
         float arrivalCountdown = 2;
         int nextBuilding = 1, nextVisitor = 1;
         long nextOrder = 1;
@@ -243,7 +248,7 @@ namespace Wintermarkt.Core
             if (b == null) { reason = "Select a building."; return false; }
             Coins += Refund(b); buildings.Remove(b);
             for (int y = 0; y < b.Definition.depth; y++) for (int x = 0; x < b.Definition.width; x++) occupied.Remove(new Cell(b.Origin.x + x, b.Origin.y + y));
-            for (int i = 0; i < b.Definition.queueSlots; i++) reserved.Remove(b.QueueCell(i));
+            for (int i = 0; i < b.Definition.queueSlots; i++) { reserved.Remove(b.QueueCell(i)); piles.Remove(b.QueueCell(i)); }
             foreach (var v in visitors)
                 if (v.Destination == b && v.State != VisitorState.Leaving && v.State != VisitorState.Gone) { v.Slot = -1; Continue(v); }
             reason = b.Definition.title + " removed."; return true;
@@ -251,7 +256,9 @@ namespace Wintermarkt.Core
 
         public int QueueCount(MarketBuilding b)
         { int count = 0; foreach (var v in visitors) if (v.Destination == b && v.State != VisitorState.Leaving && v.State != VisitorState.Gone) count++; return count; }
-        bool SlotTaken(MarketBuilding b, int slot)
+        // A queue spot under snow cannot be used until the player sweeps it (issue 28).
+        bool SlotTaken(MarketBuilding b, int slot) { return piles.Contains(b.QueueCell(slot)) || SlotInUse(b, slot); }
+        bool SlotInUse(MarketBuilding b, int slot)
         { foreach (var v in visitors) if (v.Destination == b && v.Slot == slot && v.State != VisitorState.Leaving && v.State != VisitorState.Gone) return true; return false; }
 
         public void Tick(float seconds)
@@ -321,13 +328,24 @@ namespace Wintermarkt.Core
             float elapsed = CurrentWave.seconds - Remaining; Upcoming = null;
             if (ActiveEvent != null && (EventRemaining -= dt) <= 0) { ActiveEvent = null; EventRemaining = 0; }
             if (burstLeft > 0 && (burstCountdown -= dt) <= 0) { if (visitors.Count < Settings.maxVisitors) SpawnVisitor(burstCategory); burstLeft--; burstCountdown = .6f; }
+            // While it storms, snow lands on one free queue spot after another, going round the stalls.
+            if (ActiveEvent != null && pilesLeft > 0 && buildings.Count > 0 && (pileCountdown -= dt) <= 0)
+            {
+                pileCountdown = .5f;
+                for (int n = 0; n < buildings.Count && pileCountdown < pileInterval; n++)
+                {
+                    var b = buildings[pileCursor++ % buildings.Count];
+                    for (int slot = b.Definition.queueSlots - 1; slot >= 0; slot--)
+                        if (!SlotTaken(b, slot)) { piles.Add(b.QueueCell(slot)); pilesLeft--; pileCountdown = pileInterval; break; }
+                }
+            }
             foreach (var e in Settings.events ?? new EventDefinition[0])
             {
                 if (e.wave != Wave || fired.Contains(e) || buildings.Count == 0) continue;
                 if (elapsed < e.at) { if (e.at - elapsed <= e.warnSeconds && (Upcoming == null || e.at < Upcoming.at)) { Upcoming = e; UpcomingIn = e.at - elapsed; } continue; }
                 fired.Add(e); LastEvent = e; EventCount++;
                 if (e.kind == "burst") { burstLeft += e.count; burstCategory = e.category; burstCountdown = 0; }
-                else if (e.kind == "storm") { ActiveEvent = e; EventRemaining = e.seconds; }
+                else if (e.kind == "storm") { ActiveEvent = e; EventRemaining = e.seconds; pilesLeft = e.count; pileInterval = e.count > 0 ? e.seconds / e.count : 0; pileCountdown = pileInterval; }
                 else if (e.kind == "krampus") { krampusLeft += e.count; KrampusHits = Math.Max(1, (int)e.factor); krampusCountdown = 0; }
                 else if (e.kind == "powercut") foreach (var b in buildings) if (b.ClosedRemaining <= 0) b.HelpRemaining = Settings.helpWindowSeconds * e.factor;
             }
@@ -365,6 +383,16 @@ namespace Wintermarkt.Core
                 }
             }
             krampuses.RemoveAll(k => k.Fleeing && k.RouteIndex >= k.Route.Count);
+        }
+
+        /// <summary>Sweeping at a cell clears the snow on it and on the cells next to it.</summary>
+        public bool TryClear(Cell cell, out string reason)
+        {
+            reason = "";
+            if (Paused || Finished) return false;
+            int cleared = piles.RemoveWhere(p => Apart(p, cell) <= 1);
+            if (cleared == 0) return false;
+            Swept += cleared; reason = piles.Count == 0 ? "All queue spots are clear again." : "Swept! " + piles.Count + " more under snow."; return true;
         }
 
         /// <summary>A snowball thrown at a cell: hits the nearest Krampus within two cells; enough hits drive it off through the gate.</summary>
