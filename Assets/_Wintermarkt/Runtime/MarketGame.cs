@@ -111,7 +111,7 @@ namespace Wintermarkt
             if (Simulation.Wave != lastWave)
             {
                 int done = Simulation.WaveResults[lastWave], needed = Simulation.Settings.waves[lastWave].target; lastWave = Simulation.Wave;
-                Message = (done >= needed ? "Star earned (" + done + "/" + needed + "). " : "No star (" + done + "/" + needed + "). ") + "Now: " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick();
+                Message = (done >= needed ? "Star earned (" + done + "/" + needed + "). " : "No star (" + done + "/" + needed + "). ") + "Day " + (lastWave + 1) + ": " + Simulation.CurrentWave.title + ". Send " + Simulation.CurrentWave.target + " visitors home happy."; PlayClick();
             }
             if (State == FestivalState.Playing && Simulation.Finished) { State = FestivalState.Results; HidePreview(); UI.Refresh(); return; }
             if (State != FestivalState.Playing) return;

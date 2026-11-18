@@ -36,6 +36,8 @@ namespace Wintermarkt
         readonly List<Transform> movingRides = new List<Transform>();
         readonly List<AmbientVehicle> traffic = new List<AmbientVehicle>();
         Transform content, preview, snow;
+        readonly List<Transform> sparks = new List<Transform>(); readonly List<Vector3> sparkSpeed = new List<Vector3>(); readonly List<float> sparkLife = new List<float>();
+        float fireworkClock; int fireworkCount;
         public MarketSimulation Simulation { get; private set; }
         public Vector3 World(Cell c) { return new Vector3((c.x - (Simulation.Site.Width - 1) * .5f) * CellSize, 0, ((Simulation.Site.Height - 1) * .5f - c.y) * CellSize); }
         public float CellSize { get { return Simulation.Site.Data.metersPerCell; } }
@@ -81,7 +83,7 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); movingRides.Clear(); traffic.Clear();
+            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -270,7 +272,29 @@ namespace Wintermarkt
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
             Beasts();
+            if (Simulation.Won) Fireworks(Time.unscaledDeltaTime);
             Snowfall(Simulation.ActiveEvent != null && Simulation.ActiveEvent.kind == "storm", dt);
+        }
+        // New Year's Eve: when the last day ends, rockets burst over the market for as long as the ending card is up.
+        void Fireworks(float dt)
+        {
+            if ((fireworkClock -= dt) <= 0)
+            {
+                fireworkClock = .45f; fireworkCount++;
+                Vector3 centre = World(Simulation.Site.Entrance) * .3f + new Vector3(Mathf.Sin(fireworkCount * 2.4f) * 45, 34 + fireworkCount % 3 * 7, Mathf.Cos(fireworkCount * 1.7f) * 35);
+                Color colour = Color.HSVToRGB(Mathf.Repeat(fireworkCount * .23f, 1), .75f, 1);
+                for (int i = 0; i < 16; i++)
+                {
+                    // Directions spread evenly over a sphere with the golden angle.
+                    float y = 1 - (i + .5f) / 8f, r = Mathf.Sqrt(1 - y * y), a = i * 2.4f;
+                    sparks.Add(Shape("Spark", content, PrimitiveType.Cube, centre, Vector3.one * .9f, Glow(colour))); sparkSpeed.Add(new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r) * 16); sparkLife.Add(1.3f);
+                }
+            }
+            for (int i = sparks.Count - 1; i >= 0; i--)
+            {
+                sparkLife[i] -= dt; sparkSpeed[i] += Vector3.down * 9 * dt; sparks[i].position += sparkSpeed[i] * dt; sparks[i].localScale = Vector3.one * Mathf.Max(.1f, sparkLife[i] * .7f);
+                if (sparkLife[i] <= 0) { Destroy(sparks[i].gameObject); sparks.RemoveAt(i); sparkSpeed.RemoveAt(i); sparkLife.RemoveAt(i); }
+            }
         }
         // The Krampus of the finale: a dark horned figure with glowing eyes; each snowball that hit it shows as a white ball above its head.
         void Beasts()

@@ -306,6 +306,9 @@ namespace Wintermarkt.Core
                     waveResults.Add(WaveHappy);
                     if (Wave + 1 >= waves.Length) Won = true;
                     else { Wave++; WaveHappy = 0; Remaining = CurrentWave.seconds; }
+                    // The Krampus run belongs to its day: whoever is still in the market runs off when the day ends.
+                    krampusLeft = 0;
+                    foreach (var k in krampuses) if (!k.Fleeing) { k.Fleeing = true; k.EdgeProgress = 0; k.RouteIndex = 0; k.Route = Site.Path(k.Position, Site.Entrance, occupied) ?? new List<Cell>(); }
                 }
                 RunKrampus(dt);
                 if (Reputation <= 0 && buildings.Count > 0) Failed = true;
