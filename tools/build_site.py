@@ -12,7 +12,7 @@ from pathlib import Path
 ORIGIN = (370, 90)     # Goethekreuzung crossing on the reference screenshot
 SCALE = 0.45           # metres per screenshot pixel, +-15%
 CELL = 4               # metres per grid cell, matches the stall footprints in market.json
-PLOT_RADIUS = 70       # metres from the Goethekreuzung entrance: only this corner of the park is the playable market (issue 21)
+PLOT_RADIUS = 105      # metres from the Goethekreuzung entrance: only this corner of the park is the playable market (issue 21)
 
 def P(px, py): return ((px - ORIGIN[0]) * SCALE, (ORIGIN[1] - py) * SCALE)
 def Ps(*pts): return [P(*p) for p in pts]
@@ -101,6 +101,8 @@ def build():
             if grid[gy][gx] in '.pT' and math.dist(centre(gx, gy), gate) > PLOT_RADIUS:
                 if grid[gy][gx] == 'T': scenery.append(centre(gx, gy))
                 grid[gy][gx] = '#'
+            # Inside the market most trees make way for stalls: two in three are cleared so the plot does not feel crammed.
+            elif grid[gy][gx] == 'T' and rng.random() < .66: grid[gy][gx] = '.'
     seen, todo = {(ex, ey)}, [(ex, ey)]
     while todo:
         x, y = todo.pop()

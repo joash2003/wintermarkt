@@ -177,7 +177,20 @@ namespace Wintermarkt
                         if (i % 7 == 3) Prop("bench", content, pts[i] + new Vector3(-4.5f, 0, 3), 3.4f, i * 40);
                         if (i % 11 == 5) Prop("reindeer", content, pts[i] + new Vector3(3.5f, 0, -4.5f), 3.2f, i * 55);
                     }
-                else if (f.kind == "path") Strip("Path", pts, f.width, .1f, .08f, Material(new Color(.42f, .34f, .27f), .4f));
+                else if (f.kind == "path")
+                {
+                    Strip("Path", pts, f.width, .1f, .08f, Material(new Color(.42f, .34f, .27f), .4f));
+                    // A lit lantern every 20 m, alternating sides, so the paths read as walks through a park at night.
+                    for (int i = 1, n = 0; i < pts.Count; i++)
+                    {
+                        Vector3 along = (pts[i] - pts[i - 1]).normalized, side = Vector3.Cross(Vector3.up, along);
+                        for (float s = 10; s < Vector3.Distance(pts[i - 1], pts[i]); s += 20, n++)
+                        {
+                            Vector3 p = pts[i - 1] + along * s + side * (n % 2 == 0 ? 1 : -1) * (f.width / 2 + 1.2f);
+                            if (Prop("lantern", content, p, 3, n * 90)) Lamp("Lantern glow", content, p + Vector3.up * 4.4f, Vector3.one * .65f);
+                        }
+                    }
+                }
                 else if (f.kind == "building") Building(f, pts[0], pts[1]);
                 else if (f.kind == "label") Caption(f.name, content, pts[0] + Vector3.up * 3, 1.1f);
                 else if (f.kind == "tram") traffic.Add(new AmbientVehicle(Tram(), pts, f.stopAt, 9, 6));
@@ -223,12 +236,24 @@ namespace Wintermarkt
         {
             var edge = Ground(f, "Market ground", .1f, 1.03f, new Color(.7f, .66f, .6f)); Vector3 gate = World(Simulation.Site.Entrance);
             var post = Material(new Color(.2f, .15f, .11f)); int last = -1;
+            // Patches of fresh snow break up the trodden ground of the market.
+            for (int i = 0; i < 46; i++)
+            {
+                Vector3 p = gate + new Vector3(Mathf.Sin(i * 2.4f), 0, Mathf.Cos(i * 2.4f)) * (12 + i * 2.1f);
+                if (Simulation.Site.Walkable(Grid(p))) Prop(i % 3 == 0 ? "snow-flat-large" : "snow-flat", content, p + Vector3.up * .12f, 4.5f + i % 4, i * 47);
+            }
             for (int i = 0; i < edge.Length; i++)
             {
                 if (Mathf.Abs(Vector3.Distance(new Vector3(f.points[i * 2], 0, f.points[i * 2 + 1]), gate) - f.width) > 3) continue;
                 if (Prop("lantern", content, edge[i], 3.2f, i * 90) == null) Shape("Light post", content, PrimitiveType.Cylinder, edge[i] + Vector3.up * 1.7f, new Vector3(.3f, 1.8f, .3f), post);
                 else Lamp("Lantern glow", content, edge[i] + Vector3.up * 4.7f, Vector3.one * .7f);
-                if (last >= 0 && last == i - 1) Segment("String of lights", edge[last] + Vector3.up * 4.2f, edge[i] + Vector3.up * 4.2f, .14f, 0, .14f, Glow(WarmLight));
+                if (last >= 0 && last == i - 1)
+                {
+                    // Coloured bulbs from the kit between the posts; the plain warm strip is the fallback.
+                    Vector3 span = edge[i] - edge[last];
+                    if (!Prop("lights-colored", content, (edge[last] + edge[i]) / 2 + Vector3.up * 3.6f, span.magnitude, Mathf.Atan2(span.x, span.z) * Mathf.Rad2Deg + 90))
+                        Segment("String of lights", edge[last] + Vector3.up * 4.2f, edge[i] + Vector3.up * 4.2f, .14f, 0, .14f, Glow(WarmLight));
+                }
                 last = i;
             }
         }
