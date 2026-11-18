@@ -1,0 +1,73 @@
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using Wintermarkt.Core;
+
+namespace Wintermarkt.Editor
+{
+    /// <summary>
+    /// Plays the whole evening at high speed and saves a picture of each moment to Logs/shots, so the look can be checked without a person at the mouse.
+    /// Run: bash tools/unity.sh shots   (the editor must not have this project open). It helps stalls, sweeps snow and throws snowballs like a player would.
+    /// It only proves that the evening runs and what it looks like; it says nothing about how the game feels.
+    /// </summary>
+    [InitializeOnLoad]
+    static class PlayModeShots
+    {
+        static readonly HashSet<string> done = new HashSet<string>();
+        static bool placed; static double endAt;
+        static bool Has(string flag) { return System.Array.IndexOf(System.Environment.GetCommandLineArgs(), flag) >= 0; }
+        static PlayModeShots() { if (Has("-shot")) EditorApplication.update += Tick; }
+
+        static void Tick()
+        {
+            if (EditorApplication.timeSinceStartup > 420) EditorApplication.Exit(1);   // never hang a terminal
+            if (!EditorApplication.isPlaying)
+            {
+                if (!EditorApplication.isPlayingOrWillChangePlaymode) { EditorSceneManager.OpenScene("Assets/_Wintermarkt/Scenes/Market.unity"); EditorApplication.isPlaying = true; }
+                return;
+            }
+            var game = Object.FindAnyObjectByType<MarketGame>(); if (!game || game.Simulation == null) return;
+            var cam = Camera.main; var sim = game.Simulation; Time.timeScale = 8; string reason;
+            // `-demo` (MarketGame) has placed a Punsch Hütte and a bakery; add a crafts stall so some visitors can be happy.
+            if (!placed) { placed = true; var e = sim.Site.Entrance; for (int d = 4; d < 14 && sim.Buildings.Count < 3; d++) for (int x = -d; x <= d && sim.Buildings.Count < 3; x++) sim.TryPlace("craft", new Cell(e.x + x, e.y + d), out reason); }
+
+            if (sim.Wave == 0 && sim.Remaining < 95 && !done.Contains("market"))
+            {
+                Vector3 home = cam.transform.position; float zoom = cam.orthographicSize; Save(cam, "market");
+                foreach (var v in sim.Visitors) if (v.State == VisitorState.Walking || v.State == VisitorState.Leaving) { cam.transform.position = game.World.World(v.Position) + Vector3.up * 1.5f - cam.transform.forward * 220; cam.orthographicSize = 7; Save(cam, "visitor"); break; }
+                cam.transform.position = new Vector3(-30, 0, -60) - cam.transform.forward * 220; cam.orthographicSize = 110; Save(cam, "park");
+                cam.transform.position = home; cam.orthographicSize = zoom;
+            }
+            MarketBuilding calling = null; foreach (var b in sim.Buildings) if (b.NeedsHelp) calling = b;
+            int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
+            if (calling != null && calling.HelpRemaining < 6) Save(cam, "help-call");
+            if (sim.Upcoming != null) Save(cam, "event-warning");
+            if (sim.ActiveEvent != null && sim.EventRemaining < sim.ActiveEvent.seconds - 8) Save(cam, "snowstorm");
+            if (sim.SnowPiles.Count >= 4) Save(cam, "snow-piles");
+            if (sim.LastEvent != null && sim.LastEvent.kind == "powercut" && calling != null && calling.HelpRemaining < 9) Save(cam, "power-cut");
+            if (hunting >= 2 && sim.Scared > 1) Save(cam, "krampus");
+
+            // Play like a person who is a little late: help near the end of the ring, sweep and throw every few frames.
+            foreach (var b in sim.Buildings) if (b.NeedsHelp && b.HelpRemaining < 4) sim.TryHelp(b.Id, out reason);
+            if (done.Contains("snow-piles") && Time.frameCount % 10 == 0) foreach (Cell pile in sim.SnowPiles) { sim.TryClear(pile, out reason); break; }
+            if (done.Contains("krampus") && Time.frameCount % 12 == 0) foreach (var k in sim.Krampuses) if (!k.Fleeing) { sim.TryHit(k.Position, out reason); break; }
+
+            if (sim.Finished && endAt == 0) endAt = EditorApplication.timeSinceStartup + 4;   // let the fireworks start
+            if (sim.Finished && EditorApplication.timeSinceStartup > endAt) { Save(cam, "ending"); EditorApplication.Exit(0); }
+        }
+
+        static void Save(Camera cam, string name)
+        {
+            if (!done.Add(name)) return;
+            // The HUD is a screen overlay, which a camera render does not include: draw it through the camera for the picture.
+            foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None)) { canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = cam; canvas.planeDistance = 2; }
+            Canvas.ForceUpdateCanvases();
+            var target = new RenderTexture(1600, 900, 24); cam.targetTexture = target; cam.Render();
+            RenderTexture.active = target; var picture = new Texture2D(1600, 900, TextureFormat.RGB24, false); picture.ReadPixels(new Rect(0, 0, 1600, 900), 0, 0); picture.Apply();
+            cam.targetTexture = null; RenderTexture.active = null;
+            Directory.CreateDirectory("Logs/shots"); File.WriteAllBytes("Logs/shots/" + name + ".png", picture.EncodeToPNG());
+        }
+    }
+}

@@ -42,6 +42,7 @@ A real accessible slide deck covers the current market design and required respo
 ## Work log
 
 - 17 Oct 2026: drafted a 15-slide v0.1; on 18 Oct trimmed it to a concise 9-slide editable deck. Open XML structure and ZIP integrity checks pass. Group roster confirmation, slide-service link, course submission and weekly evidence updates remain pending.
+- 2026-11-17: progress presentation given. Committed on 18 Nov: the 9-slide deck `docs/submission/Linz_Wintermarkt_Progress_2026-11-17.pptx`, its speaking script `Presentation_Script_v0.2.md` and the pictures used in it. The deck was generated with a one-off script that is not in the repo, so edit the slides directly. It describes the game as of 17 Nov midday (three acts, before help calls, events, the Krampus and the kit models) and is out of date for the next presentation. The professor's verdict on the day, as Joash reported it, was that this was not a game yet; issues 19 to 30 followed from that.
 
 ## Outcome
 

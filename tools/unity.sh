@@ -18,6 +18,8 @@ case "${1:-}" in
   data) exec "$unity_editor" -batchmode -nographics -quit -projectPath "$project_dir" -executeMethod Wintermarkt.Editor.WintermarktProjectBootstrap.ValidateData -logFile "$project_dir/Logs/wintermarkt-data.log" ;;
   test) exec "$unity_editor" -batchmode -nographics -projectPath "$project_dir" -runTests -testPlatform EditMode -testResults "$project_dir/Logs/wintermarkt-editmode.xml" -logFile "$project_dir/Logs/wintermarkt-editmode.log" ;;
   build) exec "$unity_editor" -batchmode -nographics -quit -projectPath "$project_dir" -executeMethod Wintermarkt.Editor.WintermarktProjectBootstrap.BuildRelease -logFile "$project_dir/Logs/wintermarkt-build.log" ;;
+  # Plays the evening at 8x and writes pictures to Logs/shots (needs a display, so no -nographics; close the editor first).
+  shots) exec "$unity_editor" -batchmode -projectPath "$project_dir" -shot -demo -logFile "$project_dir/Logs/wintermarkt-shots.log" ;;
   legacy-setup) exec "$unity_editor" -batchmode -nographics -quit -projectPath "$project_dir" -executeMethod EchoMaze.Editor.EchoMazeProjectBootstrap.Create -logFile "$project_dir/Logs/legacy-bootstrap.log" ;;
-  *) echo "Usage: bash tools/unity.sh setup|data|test|build|legacy-setup  (Unity: $unity_editor)" >&2; exit 2 ;;
+  *) echo "Usage: bash tools/unity.sh setup|data|test|build|shots|legacy-setup  (Unity: $unity_editor)" >&2; exit 2 ;;
 esac
