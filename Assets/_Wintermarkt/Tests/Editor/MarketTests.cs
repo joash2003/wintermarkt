@@ -3,6 +3,9 @@ namespace Wintermarkt.Tests
 {
     public sealed class MarketTests
     {
+        [Test] public void TapCooksABatchThatIsHandedOut() { MarketTestCases.TapCooksABatchThatIsHandedOut(); }
+        [Test] public void FullStallCannotBeTappedAndUpgradesGrowTheBatch() { MarketTestCases.FullStallCannotBeTappedAndUpgradesGrowTheBatch(); }
+        [Test] public void LaterDaysAreLessPatient() { MarketTestCases.LaterDaysAreLessPatient(); }
         [Test] public void SnowBuriesQueueSpotsUntilSwept() { MarketTestCases.SnowBuriesQueueSpotsUntilSwept(); }
         [Test] public void KrampusScaresAndIsDrivenOff() { MarketTestCases.KrampusScaresAndIsDrivenOff(); }
         [Test] public void BurstEventSpawnsVisitors() { MarketTestCases.BurstEventSpawnsVisitors(); }

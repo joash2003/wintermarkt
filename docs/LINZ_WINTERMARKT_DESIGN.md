@@ -43,7 +43,9 @@ The game is designed to be played once, for about ten minutes (decided 17 Nov 20
 - **Four days, one star each.** First Advent (120 s, 5 happy visitors for the star), Krampus night (150 s, 18, arrivals x1.3), Christmas Eve (180 s, 48, arrivals x1.6), New Year's Eve (150 s, 48, arrivals x1.3). A missed target costs the star but the season goes on. It ends early only if reputation falls to zero. The ending card gives a verdict by stars, and fireworks play when the last day ends.
 - **Happy visitor.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest. Only a visitor who got everything is happy.
 - **How a visit ends.** Got everything: happy. Something they wanted is not built: "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: "gave up", reputation -2.
-- **Stalls call for help.** A stall with a queue calls about every 25 s (more often in acts 2 and 3). Click it within 8 s: it serves twice as fast for 15 s and pays 5 coins. Miss it: it closes for 10 s. Every stall has its own timer, so a bigger market needs more of the player.
+- **Tap to cook (18 Nov, issue 32, a teammate's idea).** Nothing is served by itself. A tap on a stall cooks one batch: `capacity` portions in `serviceSeconds` (Punsch 3 in 8 s, bakery 3 in 10 s, crafts 2 in 12 s, carousel 4 in 12 s, wheel 6 in 16 s). The portions go to the queue without further clicks, 0.8 s each. A stall cannot be tapped while it cooks or while it is full. Upgrades add one or two portions to the batch and shorten the cooking. A white pulsing ball marks a stall with nothing left and people waiting, a growing green ball one that is cooking, and cubes on its front show the stock.
+- **Patience shrinks.** Visitors wait 35 s on First Advent, then 90 %, 80 % and 70 % of that on the following days.
+- **Calls to relight.** The regular help calls of issue 23 are switched off. In the power cut every stall calls: click it within 12 s or it closes for 10 s; a relit stall cooks twice as fast for 15 s.
 - **Events, one challenge per day.** First Advent: a full tram (6 visitors at once). Krampus night: the Krampus run. Christmas Eve: a school class (12 visitors who want only food, announced 20 s ahead) and a snowstorm (45 s, announced 15 s ahead: patience x0.6, everyone also wants a hot drink, and ten snow piles land on free queue spots). New Year's Eve: a packed last tram (10 visitors) and a power cut (every stall calls at once, 12 s to answer, no warning).
 - **Snow piles.** A queue spot under snow cannot be used. Holding the mouse button and moving over a pile sweeps it and the cells next to it clear.
 - **The Krampus run.** 50 s into Krampus night, announced 20 s ahead, four Krampus enter at the gate one after the other. Each walks to the nearest visitor and scares away everyone within two cells (reputation -0.5 each); visitors at a stall the player has just helped stay. A click on or near a Krampus throws a snowball; the third hit drives it off. Any still there run off when the day ends.
@@ -56,19 +58,19 @@ The game is designed to be played once, for about ten minutes (decided 17 Nov 20
 - **Capacity.** A building serves `capacity` visitors at once, each taking `serviceSeconds`. An upgrade raises capacity (1, 2, 3), shortens service and raises income.
 - **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too, so room has to be kept for them.
 
-Scripted players (`bash tools/balance-bots.sh`, 18 Nov 2026, these values, real site). They answer a help call after about 3 seconds and miss one in four, sweep one snow pile and throw one snowball a second, except the one marked otherwise. "Happy per day" is happy visitors against the star target:
+Scripted players (`bash tools/balance-bots.sh`, 18 Nov 2026, tap to cook, these values, real site). A bot has one mouse: at most two hand actions a second (relight, snowball, cook, sweep, in that order of urgency), except the one that keeps its hands off. "Happy per day" is happy visitors against the star target:
 
-| Strategy | Result | Happy per day | Happy | Wanted more | Gave up | Scared off | Krampus driven off |
-|---|---|---|---|---|---|---|---|
-| One stall, then nothing | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 107 | 5 | 2 | 4 |
-| Cheapest stall, repeatedly | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 184 | 0 | 4 | 4 |
-| Attractions only, no upgrades | 0 stars | 3/5, 16/18, 8/48, 8/48 | 35 | 172 | 60 | 9 | 4 |
-| Upgrade the busiest first | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 162 | 0 | 3 | 4 |
-| One of each, then upgrades | 4 stars | 7/5, 30/18, 77/48, 74/48 | 188 | 6 | 173 | 8 | 4 |
-| One of each, then upgrades, never helps, sweeps or throws | Closed on day 3 | 5/5, 4/18 | 9 | 6 | 32 | 44 | 0 |
-| One of each, then what visitors miss, duplicates when busy | 4 stars | 10/5, 24/18, 68/48, 76/48 | 178 | 39 | 187 | 7 | 4 |
+| Strategy | Result | Happy per day | Happy | Wanted more | Gave up | Batches cooked |
+|---|---|---|---|---|---|---|
+| One stall, then nothing | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 113 | 3 | 24 |
+| Cheapest stall, repeatedly | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 169 | 0 | 36 |
+| Attractions only, no upgrades | 3 stars | 4/5, 27/18, 57/48, 58/48 | 146 | 161 | 248 | 261 |
+| Upgrade the busiest first | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 156 | 0 | 22 |
+| One of each, then upgrades | 4 stars | 20/5, 50/18, 68/48, 75/48 | 213 | 6 | 277 | 173 |
+| One of each, then upgrades, hands off the mouse | Closed on day 2 | 0/5 | 0 | 0 | 40 | 0 |
+| One of each, then what visitors miss, duplicates when busy | 4 stars | 22/5, 28/18, 90/48, 93/48 | 233 | 37 | 297 | 220 |
 
-A one-sided market plays the whole season without a star; the two mixed strategies get all four; the same mixed strategy with idle hands loses its reputation and closes on day 3. These are bots, not people: they never miss a snowball, and the targets were set at about two thirds of the weaker mixed bot. No human playtest supports the numbers yet. Known weak points: well over a hundred visitors still give up in a four-star run; coins are left over once the plot is full; queue positions still do not move up (issue 14).
+Batches cooked in the two mixed runs: 173 and 220, about one tap every three seconds. A player who never taps serves nobody and closes on day 2. These are bots, not people; the star targets (5, 18, 48, 48) were not changed for tap to cook and are now easy for a bot. Known weak points: close to three hundred visitors still give up in a four-star run; a bot with attractions only now gets three stars, so variety matters less than before; nobody has tapped by hand.
 
 ## Placement and navigation
 
