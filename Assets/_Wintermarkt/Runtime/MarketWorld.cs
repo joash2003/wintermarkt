@@ -38,6 +38,7 @@ namespace Wintermarkt
         Transform content, preview, snow;
         readonly List<Transform> sparks = new List<Transform>(); readonly List<Vector3> sparkSpeed = new List<Vector3>(); readonly List<float> sparkLife = new List<float>();
         float fireworkClock; int fireworkCount;
+        readonly Dictionary<Cell, Transform> mounds = new Dictionary<Cell, Transform>();
         public MarketSimulation Simulation { get; private set; }
         public Vector3 World(Cell c) { return new Vector3((c.x - (Simulation.Site.Width - 1) * .5f) * CellSize, 0, ((Simulation.Site.Height - 1) * .5f - c.y) * CellSize); }
         public float CellSize { get { return Simulation.Site.Data.metersPerCell; } }
@@ -83,7 +84,7 @@ namespace Wintermarkt
         {
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
-            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); movingRides.Clear(); traffic.Clear();
+            buildings.Clear(); levels.Clear(); people.Clear(); marks.Clear(); shown.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -272,6 +273,11 @@ namespace Wintermarkt
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
             Beasts();
+            // Snow piles on queue spots (issue 28): one white mound per buried cell.
+            foreach (Cell pile in Simulation.SnowPiles)
+                if (!mounds.ContainsKey(pile)) mounds[pile] = Shape("Snow pile", content, PrimitiveType.Sphere, World(pile) + Vector3.up * .5f, new Vector3(3.6f, 1.9f, 3.6f), Material(new Color(.97f, .98f, 1f)));
+            if (mounds.Count != Simulation.SnowPiles.Count)
+                foreach (Cell pile in new List<Cell>(mounds.Keys)) if (!((ICollection<Cell>)Simulation.SnowPiles).Contains(pile)) { Destroy(mounds[pile].gameObject); mounds.Remove(pile); }
             if (Simulation.Won) Fireworks(Time.unscaledDeltaTime);
             Snowfall(Simulation.ActiveEvent != null && Simulation.ActiveEvent.kind == "storm", dt);
         }
@@ -292,7 +298,7 @@ namespace Wintermarkt
             }
             for (int i = sparks.Count - 1; i >= 0; i--)
             {
-                sparkLife[i] -= dt; sparkSpeed[i] += Vector3.down * 9 * dt; sparks[i].position += sparkSpeed[i] * dt; sparks[i].localScale = Vector3.one * Mathf.Max(.1f, sparkLife[i] * .7f);
+                sparkLife[i] -= dt; sparkSpeed[i] += Vector3.down * 9 * dt; sparks[i].position += sparkSpeed[i] * dt; sparks[i].localScale = Vector3.one * Mathf.Max(.2f, sparkLife[i] * 1.6f);
                 if (sparkLife[i] <= 0) { Destroy(sparks[i].gameObject); sparks.RemoveAt(i); sparkSpeed.RemoveAt(i); sparkLife.RemoveAt(i); }
             }
         }
