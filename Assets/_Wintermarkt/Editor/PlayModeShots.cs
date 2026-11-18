@@ -40,16 +40,26 @@ namespace Wintermarkt.Editor
                 cam.transform.position = new Vector3(-30, 0, -60) - cam.transform.forward * 220; cam.orthographicSize = 110; Save(cam, "park");
                 cam.transform.position = home; cam.orthographicSize = zoom;
             }
-            // Issue 44: upgrade the Punsch Hütte whenever coins allow, and picture every level and one mid-pop frame close up.
-            MarketBuilding punsch = null; foreach (var b in sim.Buildings) if (b.Definition.id == "punsch") punsch = b;
-            if (punsch != null && done.Contains("market") && !sim.Finished)
+            // Issue 44: upgrade the Punsch Hütte whenever coins allow, and picture every level and one mid-pop frame close up. Then the same for a carousel, then a wheel.
+            MarketBuilding punsch = null, carousel = null, wheel = null;
+            foreach (var b in sim.Buildings) { if (b.Definition.id == "punsch") punsch = b; else if (b.Definition.id == "carousel") carousel = b; else if (b.Definition.id == "wheel") wheel = b; }
+            var shown = wheel ?? carousel ?? punsch; string tag = shown == punsch ? "level-" : shown.Definition.id + "-";
+            if (shown != null && done.Contains("market") && !sim.Finished)
             {
                 double since = EditorApplication.timeSinceStartup - upgradedAt;
-                if (upgradedAt > 0 && since > .2 && since < .5) Close(cam, game, punsch, "upgrade-pop-" + (punsch.Level + 1));
+                if (upgradedAt > 0 && since > .2 && since < .5) Close(cam, game, shown, "upgrade-pop-" + (shown == punsch ? "" : tag) + (shown.Level + 1));
                 if (upgradedAt == 0 || since > 1.5)
                 {
-                    Close(cam, game, punsch, "level-" + (punsch.Level + 1));
-                    if (punsch.Level < punsch.Definition.levels.Length - 1 && sim.TryUpgrade(punsch.Id, out reason)) upgradedAt = EditorApplication.timeSinceStartup;
+                    Close(cam, game, shown, tag + (shown.Level + 1));
+                    if (shown.Level < shown.Definition.levels.Length - 1) { if (sim.TryUpgrade(shown.Id, out reason)) upgradedAt = EditorApplication.timeSinceStartup; }
+                    else if (wheel == null)
+                    {
+                        // An evening rarely affords a 260-coin carousel or a 480-coin wheel, so the coins are topped up through the private setter: this is a picture, not a playtest.
+                        // The wheel waits until enough visitors have been welcomed to unlock it.
+                        typeof(MarketSimulation).GetProperty("Coins").SetValue(sim, 1500);
+                        var e = sim.Site.Entrance; int had = sim.Buildings.Count; string next = carousel == null ? "carousel" : "wheel";
+                        for (int d = 4; d < 14 && sim.Buildings.Count == had; d++) for (int x = -d; x <= d && sim.Buildings.Count == had; x++) sim.TryPlace(next, new Cell(e.x + x, e.y + d), out reason);
+                    }
                 }
             }
             MarketBuilding calling = null; foreach (var b in sim.Buildings) if (b.NeedsHelp) calling = b;
@@ -74,7 +84,8 @@ namespace Wintermarkt.Editor
         {
             if (done.Contains(name)) return;
             Vector3 home = cam.transform.position; float zoom = cam.orthographicSize;
-            cam.transform.position = game.World.World(b.Origin) + Vector3.up * 3 - cam.transform.forward * 220; cam.orthographicSize = 13; Save(cam, name);
+            float cell = game.World.CellSize;   // the origin is the near-left cell; aim at the middle of the footprint
+            cam.transform.position = game.World.World(b.Origin) + new Vector3((b.Definition.width - 1) * cell / 2, 3, -(b.Definition.depth - 1) * cell / 2) - cam.transform.forward * 220; cam.orthographicSize = 13; Save(cam, name);
             cam.transform.position = home; cam.orthographicSize = zoom;
         }
 

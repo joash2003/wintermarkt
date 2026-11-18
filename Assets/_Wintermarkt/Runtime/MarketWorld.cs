@@ -36,6 +36,7 @@ namespace Wintermarkt
             }
         }
         readonly List<Transform> movingRides = new List<Transform>();
+        readonly List<Transform> gondolas = new List<Transform>();   // wheel cabins, kept upright while their wheel turns
         readonly List<AmbientVehicle> traffic = new List<AmbientVehicle>();
         Transform content, preview, snow;
         readonly List<Transform> sparks = new List<Transform>(); readonly List<Vector3> sparkSpeed = new List<Vector3>(); readonly List<float> sparkLife = new List<float>();
@@ -134,7 +135,7 @@ namespace Wintermarkt
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
             foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy();
-            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); popping.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); traffic.Clear();
+            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); popping.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); gondolas.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -397,6 +398,7 @@ namespace Wintermarkt
             var removed = new List<int>(); foreach (var pair in people) if (!active.Contains(pair.Key)) { Destroy(pair.Value.gameObject); removed.Add(pair.Key); }
             foreach (int id in removed) { people.Remove(id); Walker gone; if (walkers.TryGetValue(id, out gone)) { if (gone.graph.IsValid()) gone.graph.Destroy(); walkers.Remove(id); } }
             for (int i = movingRides.Count - 1; i >= 0; i--) { if (!movingRides[i]) { movingRides.RemoveAt(i); continue; } movingRides[i].Rotate(Vector3.up, 20 * dt, Space.Self); }
+            for (int i = gondolas.Count - 1; i >= 0; i--) { if (!gondolas[i]) gondolas.RemoveAt(i); else gondolas[i].rotation = Quaternion.identity; }
             foreach (var vehicle in traffic) vehicle.Tick(dt);
             Beasts();
             // Snow piles on queue spots (issue 28): one white mound per buried cell.
@@ -538,7 +540,7 @@ namespace Wintermarkt
             // Three levels, three buildings (issue 44): a low shed, the proper Hütte, then a bigger, taller grand Hütte. Dressing stays at the level-2 spots (e = 5).
             int level = b.Level; const float e = 5;
             float pitch = 28.6f, rise = d / 2 * Mathf.Tan(pitch * Mathf.Deg2Rad), u = 4.5f + .75f * level, squash = level == 0 ? .55f : level == 1 ? .65f : .8f;
-            bool isRide = b.Definition.id == "carousel" || b.Definition.id == "wheel";
+            bool carousel = b.Definition.id == "carousel", isRide = carousel || b.Definition.id == "wheel";
             var hut = new GameObject("Cabin").transform; hut.SetParent(root, false); hut.localScale = new Vector3(1, squash, 1);
             if (!isRide && Prop("cabin-window-large", hut, Vector3.zero, u, 180) != null)
             {
@@ -561,7 +563,7 @@ namespace Wintermarkt
                 rise = u * squash * 1.44f - .9f;
                 Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, u * squash + .75f, -u * .53f), new Vector3(u * (level == 2 ? .62f : .46f), level == 2 ? .8f : .6f, .16f), Glow(sign));
             }
-            else
+            else if (!isRide)
             {
                 Box("Wooden hut", root, new Vector3(0, 1.8f, 0), new Vector3(w, 3.6f, d), Wood);
                 // Pitched roof with the ridge along the front; light strips trace the eaves and ridge like the real huts.
@@ -573,36 +575,15 @@ namespace Wintermarkt
                 Lamp("Ridge lights", root, new Vector3(0, 3.75f + rise, 0), new Vector3(w + .8f, .15f, .15f));
                 Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.2f, -d / 2 - .3f), new Vector3(w * .8f, .7f, .2f), Glow(sign));
             }
-            Shape("Roof flag", root, PrimitiveType.Cube, new Vector3(0, 4.6f + rise, 0), Vector3.one * 1.1f, Glow(sign));
+            if (!isRide) Shape("Roof flag", root, PrimitiveType.Cube, new Vector3(0, 4.6f + rise, 0), Vector3.one * 1.1f, Glow(sign));
             // A warm pool of light on the snow in front of the counter.
             var pool = new GameObject("Counter light", typeof(Light)).GetComponent<Light>(); pool.transform.SetParent(root, false); pool.transform.localPosition = new Vector3(0, 3, -d / 2 - 3);
             pool.type = LightType.Point; pool.color = WarmLight; pool.range = 16; pool.intensity = 1.4f;
-            if (hut.childCount == 0) Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
+            if (hut.childCount == 0 && !isRide) Lamp("Lit counter", root, new Vector3(0, 2.1f, -d / 2 - .05f), new Vector3(w * .7f, 1.5f, .12f));
             if (isRide)
             {
-                var ride = new GameObject("Ride motion").transform; ride.SetParent(root, false); ride.localPosition = Vector3.up * 5;
-                if (b.Definition.id == "carousel")
-                {
-                    // Level 1: six seats under a plain canopy; 2: eight seats and a lit rim; 3: twelve seats, a second tier and a glowing crown.
-                    int seats = level == 0 ? 6 : level == 1 ? 8 : 12; float reach = level == 2 ? 3.6f : 3;
-                    Shape("Carousel canopy", ride, PrimitiveType.Cylinder, Vector3.up * 2, new Vector3(w * .9f, .4f, w * .9f), sign);
-                    for (int i = 0; i < seats; i++) { float a = i * 2 * Mathf.PI / seats; Lamp("Ride seat", ride, new Vector3(Mathf.Cos(a) * reach, 0, Mathf.Sin(a) * reach), new Vector3(1, 1.2f, 1)); }
-                    if (level >= 1) Shape("Canopy lights", ride, PrimitiveType.Cylinder, Vector3.up * 1.75f, new Vector3(w * .93f, .14f, w * .93f), Glow(WarmLight));
-                    if (level >= 2) { Shape("Upper canopy", ride, PrimitiveType.Cylinder, Vector3.up * 3, new Vector3(w * .55f, .35f, w * .55f), sign); Shape("Crown", ride, PrimitiveType.Sphere, Vector3.up * 3.9f, Vector3.one * 1.2f, Glow(sign)); }
-                }
-                else
-                {
-                    // Level 1: eight cabins; 2: twelve on a bigger wheel; 3: sixteen cabins inside a ring of lights. Local Y rotation becomes world Z rotation for this wheel plane.
-                    int cabins = level == 0 ? 8 : level == 1 ? 12 : 16; float radius = level == 0 ? 5 : level == 1 ? 6 : 6.5f;
-                    ride.localRotation = Quaternion.Euler(90, 0, 0); ride.localPosition = Vector3.up * 12;
-                    for (int i = 0; i < cabins; i++)
-                    {
-                        float a = i * 2 * Mathf.PI / cabins; var spoke = Lamp("Lit spoke", ride, Vector3.zero, new Vector3(.18f, .18f, radius * 2)); spoke.localRotation = Quaternion.Euler(0, i * 360f / cabins, 0);
-                        Shape("Cabin", ride, PrimitiveType.Sphere, new Vector3(Mathf.Sin(a) * radius, 0, Mathf.Cos(a) * radius), new Vector3(1.7f, 1.3f, 1.7f), sign);
-                    }
-                    if (level >= 2) for (int i = 0; i < 32; i++) { float a = i * Mathf.PI / 16; Lamp("Rim light", ride, new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a)) * (radius + .9f), Vector3.one * .45f); }
-                    Box("Wheel support", root, Vector3.up * 7, new Vector3(level == 2 ? 1.1f : .8f, 14, level == 2 ? 1.1f : .8f), new Color(.8f, .67f, .34f));
-                }
+                var ride = new GameObject("Ride motion").transform; ride.SetParent(root, false);
+                if (carousel) Carousel(ride, level, sign); else Wheel(root, ride, level, sign, w, d);
                 movingRides.Add(ride);
             }
             Caption(b.Definition.title + " · Level " + (b.Level + 1), root, root.position + new Vector3(0, 6 + rise, -d / 2 - 1), .38f);
@@ -612,6 +593,78 @@ namespace Wintermarkt
                 Box("Queue marker", root, marker, new Vector3(1.1f, .1f, 1.1f), new Color(.75f, .64f, .4f));
             }
             return root;
+        }
+        // A fairground galloper after Joash's reference picture (issue 44): a round deck with a red rim, chrome poles, the kit's reindeer instead of horses,
+        // a cream canopy with a white dome and warm bulbs along the eave. Level 1 is a small plain one with four animals; 2 is wider with six, painted
+        // panels and a gold finial; 3 is wider again with eight, lit poles, a second tier and a glowing crown. The whole thing turns.
+        void Carousel(Transform ride, int level, Color sign)
+        {
+            int animals = 4 + 2 * level; float radius = 4 + .6f * level, eave = 5, span = radius * 2 + .8f; Color gold = new Color(1, .8f, .25f);
+            Material cream = Material(new Color(.95f, .92f, .84f)), white = Material(new Color(.96f, .96f, .96f)), red = Material(new Color(.75f, .12f, .1f)), chrome = Material(new Color(.8f, .82f, .88f), .9f);
+            Shape("Deck", ride, PrimitiveType.Cylinder, Vector3.up * .3f, new Vector3(radius * 2, .3f, radius * 2), cream);
+            Shape("Deck rim", ride, PrimitiveType.Cylinder, Vector3.up * .55f, new Vector3(radius * 2 + .2f, .08f, radius * 2 + .2f), red);
+            Shape("Column", ride, PrimitiveType.Cylinder, Vector3.up * 3, new Vector3(1.6f, 2.4f, 1.6f), cream);
+            Shape("Column band", ride, PrimitiveType.Cylinder, Vector3.up * 2.2f, new Vector3(1.75f, .15f, 1.75f), level >= 1 ? Glow(WarmLight) : red);
+            for (int i = 0; i < animals; i++)
+            {
+                float a = i * 2 * Mathf.PI / animals; var spot = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (radius - 1.1f);
+                Shape("Pole", ride, PrimitiveType.Cylinder, spot + Vector3.up * 2.8f, new Vector3(.12f, 2.3f, .12f), chrome);
+                // Every other animal rides higher, as on a galloper; each faces the way the deck turns.
+                Prop("reindeer", ride, spot + Vector3.up * (i % 2 == 0 ? 1.1f : 1.5f), 2.4f, 180 - a * Mathf.Rad2Deg);
+                if (level >= 2) for (int k = 1; k <= 3; k++) Shape("Pole light", ride, PrimitiveType.Sphere, spot + Vector3.up * (1.5f + k), Vector3.one * .22f, Glow(WarmLight));
+            }
+            Shape("Frieze", ride, PrimitiveType.Cylinder, Vector3.up * (eave + .45f), new Vector3(span, .45f, span), cream);
+            Shape("Dome", ride, PrimitiveType.Sphere, Vector3.up * (eave + 1.3f), new Vector3(span - .2f, 2.6f, span - .2f), white);
+            int bulbs = 16 + 8 * level;
+            for (int i = 0; i < bulbs; i++) { float a = i * 2 * Mathf.PI / bulbs; Shape("Eave bulb", ride, PrimitiveType.Sphere, new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (span / 2) + Vector3.up * eave, Vector3.one * .28f, Glow(WarmLight)); }
+            if (level >= 1) for (int i = 0; i < animals * 2; i++)
+            {
+                // Painted panels around the frieze, in the ride's colour and a winter blue, each turned to face outwards.
+                float a = i * Mathf.PI / animals;
+                var panel = Shape("Painted panel", ride, PrimitiveType.Cube, new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (span / 2) + Vector3.up * (eave + .45f), new Vector3(1, .55f, .08f), i % 2 == 0 ? sign : new Color(.45f, .65f, .9f));
+                panel.localRotation = Quaternion.Euler(0, 90 - a * Mathf.Rad2Deg, 0);
+            }
+            if (level == 1) Shape("Finial", ride, PrimitiveType.Sphere, Vector3.up * (eave + 2.75f), Vector3.one * .6f, Material(gold, .6f));
+            if (level >= 2)
+            {
+                Shape("Upper frieze", ride, PrimitiveType.Cylinder, Vector3.up * (eave + 2.3f), new Vector3(span * .45f, .3f, span * .45f), cream);
+                Shape("Upper dome", ride, PrimitiveType.Sphere, Vector3.up * (eave + 2.9f), new Vector3(span * .42f, 1.6f, span * .42f), white);
+                Shape("Crown", ride, PrimitiveType.Sphere, Vector3.up * (eave + 3.9f), Vector3.one * .9f, Glow(gold));
+            }
+        }
+        // The Festival Wheel, in the same spirit (issue 44): a low platform with a ticket booth, two A-frames meeting at the axle, half-length spokes and gondolas
+        // that hang upright as the wheel turns (Synchronize resets their rotation). Level 1: eight gondolas on plain steel; 2: twelve on a bigger wheel with lit spokes,
+        // a ring of bulbs and a lit hub; 3: sixteen, bigger again, with lit frames, a second ring and a big glowing hub star. The wheel plane faces the camera.
+        void Wheel(Transform root, Transform ride, int level, Color sign, float w, float d)
+        {
+            int count = 8 + 4 * level; float radius = 5 + level, hub = 12; Color gold = new Color(1, .8f, .25f);
+            Material steel = Material(new Color(.55f, .58f, .62f), .5f);
+            Box("Platform", root, Vector3.up * .3f, new Vector3(w, .6f, d), new Color(.95f, .92f, .84f));
+            Box("Ticket booth", root, new Vector3(0, 1.9f, -d / 2 + 1.4f), new Vector3(3.2f, 2.6f, 2.4f), Wood);
+            Shape("Sign", root, PrimitiveType.Cube, new Vector3(0, 3.5f, -d / 2 + .2f), new Vector3(3.4f, .7f, .2f), Glow(sign));
+            for (int side = -1; side <= 1; side += 2) for (int leg = -1; leg <= 1; leg += 2)
+            {
+                Vector3 foot = new Vector3(leg * 4.5f, .6f, side * 1.4f), top = new Vector3(0, hub, side * 1.4f);
+                Shape("Frame", root, PrimitiveType.Cube, (foot + top) / 2, new Vector3(.45f, .45f, Vector3.Distance(foot, top)), level == 2 ? Glow(WarmLight) : steel).localRotation = Quaternion.LookRotation(top - foot);
+            }
+            Shape("Axle", root, PrimitiveType.Cylinder, Vector3.up * hub, new Vector3(.9f, 1.7f, .9f), steel).localRotation = Quaternion.Euler(90, 0, 0);
+            if (level >= 1) Shape("Hub light", root, PrimitiveType.Sphere, Vector3.up * hub, Vector3.one * (level == 2 ? 2.6f : 1.5f), Glow(gold));
+            // Local Y rotation becomes world Z rotation for this wheel plane.
+            ride.localRotation = Quaternion.Euler(90, 0, 0); ride.localPosition = Vector3.up * hub;
+            for (int i = 0; i < count; i++)
+            {
+                float a = i * 2 * Mathf.PI / count; var rim = new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a));
+                Shape("Spoke", ride, PrimitiveType.Cube, rim * radius / 2, new Vector3(.16f, .16f, radius), level >= 1 ? Glow(WarmLight) : steel).localRotation = Quaternion.Euler(0, i * 360f / count, 0);
+                var pivot = new GameObject("Gondola").transform; pivot.SetParent(ride, false); pivot.localPosition = rim * radius; gondolas.Add(pivot);
+                Box("Cabin roof", pivot, new Vector3(0, -.1f, 0), new Vector3(1.8f, .25f, 1.5f), new Color(.92f, .92f, .92f));
+                Box("Cabin", pivot, new Vector3(0, -.9f, 0), new Vector3(1.6f, 1.4f, 1.3f), sign);
+                Lamp("Window", pivot, new Vector3(0, -.8f, -.66f), new Vector3(1.2f, .6f, .06f));
+            }
+            for (int ring = 1; ring <= level; ring++) for (int i = 0; i < 16 + 8 * level; i++)
+            {
+                float a = i * 2 * Mathf.PI / (16 + 8 * level);
+                Lamp("Rim light", ride, new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a)) * (radius + .5f * ring), Vector3.one * .4f);
+            }
         }
         void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); foreach (var m in kitMaterials.Values) if (m) Destroy(m); foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy(); }
 
