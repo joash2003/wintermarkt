@@ -123,6 +123,8 @@ namespace Wintermarkt
             // During the Krampus run a click near a Krampus throws a snowball, whatever else the player was doing.
             string thrown;
             if (Input.GetMouseButtonDown(0) && Simulation.Krampuses.Count > 0 && Simulation.TryHit(cell, out thrown)) { Message = thrown; PlayClick(); World.Synchronize(0); return; }
+            // Holding the button and moving over snow sweeps it off the queue spots.
+            if (Input.GetMouseButton(0) && Simulation.SnowPiles.Count > 0 && Simulation.TryClear(cell, out thrown)) { Message = thrown; PlayClick(); World.Synchronize(0); return; }
             if (BuildChoice != null)
             {
                 string reason; bool valid = Simulation.CanPlace(BuildChoice, cell, out reason); Message = reason;

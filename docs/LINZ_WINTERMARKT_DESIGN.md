@@ -38,14 +38,15 @@ A new ride increases attraction but consumes space and money. An upgraded pastry
 
 ## How the numbers work (17 Nov 2026)
 
-The game is designed to be played once, for about ten minutes (decided 17 Nov 2026): one evening in three acts. This is what the simulation calculates. The values are in `Resources/Wintermarkt/market.json`.
+The game is designed to be played once, for about ten minutes (decided 17 Nov 2026): four short days of one market season (18 Nov, issue 27). This is what the simulation calculates. The values are in `Resources/Wintermarkt/market.json`.
 
-- **Three acts, one star each.** Afternoon (150 s, 6 happy visitors for the star), Evening rush (240 s, 35, arrivals x1.6), Closing time (210 s, 60, arrivals x1.2). A missed target costs the star but the evening goes on. It ends early only if reputation falls to zero. The ending card gives a verdict by stars.
+- **Four days, one star each.** First Advent (120 s, 5 happy visitors for the star), Krampus night (150 s, 18, arrivals x1.3), Christmas Eve (180 s, 48, arrivals x1.6), New Year's Eve (150 s, 48, arrivals x1.3). A missed target costs the star but the season goes on. It ends early only if reputation falls to zero. The ending card gives a verdict by stars, and fireworks play when the last day ends.
 - **Happy visitor.** Every visitor arrives wanting two or three different categories (drinks, food, crafts, rides, landmark), in a fixed repeating pattern from the categories that are unlocked. They visit one building per wish, each time the one where queue plus walk is shortest. Only a visitor who got everything is happy.
 - **How a visit ends.** Got everything: happy. Something they wanted is not built: "wanted more", reputation -0.5, and the HUD names the category visitors miss most. Waited over 35 s, or every queue for what they want is full: "gave up", reputation -2.
 - **Stalls call for help.** A stall with a queue calls about every 25 s (more often in acts 2 and 3). Click it within 8 s: it serves twice as fast for 15 s and pays 5 coins. Miss it: it closes for 10 s. Every stall has its own timer, so a bigger market needs more of the player.
-- **Events.** Act 1: a full tram (6 visitors at once). Act 2: a school class (12 visitors who want only food, announced 20 s ahead), a snowstorm (45 s: patience x0.6 and everyone also wants a hot drink, announced 15 s ahead), a power cut (every stall calls at once, 12 s to answer, no warning). Act 3: a packed last tram (10 visitors), then the finale.
-- **Finale: the Krampus run.** 100 s into act 3, announced 20 s ahead, five Krampus enter at the gate one after the other. Each walks to the nearest visitor and scares away everyone within two cells (reputation -0.5 each); visitors at a stall the player has just helped stay. A click on or near a Krampus throws a snowball; the third hit drives it off.
+- **Events, one challenge per day.** First Advent: a full tram (6 visitors at once). Krampus night: the Krampus run. Christmas Eve: a school class (12 visitors who want only food, announced 20 s ahead) and a snowstorm (45 s, announced 15 s ahead: patience x0.6, everyone also wants a hot drink, and ten snow piles land on free queue spots). New Year's Eve: a packed last tram (10 visitors) and a power cut (every stall calls at once, 12 s to answer, no warning).
+- **Snow piles.** A queue spot under snow cannot be used. Holding the mouse button and moving over a pile sweeps it and the cells next to it clear.
+- **The Krampus run.** 50 s into Krampus night, announced 20 s ahead, four Krampus enter at the gate one after the other. Each walks to the nearest visitor and scares away everyone within two cells (reputation -0.5 each); visitors at a stall the player has just helped stay. A click on or near a Krampus throws a snowball; the third hit drives it off. Any still there run off when the day ends.
 - **On the map.** Each category has one colour (sign and flag on the building, swatch in the build menu). A visitor carries one lit cube per remaining wish, a gold ball when leaving happy and a red bar when they gave up. A calling stall shows a yellow ball with a shrinking red ring.
 - **Space.** Only the corner within 70 m of the Goethekreuzung entrance is the market: 224 buildable cells of 4 m, minus trees and paths. A stall needs 4 cells plus 4 for its queue, the carousel 9 + 6, the wheel 12 + 8. A building can be removed for half of what was spent on it.
 - **Coins.** You start with 400, enough for the three stalls. A visitor pays the building's `income` each time a service finishes (4 to 15 coins).
@@ -55,19 +56,19 @@ The game is designed to be played once, for about ten minutes (decided 17 Nov 20
 - **Capacity.** A building serves `capacity` visitors at once, each taking `serviceSeconds`. An upgrade raises capacity (1, 2, 3), shortens service and raises income.
 - **Unlocks.** The carousel unlocks after 25 arrivals and the wheel after 80. From then on some visitors want a ride or the landmark too, so room has to be kept for them.
 
-Scripted players (`bash tools/balance-bots.sh`, 17 Nov 2026, these values, real site). They answer a help call after about 3 seconds and miss one in four, except the one marked "never helps". "Happy per act" is happy visitors against the star target:
+Scripted players (`bash tools/balance-bots.sh`, 18 Nov 2026, these values, real site). They answer a help call after about 3 seconds and miss one in four, sweep one snow pile and throw one snowball a second, except the one marked otherwise. "Happy per day" is happy visitors against the star target:
 
-| Strategy | Result | Happy per act | Arrived | Happy | Wanted more | Gave up | Calls helped |
+| Strategy | Result | Happy per day | Happy | Wanted more | Gave up | Scared off | Krampus driven off |
 |---|---|---|---|---|---|---|---|
-| One stall, then nothing | 0 stars | 0/6, 0/35, 0/60 | 112 | 0 | 105 | 6 | 16/21 |
-| Cheapest stall, repeatedly | 0 stars | 0/6, 0/35, 0/60 | 191 | 0 | 190 | 0 | 65/81 |
-| Attractions only, no upgrades | 0 stars | 3/6, 18/35, 7/60 | 249 | 28 | 152 | 60 | 90/102 |
-| Upgrade the busiest first | 0 stars | 0/6, 0/35, 0/60 | 166 | 0 | 165 | 0 | 40/45 |
-| One of each, then upgrades | 3 stars | 9/6, 76/35, 103/60 | 396 | 188 | 6 | 179 | 98/104 |
-| One of each, then upgrades, never helps | Closed in act 2 | 8/6 | 76 | 10 | 4 | 46 | 0/14 |
-| One of each, then what visitors miss, duplicates when busy | 3 stars | 13/6, 61/35, 130/60 | 451 | 204 | 37 | 182 | 121/130 |
+| One stall, then nothing | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 107 | 5 | 2 | 4 |
+| Cheapest stall, repeatedly | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 184 | 0 | 4 | 4 |
+| Attractions only, no upgrades | 0 stars | 3/5, 16/18, 8/48, 8/48 | 35 | 172 | 60 | 9 | 4 |
+| Upgrade the busiest first | 0 stars | 0/5, 0/18, 0/48, 0/48 | 0 | 162 | 0 | 3 | 4 |
+| One of each, then upgrades | 4 stars | 7/5, 30/18, 77/48, 74/48 | 188 | 6 | 173 | 8 | 4 |
+| One of each, then upgrades, never helps, sweeps or throws | Closed on day 3 | 5/5, 4/18 | 9 | 6 | 32 | 44 | 0 |
+| One of each, then what visitors miss, duplicates when busy | 4 stars | 10/5, 24/18, 68/48, 76/48 | 178 | 39 | 187 | 7 | 4 |
 
-A one-sided market plays the whole evening without a star; the two mixed strategies get all three; the same mixed strategy without helping the stalls loses its reputation and closes in act 2. These are bots, not people, and the targets were set from their results: no human playtest supports the numbers yet. Known weak points: well over a hundred visitors still give up in a three-star run, so the evening rush overloads even a full plot; coins are left over once the plot is full; queue positions still do not move up (issue 14). The bot table above was run before the finale was added; with it the two mixed strategies still get 3 stars, drive off all five Krampus and lose 18 to 24 visitors to them, but a bot never misses a snowball.
+A one-sided market plays the whole season without a star; the two mixed strategies get all four; the same mixed strategy with idle hands loses its reputation and closes on day 3. These are bots, not people: they never miss a snowball, and the targets were set at about two thirds of the weaker mixed bot. No human playtest supports the numbers yet. Known weak points: well over a hundred visitors still give up in a four-star run; coins are left over once the plot is full; queue positions still do not move up (issue 14).
 
 ## Placement and navigation
 

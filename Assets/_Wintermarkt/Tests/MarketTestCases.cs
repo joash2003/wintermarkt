@@ -275,6 +275,18 @@ namespace Wintermarkt.Tests
             int scared = sim.Scared; sim.Tick(20);
             Require(sim.Krampuses.Count == 0 && sim.Scared == scared, "A fleeing Krampus leaves the market and scares nobody");
         }
-        public static Action[] All { get { return new Action[] { KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static void SnowBuriesQueueSpotsUntilSwept()
+        {
+            var sim = Create(); string reason; sim.Settings.baseArrivalSeconds = 6; sim.Settings.minArrivalSeconds = 6; sim.Settings.buildings[0].levels[0].serviceSeconds = 200;
+            sim.Settings.events = new[] { new EventDefinition { wave = 0, at = 0, seconds = 6, kind = "storm", title = "Snowstorm", count = 3 } };
+            sim.TryPlace("stall", new Cell(2, 2), out reason);
+            sim.Tick(7); Require(sim.SnowPiles.Count == 3 && sim.Visitors.Count == 1 && sim.Abandoned == 0, "The storm must bury the three free queue spots, never the one in use");
+            sim.Tick(2); Require(sim.Abandoned == 1, "With every free spot under snow the next visitor finds no place");
+            Require(!sim.TryClear(new Cell(8, 7), out reason) && sim.SnowPiles.Count == 3, "Sweeping far from the snow does nothing");
+            for (int i = 0; i < 3 && sim.SnowPiles.Count > 0; i++) { Cell pile = default(Cell); foreach (Cell c in sim.SnowPiles) pile = c; Require(sim.TryClear(pile, out reason), reason); }
+            Require(sim.SnowPiles.Count == 0 && sim.Swept == 3, "Sweeping removes the snow and is counted");
+            sim.Tick(6); Require(sim.Abandoned == 1 && sim.Visitors.Count == 2, "A swept spot can be queued on again");
+        }
+        public static Action[] All { get { return new Action[] { SnowBuriesQueueSpotsUntilSwept, KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

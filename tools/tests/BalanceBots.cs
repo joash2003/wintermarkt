@@ -39,6 +39,8 @@ static class BalanceBots
             while (!s.Finished) {
                 // A person notices a call after about 3 seconds and misses one in four; strategies marked "never helps" ignore them.
                 if (!pair.Key.Contains("never helps")) foreach (var b in s.Buildings) if (b.NeedsHelp && b.HelpRemaining <= s.Settings.helpWindowSeconds - 3 && (b.Id + s.Helped + s.MissedHelp) % 4 != 0) { string why; s.TryHelp(b.Id, out why); }
+                // One sweep a second at one snow pile.
+                if (!pair.Key.Contains("never helps")) foreach (Cell pile in s.SnowPiles) { string swept; s.TryClear(pile, out swept); break; }
                 // One snowball a second at the first Krampus still hunting.
                 if (!pair.Key.Contains("never helps")) foreach (var k in s.Krampuses) if (!k.Fleeing) { string hit; s.TryHit(k.Position, out hit); break; }
                 pair.Value(s); s.Tick(1); }

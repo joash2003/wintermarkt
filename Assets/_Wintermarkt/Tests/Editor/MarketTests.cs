@@ -3,6 +3,7 @@ namespace Wintermarkt.Tests
 {
     public sealed class MarketTests
     {
+        [Test] public void SnowBuriesQueueSpotsUntilSwept() { MarketTestCases.SnowBuriesQueueSpotsUntilSwept(); }
         [Test] public void KrampusScaresAndIsDrivenOff() { MarketTestCases.KrampusScaresAndIsDrivenOff(); }
         [Test] public void BurstEventSpawnsVisitors() { MarketTestCases.BurstEventSpawnsVisitors(); }
         [Test] public void StormShortensPatience() { MarketTestCases.StormShortensPatience(); }
