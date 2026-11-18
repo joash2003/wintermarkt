@@ -49,6 +49,11 @@ namespace Wintermarkt.Editor
             if (sim.LastEvent != null && sim.LastEvent.kind == "powercut" && calling != null && calling.HelpRemaining < 9) Save(cam, "power-cut");
             if (hunting >= 2 && sim.Scared > 1) Save(cam, "krampus");
 
+            MarketBuilding empty = null, cooking = null;
+            foreach (var b in sim.Buildings) { if (b.CookRemaining > 0 && b.CookRemaining < b.Stats.serviceSeconds * .5f) cooking = b; if (b.Stock == 0 && b.CookRemaining <= 0 && sim.QueueCount(b) > 1) empty = b; }
+            if (empty != null) Save(cam, "tap-me");
+            if (cooking != null && done.Contains("tap-me")) Save(cam, "cooking");
+            if (Time.frameCount % 6 == 0) foreach (var b in sim.Buildings) if (b.Stock == 0 && b.CookRemaining <= 0 && sim.QueueCount(b) > 0 && sim.TryCook(b.Id, out reason)) break;
             // Play like a person who is a little late: help near the end of the ring, sweep and throw every few frames.
             foreach (var b in sim.Buildings) if (b.NeedsHelp && b.HelpRemaining < 4) sim.TryHelp(b.Id, out reason);
             if (done.Contains("snow-piles") && Time.frameCount % 10 == 0) foreach (Cell pile in sim.SnowPiles) { sim.TryClear(pile, out reason); break; }
