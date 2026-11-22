@@ -2,7 +2,7 @@
 type: bug
 priority: medium
 created: 2026-11-18
-assignee:
+assignee: Joash Johnson Samuel
 branch:
 ---
 
