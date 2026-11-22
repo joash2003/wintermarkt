@@ -2,7 +2,7 @@
 type: chore
 priority: high
 created: 2026-11-18
-assignee:
+assignee: Farhad Arezo
 branch:
 ---
 

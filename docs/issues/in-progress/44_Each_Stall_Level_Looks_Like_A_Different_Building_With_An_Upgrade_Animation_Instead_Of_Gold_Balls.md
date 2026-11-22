@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-18
-assignee: Joash Johnson
+assignee: Joash Johnson Samuel
 branch: 44-stall-levels-look-different
 ---
 

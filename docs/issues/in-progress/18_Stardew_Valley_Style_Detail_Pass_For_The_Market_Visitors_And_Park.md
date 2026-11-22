@@ -2,7 +2,7 @@
 type: feature
 priority: medium
 created: 2026-11-17
-assignee:
+assignee: Alibek Abylkasymov
 branch: 18-kit-detail
 ---
 

@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-17
-assignee:
+assignee: Joash Johnson Samuel
 branch: 19-multi-stop-visitors
 ---
 

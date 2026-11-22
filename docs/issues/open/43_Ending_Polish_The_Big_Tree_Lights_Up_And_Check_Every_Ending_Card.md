@@ -2,7 +2,7 @@
 type: feature
 priority: low
 created: 2026-11-18
-assignee:
+assignee: Alibek Abylkasymov
 branch:
 ---
 
