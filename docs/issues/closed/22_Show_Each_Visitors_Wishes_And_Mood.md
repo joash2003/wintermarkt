@@ -4,6 +4,7 @@ priority: high
 created: 2026-11-17
 assignee: Alibek Abylkasymov
 branch: 22-visible-wishes
+closed: 2026-11-22
 ---
 
 # 22 — Show each visitor's wishes and mood
@@ -18,10 +19,10 @@ The player can read each visitor's remaining wishes and how they left directly o
 
 ## Acceptance criteria
 
-- [ ] Each category has one colour, used for the building sign and for the wish markers.
+- [x] Each category has one colour, used for the building sign and for the wish markers.
 - [ ] ~~A visitor shows one marker per remaining wish; a visitor leaving shows whether they were happy or gave up.~~ Dropped on 18 Nov 2026: Joash does not want markers above visitors.
-- [ ] The build menu shows the category colour of each building.
-- [ ] `MarketVisitor.Mood` is set by the simulation and covered by a core test.
+- [x] The build menu shows the category colour of each building.
+- [x] `MarketVisitor.Mood` is set by the simulation and covered by a core test.
 
 ## Tasks
 
@@ -38,4 +39,4 @@ The player can read each visitor's remaining wishes and how they left directly o
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: one colour per category on the stall and as a swatch on the build-menu button, and `MarketVisitor.Mood` with the MoodIsRecorded core test (2b145db, 03ef4c2). Pictures from `bash tools/unity.sh shots` on 22 Nov 2026 (Windows, Unity 6000.3.25f1, main at 31dc71e), kept in docs/submission/assets/shots-2026-11-22/. market.png shows the swatches and the coloured stalls. Dropped: the markers above visitors, at Joash's decision of 18 Nov. Nothing left to do here.
