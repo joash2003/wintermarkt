@@ -4,6 +4,7 @@ priority: high
 created: 2026-10-17
 assignee: Joash Johnson Samuel
 branch:
+closed: 2026-11-22
 ---
 
 # 8 — Build the market vertical slice
@@ -52,4 +53,4 @@ In Unity, place a stall, watch a visitor walk to it and leave after service, ear
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: the market runs in Unity. First real run on 20 Oct (c6bad0c: import, 24 EditMode tests, macOS build, the built app), then the 17 and 18 Nov work on top. Pictures from `bash tools/unity.sh shots` on 22 Nov 2026 (Windows, Unity 6000.3.25f1, main at 31dc71e), kept in docs/submission/assets/shots-2026-11-22/. market.png shows three stalls with queues, visitors, coins, reputation, the HUD and the build menu; the upgrade-pop-*.png series in Logs/shots shows an upgrade. Left out: the original 32 x 36 blockout and the single-stall economy were replaced by the Volksgarten plot (issues 11, 21, 30) and the tap-to-cook loop (issue 32).
