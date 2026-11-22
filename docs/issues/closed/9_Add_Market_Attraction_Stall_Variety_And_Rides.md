@@ -4,6 +4,7 @@ priority: high
 created: 2026-10-17
 assignee: Farhad Arezo
 branch:
+closed: 2026-11-22
 ---
 
 # 9 — Add market attraction, stall variety and rides
@@ -59,4 +60,4 @@ Players can place and upgrade all proposed stall/ride categories, understand que
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: five categories (Punsch Huette, Sweet Bakery, Christmas Crafts, Winter Carousel, Festival Wheel) with three levels each, arrivals from attraction and reputation, queue patience, four days with a results card (issues 19, 23, 24, 27, 32, 44 built on this). Pictures from `bash tools/unity.sh shots` on 22 Nov 2026 (Windows, Unity 6000.3.25f1, main at 31dc71e), kept in docs/submission/assets/shots-2026-11-22/. carousel-3.png shows the carousel at level 3, ending.png a finished evening with four stars; krampus.png in Logs/shots shows all five at level 3. Left out: task 5, comparing attraction purchases with upgrades in human playtests; that is issue 33 and the playtests 38 and 39.
