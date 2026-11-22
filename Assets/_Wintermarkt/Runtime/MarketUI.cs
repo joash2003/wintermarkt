@@ -111,7 +111,7 @@ namespace Wintermarkt
             {
                 Label("LINZ\nWINTERMARKT", card, new Vector2(0, 200), new Vector2(600, 140), 54, gold);
                 Label("A little square. A whole city of Christmas.", card, new Vector2(0, 90), new Vector2(590, 45), 21, ink);
-                Label("Every visitor wants two or three different things.\nFour days, one star each: send enough of them home happy.\nEarn coins from service and reinvest them.", card, new Vector2(0, -5), new Vector2(580, 125), 20, ink);
+                Label("Tap a stall to cook a batch for its queue.\nEvery visitor wants two or three different things.\nFour days, one star each: send enough home happy.", card, new Vector2(0, -5), new Vector2(580, 125), 20, ink);
                 ActionButton("Open the market", card, new Vector2(0, -115), new Vector2(350, 54), game.StartFestival);
                 ActionButton(game.Muted ? "Sound off" : "Sound on", card, new Vector2(-90, -185), new Vector2(170, 45), game.ToggleSound);
                 ActionButton("Quit", card, new Vector2(90, -185), new Vector2(170, 45), game.Quit);
@@ -151,7 +151,7 @@ namespace Wintermarkt
             selection.gameObject.SetActive(b != null);
             if (b == null) return;
             bool max = b.Level + 1 >= b.Definition.levels.Length;
-            details.text = b.Definition.title + "\n" + game.Simulation.QueueCount(b) + " visitors waiting/in line\nLEVEL " + (b.Level + 1) + " / " + b.Definition.levels.Length + "\n\n" + b.Stats.income + " coins / visitor\n" + b.Stats.serviceSeconds.ToString("0.#") + "s service · " + b.Stats.capacity + " at once\nAttraction +" + b.Stats.attraction.ToString("0.#") + "\n" + (max ? "Fully upgraded" : "Next upgrade: " + b.Definition.levels[b.Level + 1].cost + " coins") + "\nRemove: +" + game.Simulation.Refund(b) + " coins";
+            details.text = b.Definition.title + "\n" + game.Simulation.QueueCount(b) + " visitors waiting/in line\nLEVEL " + (b.Level + 1) + " / " + b.Definition.levels.Length + "\n\n" + b.Stats.income + " coins / visitor\n" + (game.Simulation.Settings.tapToCook ? "Tap: cooks " + b.Stats.capacity + " in " + b.Stats.serviceSeconds.ToString("0.#") + "s" : b.Stats.serviceSeconds.ToString("0.#") + "s service · " + b.Stats.capacity + " at once") + "\nAttraction +" + b.Stats.attraction.ToString("0.#") + "\n" + (max ? "Fully upgraded" : "Next upgrade: " + b.Definition.levels[b.Level + 1].cost + " coins") + "\nRemove: +" + game.Simulation.Refund(b) + " coins";
             upgrade.interactable = !max && game.State == FestivalState.Playing && game.Simulation.Coins >= b.Definition.levels[b.Level + 1].cost;
         }
         void Update()

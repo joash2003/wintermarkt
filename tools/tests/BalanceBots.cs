@@ -32,20 +32,26 @@ static class BalanceBots
         var grid = new SiteGrid(site); var e = grid.Entrance; cells = new List<Cell>();
         for (int y = 0; y < grid.Height; y++) for (int x = 0; x < grid.Width; x++) if (Math.Abs(x - e.x) + Math.Abs(y - e.y) > 3 && grid.Buildable(new Cell(x, y))) cells.Add(new Cell(x, y));
         cells = cells.OrderBy(c => Math.Abs(c.x - e.x) + Math.Abs(c.y - e.y)).Take(700).ToList();
-        Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5}{7,7}{8,6}{9,9}", "strategy", "result", "arrived", "happy", "wanted+", "gave up", "rep", "coins", "bldgs", "helped");
+        Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5}{7,7}{8,6}{9,9}", "strategy", "result", "arrived", "happy", "wanted+", "gave up", "rep", "coins", "bldgs", "hands");
         foreach (var pair in Strategies)
         {
             var s = new MarketSimulation(json.Deserialize<MarketSettings>(File.ReadAllText(a[0])), site); var perWave = new List<string>();
             while (!s.Finished) {
-                // A person notices a call after about 3 seconds and misses one in four; strategies marked "never helps" ignore them.
-                if (!pair.Key.Contains("never helps")) foreach (var b in s.Buildings) if (b.NeedsHelp && b.HelpRemaining <= s.Settings.helpWindowSeconds - 3 && (b.Id + s.Helped + s.MissedHelp) % 4 != 0) { string why; s.TryHelp(b.Id, out why); }
-                // One sweep a second at one snow pile.
-                if (!pair.Key.Contains("never helps")) foreach (Cell pile in s.SnowPiles) { string swept; s.TryClear(pile, out swept); break; }
-                // One snowball a second at the first Krampus still hunting.
-                if (!pair.Key.Contains("never helps")) foreach (var k in s.Krampuses) if (!k.Fleeing) { string hit; s.TryHit(k.Position, out hit); break; }
+                // The player has one mouse: at most two hand actions a second, in the order a person would choose them.
+                // Strategies marked "never helps" do none of them.
+                for (int hand = 0; hand < 2 && !pair.Key.Contains("never helps"); hand++)
+                {
+                    string why; MarketBuilding lit = s.Buildings.FirstOrDefault(b => b.NeedsHelp && b.HelpRemaining <= s.Settings.helpWindowSeconds - 2);
+                    MarketKrampus beast = s.Krampuses.FirstOrDefault(k => !k.Fleeing);
+                    MarketBuilding empty = s.Buildings.Where(b => b.Stock == 0 && b.CookRemaining <= 0 && b.ClosedRemaining <= 0 && s.QueueCount(b) > 0).OrderByDescending(b => s.QueueCount(b)).FirstOrDefault();
+                    if (lit != null) s.TryHelp(lit.Id, out why);
+                    else if (beast != null && hand == 0) s.TryHit(beast.Position, out why);
+                    else if (s.Settings.tapToCook && empty != null) s.TryCook(empty.Id, out why);
+                    else if (s.SnowPiles.Count > 0) s.TryClear(s.SnowPiles.First(), out why);
+                }
                 pair.Value(s); s.Tick(1); }
             for (int w = 0; w < s.WaveResults.Count; w++) perWave.Add(s.WaveResults[w] + "/" + s.Settings.waves[w].target);
-            Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,9}", pair.Key, (s.Failed ? "closed act " + (s.Wave + 1) + " " : s.Stars + " stars ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, s.Helped + "/" + (s.Helped + s.MissedHelp) + "  scared " + s.Scared + ", off " + s.DrivenOff);
+            Console.WriteLine("{0,-74}{1,-30}{2,8}{3,7}{4,8}{5,8}{6,5:0}{7,7}{8,6}{9,9}", pair.Key, (s.Failed ? "closed act " + (s.Wave + 1) + " " : s.Stars + " stars ") + string.Join(" ", perWave), s.Welcomed, s.Happy, s.Disappointed, s.Abandoned, s.Reputation, s.Coins, s.Buildings.Count, " " + s.Cooked + " batches  scared " + s.Scared + ", off " + s.DrivenOff);
         }
         return 0;
     }

@@ -22,6 +22,7 @@ namespace Wintermarkt
         readonly Dictionary<int, int> signalState = new Dictionary<int, int>();
         // An upgraded stall pops up from nothing (issue 44): its new model and the seconds since the upgrade.
         readonly Dictionary<Transform, float> popping = new Dictionary<Transform, float>();
+        readonly Dictionary<int, int> stocks = new Dictionary<int, int>();   // stock shown per stall in tap mode (issue 32)
         /// <summary>One colour per building category: the stall sign and the build menu both use it.</summary>
         public static Color CategoryColor(string category)
         {
@@ -135,7 +136,7 @@ namespace Wintermarkt
             Simulation = sim;
             if (content) { content.gameObject.SetActive(false); Destroy(content.gameObject); }
             foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy();
-            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); popping.Clear(); signals.Clear(); signalState.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); gondolas.Clear(); traffic.Clear();
+            walkers.Clear(); buildings.Clear(); levels.Clear(); people.Clear(); popping.Clear(); signals.Clear(); signalState.Clear(); stocks.Clear(); beasts.Clear(); beastHits.Clear(); sparks.Clear(); sparkSpeed.Clear(); sparkLife.Clear(); mounds.Clear(); movingRides.Clear(); gondolas.Clear(); traffic.Clear();
             content = new GameObject("Volksgarten").transform; content.SetParent(transform);
             Dusk();
             var site = sim.Site; float width = site.Width * CellSize, height = site.Height * CellSize;
@@ -354,7 +355,7 @@ namespace Wintermarkt
                 {
                     bool upgraded = buildings.ContainsKey(b.Id);
                     if (upgraded) { popping.Remove(buildings[b.Id]); buildings[b.Id].gameObject.SetActive(false); Destroy(buildings[b.Id].gameObject); }
-                    buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level; signals.Remove(b.Id); signalState.Remove(b.Id);
+                    buildings[b.Id] = BuildShop(b); levels[b.Id] = b.Level; signals.Remove(b.Id); signalState.Remove(b.Id); stocks.Remove(b.Id);
                     if (upgraded) { buildings[b.Id].localScale = Vector3.zero; popping[buildings[b.Id]] = 0; Burst(buildings[b.Id].position + Vector3.up * 4); }
                 }
                 Signal(b);
@@ -363,7 +364,7 @@ namespace Wintermarkt
             if (buildings.Count != Simulation.Buildings.Count)
             {
                 var standing = new HashSet<int>(); foreach (var b in Simulation.Buildings) standing.Add(b.Id);
-                foreach (int id in new List<int>(buildings.Keys)) if (!standing.Contains(id)) { movingRides.Remove(buildings[id].Find("Ride motion")); Destroy(buildings[id].gameObject); buildings.Remove(id); levels.Remove(id); signals.Remove(id); signalState.Remove(id); }
+                foreach (int id in new List<int>(buildings.Keys)) if (!standing.Contains(id)) { movingRides.Remove(buildings[id].Find("Ride motion")); Destroy(buildings[id].gameObject); buildings.Remove(id); levels.Remove(id); signals.Remove(id); signalState.Remove(id); stocks.Remove(id); }
             }
             var active = new HashSet<int>();
             foreach (var v in Simulation.Visitors)
@@ -508,10 +509,12 @@ namespace Wintermarkt
                 flake.localPosition = p;
             }
         }
-        // Above the roof: a pulsing yellow ball with a shrinking red ring while the stall calls for help, a dark slab while it is closed, a green light while boosted.
+        // Above the roof: what the stall needs from the player. A yellow ball with a shrinking red ring while it calls to be relit, a dark slab while it is closed,
+        // a white pulsing ball when it has nothing left and people are waiting (tap to cook), a green ball that grows while it cooks, a small green light while boosted.
         void Signal(MarketBuilding b)
         {
-            int state = b.NeedsHelp ? 1 : b.ClosedRemaining > 0 ? 2 : b.BoostRemaining > 0 ? 3 : 0, old; Transform signal;
+            bool tap = Simulation.Settings.tapToCook;
+            int state = b.NeedsHelp ? 1 : b.ClosedRemaining > 0 ? 2 : tap && b.CookRemaining > 0 ? 4 : tap && b.Stock == 0 && Simulation.QueueCount(b) > 0 ? 5 : b.BoostRemaining > 0 ? 3 : 0, old; Transform signal;
             if (!signalState.TryGetValue(b.Id, out old) || old != state)
             {
                 if (signals.TryGetValue(b.Id, out signal) && signal) Destroy(signal.gameObject);
@@ -524,11 +527,26 @@ namespace Wintermarkt
                 }
                 else if (state == 2) { Box("Closed", signal, Vector3.zero, new Vector3(4, .8f, 1.2f), new Color(.12f, .08f, .08f)); Caption("CLOSED", signal, signal.position + Vector3.up * 1.4f, .45f); }
                 else if (state == 3) Shape("Boost", signal, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 1.3f, Glow(new Color(.3f, 1, .5f)));
+                else if (state == 4) Shape("Cooking", signal, PrimitiveType.Sphere, Vector3.zero, Vector3.one, Glow(new Color(.35f, 1, .45f)));
+                else if (state == 5) Shape("Tap me", signal, PrimitiveType.Sphere, Vector3.zero, Vector3.one * 2.2f, Glow(Color.white));
             }
-            if (state != 1) return;
-            signal = signals[b.Id]; float left = b.HelpRemaining / Simulation.Settings.helpWindowSeconds;
-            signal.GetChild(0).localScale = Vector3.one * (2.6f + .5f * Mathf.Sin(Time.unscaledTime * 9));
-            signal.GetChild(1).localScale = new Vector3(5 * left, .12f, 5 * left);
+            signal = signals[b.Id];
+            if (state == 1)
+            {
+                float left = b.HelpRemaining / Simulation.Settings.helpWindowSeconds;
+                signal.GetChild(0).localScale = Vector3.one * (2.6f + .5f * Mathf.Sin(Time.unscaledTime * 9));
+                signal.GetChild(1).localScale = new Vector3(5 * left, .12f, 5 * left);
+            }
+            else if (state == 4) signal.GetChild(0).localScale = Vector3.one * Mathf.Lerp(.7f, 2.6f, 1 - b.CookRemaining / b.Stats.serviceSeconds);
+            else if (state == 5) signal.GetChild(0).localScale = Vector3.one * (2.2f + .6f * Mathf.Sin(Time.unscaledTime * 10));
+            if (!tap) return;
+            // In front of the gable: one cube per portion of a batch, lit in the stall's colour while it is in stock.
+            int stock = b.Stock * 100 + b.Batch, shownStock;
+            if (stocks.TryGetValue(b.Id, out shownStock) && shownStock == stock) return;
+            var oldRow = buildings[b.Id].Find("Stock"); if (oldRow) Destroy(oldRow.gameObject);
+            var row = new GameObject("Stock").transform; row.SetParent(buildings[b.Id], false); row.localPosition = new Vector3(0, 5.6f, -4.2f); stocks[b.Id] = stock;
+            for (int i = 0; i < b.Batch; i++)
+                Shape("Portion", row, PrimitiveType.Cube, new Vector3((i - (b.Batch - 1) * .5f) * 1.25f, 0, 0), Vector3.one, i < b.Stock ? Glow(CategoryColor(b.Definition.category)) : Material(new Color(.2f, .2f, .24f)));
         }
         Transform BuildShop(MarketBuilding b)
         {
