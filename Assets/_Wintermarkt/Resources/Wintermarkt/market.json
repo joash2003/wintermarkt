@@ -12,11 +12,13 @@
   "varietyBonus": 15,
   "disappointmentLoss": 0.5,
   "maxWishes": 3,
-  "helpIntervalSeconds": 25,
+  "helpIntervalSeconds": 0,
   "helpWindowSeconds": 8,
   "boostSeconds": 15,
   "closedSeconds": 10,
   "helpTip": 5,
+  "tapToCook": true,
+  "handoverSeconds": 0.8,
   "krampusSecondsPerCell": 0.9,
   "scareLoss": 0.5,
   "waves": [
@@ -25,28 +27,32 @@
       "seconds": 120,
       "arrivalFactor": 1.0,
       "helpFactor": 1.0,
-      "target": 5
+      "target": 5,
+      "patienceFactor": 1.0
     },
     {
       "title": "Krampus night",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,
-      "target": 18
+      "target": 18,
+      "patienceFactor": 0.9
     },
     {
       "title": "Christmas Eve",
       "seconds": 180,
       "arrivalFactor": 1.6,
       "helpFactor": 1.4,
-      "target": 48
+      "target": 48,
+      "patienceFactor": 0.8
     },
     {
       "title": "New Year's Eve",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,
-      "target": 48
+      "target": 48,
+      "patienceFactor": 0.7
     }
   ],
   "events": [
@@ -129,23 +135,23 @@
       "levels": [
         {
           "cost": 100,
-          "capacity": 1,
+          "capacity": 3,
           "income": 4,
-          "serviceSeconds": 7,
+          "serviceSeconds": 8,
           "attraction": 5
         },
         {
           "cost": 75,
-          "capacity": 2,
+          "capacity": 4,
           "income": 6,
-          "serviceSeconds": 5.6000000000000005,
+          "serviceSeconds": 7,
           "attraction": 6.5
         },
         {
           "cost": 120,
-          "capacity": 3,
+          "capacity": 5,
           "income": 8,
-          "serviceSeconds": 4.2,
+          "serviceSeconds": 6,
           "attraction": 8.5
         }
       ]
@@ -161,23 +167,23 @@
       "levels": [
         {
           "cost": 120,
-          "capacity": 1,
+          "capacity": 3,
           "income": 6,
-          "serviceSeconds": 9,
+          "serviceSeconds": 10,
           "attraction": 6
         },
         {
           "cost": 90,
-          "capacity": 2,
+          "capacity": 4,
           "income": 8,
-          "serviceSeconds": 7.2,
+          "serviceSeconds": 9,
           "attraction": 7.800000000000001
         },
         {
           "cost": 144,
-          "capacity": 3,
+          "capacity": 5,
           "income": 9,
-          "serviceSeconds": 5.3999999999999995,
+          "serviceSeconds": 8,
           "attraction": 10.2
         }
       ]
@@ -193,23 +199,23 @@
       "levels": [
         {
           "cost": 160,
-          "capacity": 1,
+          "capacity": 2,
           "income": 9,
           "serviceSeconds": 12,
           "attraction": 8
         },
         {
           "cost": 120,
-          "capacity": 2,
+          "capacity": 3,
           "income": 10,
-          "serviceSeconds": 9.600000000000001,
+          "serviceSeconds": 10,
           "attraction": 10.4
         },
         {
           "cost": 192,
-          "capacity": 3,
+          "capacity": 4,
           "income": 12,
-          "serviceSeconds": 7.199999999999999,
+          "serviceSeconds": 9,
           "attraction": 13.6
         }
       ]
@@ -225,23 +231,23 @@
       "levels": [
         {
           "cost": 260,
-          "capacity": 1,
+          "capacity": 4,
           "income": 8,
-          "serviceSeconds": 10,
+          "serviceSeconds": 12,
           "attraction": 18
         },
         {
           "cost": 195,
-          "capacity": 2,
+          "capacity": 6,
           "income": 9,
-          "serviceSeconds": 8.0,
+          "serviceSeconds": 11,
           "attraction": 23.400000000000002
         },
         {
           "cost": 312,
-          "capacity": 3,
+          "capacity": 8,
           "income": 10,
-          "serviceSeconds": 6.0,
+          "serviceSeconds": 10,
           "attraction": 30.599999999999998
         }
       ]
@@ -257,23 +263,23 @@
       "levels": [
         {
           "cost": 480,
-          "capacity": 1,
+          "capacity": 6,
           "income": 12,
-          "serviceSeconds": 14,
+          "serviceSeconds": 16,
           "attraction": 32
         },
         {
           "cost": 360,
-          "capacity": 2,
+          "capacity": 8,
           "income": 14,
-          "serviceSeconds": 11.200000000000001,
+          "serviceSeconds": 14,
           "attraction": 41.6
         },
         {
           "cost": 576,
-          "capacity": 3,
+          "capacity": 10,
           "income": 15,
-          "serviceSeconds": 8.4,
+          "serviceSeconds": 12,
           "attraction": 54.4
         }
       ]

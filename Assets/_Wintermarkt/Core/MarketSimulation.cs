@@ -22,6 +22,10 @@ namespace Wintermarkt.Core
         /// <summary>Seconds the stall stays closed after a missed call.</summary>
         public float ClosedRemaining { get; internal set; }
         internal float NextHelp; internal int Calls;
+        /// <summary>Tap to cook: portions ready to hand out, seconds until the batch being cooked is ready, and the batch size.</summary>
+        public int Stock { get; internal set; }
+        public float CookRemaining { get; internal set; }
+        public int Batch { get { return Stats.capacity; } }
         public Cell QueueCell(int slot) { return new Cell(Origin.x + slot % Definition.width, Origin.y + Definition.depth + slot / Definition.width); }
     }
 
@@ -80,6 +84,8 @@ namespace Wintermarkt.Core
         /// <summary>Help calls answered in time, and calls that ran out.</summary>
         public int Helped { get; private set; }
         public int MissedHelp { get; private set; }
+        /// <summary>Batches the player has cooked.</summary>
+        public int Cooked { get; private set; }
         public int Earned { get; private set; }
         public float Reputation { get; private set; }
         public float Remaining { get; private set; }
@@ -227,6 +233,19 @@ namespace Wintermarkt.Core
         // Each stall has its own timer, staggered by its id, so more stalls mean more calls; later acts call more often.
         void ScheduleHelp(MarketBuilding b) { b.NextHelp = Settings.helpIntervalSeconds * (.75f + (b.Id * 7 + b.Calls) % 3 * .25f) / CurrentWave.helpFactor; }
 
+        /// <summary>The player taps a stall: it cooks one batch. Not while it is cooking, full or closed.</summary>
+        public bool TryCook(int id, out string reason)
+        {
+            if (Paused || Finished) { reason = "Resume the festival to cook."; return false; }
+            MarketBuilding b = null; foreach (var item in buildings) if (item.Id == id) b = item;
+            if (b == null || !Settings.tapToCook) { reason = "Select a building."; return false; }
+            if (b.ClosedRemaining > 0) { reason = b.Definition.title + " is closed for a moment."; return false; }
+            if (b.CookRemaining > 0) { reason = b.Definition.title + " is already cooking."; return false; }
+            if (b.Stock >= b.Batch) { reason = b.Definition.title + " is still full."; return false; }
+            b.CookRemaining = b.Stats.serviceSeconds * (b.BoostRemaining > 0 ? .5f : 1); Cooked++;
+            reason = b.Definition.title + ": cooking " + b.Batch + "."; return true;
+        }
+
         public bool TryHelp(int id, out string reason)
         {
             if (Paused || Finished) { reason = "Resume the festival to help."; return false; }
@@ -279,7 +298,7 @@ namespace Wintermarkt.Core
                     if (v.State == VisitorState.Waiting)
                     {
                         v.Waited += dt;
-                        if (v.Waited >= Settings.patienceSeconds * (ActiveEvent != null && ActiveEvent.kind == "storm" ? ActiveEvent.factor : 1)) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
+                        if (v.Waited >= Settings.patienceSeconds * CurrentWave.patienceFactor * (ActiveEvent != null && ActiveEvent.kind == "storm" ? ActiveEvent.factor : 1)) { v.Mood = VisitorMood.GaveUp; Abandoned++; Reputation = Math.Max(0, Reputation - Settings.abandonmentLoss); Leave(v); }
                     }
                     if (v.State == VisitorState.Serving)
                     {
@@ -295,6 +314,7 @@ namespace Wintermarkt.Core
                 foreach (var b in buildings)
                 {
                     if (b.BoostRemaining > 0) b.BoostRemaining = Math.Max(0, b.BoostRemaining - dt);
+                    if (b.CookRemaining > 0 && (b.CookRemaining -= dt) <= 0) { b.CookRemaining = 0; b.Stock = b.Batch; }
                     if (b.ClosedRemaining > 0) b.ClosedRemaining = Math.Max(0, b.ClosedRemaining - dt);
                     else if (b.NeedsHelp)
                     {
@@ -468,6 +488,19 @@ namespace Wintermarkt.Core
         void StartService(MarketBuilding b)
         {
             if (b.ClosedRemaining > 0) return;
+            if (Settings.tapToCook)
+            {
+                // Each ready portion goes to the visitor who has waited longest; handing it over takes a moment.
+                while (b.Stock > 0)
+                {
+                    MarketVisitor next = null;
+                    foreach (var v in visitors)
+                        if (v.Destination == b && v.State == VisitorState.Waiting && (next == null || v.QueueOrder < next.QueueOrder)) next = v;
+                    if (next == null) return;
+                    next.State = VisitorState.Serving; next.ServiceRemaining = Settings.handoverSeconds; b.Stock--;
+                }
+                return;
+            }
             int active = 0; foreach (var v in visitors) if (v.Destination == b && v.State == VisitorState.Serving) active++;
             while (active < b.Stats.capacity)
             {

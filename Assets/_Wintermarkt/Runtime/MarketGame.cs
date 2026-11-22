@@ -61,7 +61,7 @@ namespace Wintermarkt
         {
             Simulation = new MarketSimulation(settings, site); World.Initialize(Simulation);
             BuildChoice = null; Selected = null; focus = World.World(Simulation.Site.Entrance) * .3f; previewVisible = false; lastChoice = null; lastCell = new Cell(-999, -999);
-            Message = "Choose a stall, then place it on an open plot. Leave room for its queue."; lastWave = 0; lastCalling = 0;
+            Message = "Build a stall, then tap it to cook a batch. Visitors only get what you have cooked."; lastWave = 0; lastCalling = 0;
             PlaceCamera();
         }
         public void StartFestival() { ResetSimulation(); State = FestivalState.Playing; UI.Refresh(); }
@@ -142,14 +142,15 @@ namespace Wintermarkt
             }
             else if (Input.GetMouseButtonDown(0))
             {
-                // A click on or near a calling stall helps it: the bubble floats above the roof, so the click may land a cell or two behind.
-                MarketBuilding calling = null; float nearest = 3.2f; string reason;
+                // A click on or near a stall that needs the player acts on it: relight it if it is calling, otherwise cook a batch.
+                // The marker floats above the roof, so the click may land a cell or two behind the stall.
+                MarketBuilding calling = null; float nearest = 3.2f; string reason; bool tap = Simulation.Settings.tapToCook;
                 foreach (var b in Simulation.Buildings)
                 {
                     float d = Vector2.Distance(new Vector2(cell.x, cell.y), new Vector2(b.Origin.x + (b.Definition.width - 1) * .5f, b.Origin.y + (b.Definition.depth - 1) * .5f - 1));
-                    if (b.NeedsHelp && d < nearest) { nearest = d; calling = b; }
+                    if ((b.NeedsHelp || (tap && b.CookRemaining <= 0 && b.Stock < b.Batch && b.ClosedRemaining <= 0)) && d < nearest) { nearest = d; calling = b; }
                 }
-                if (calling != null && Simulation.TryHelp(calling.Id, out reason)) { Message = reason; PlayClick(); World.Synchronize(0); Selected = calling; }
+                if (calling != null && (calling.NeedsHelp ? Simulation.TryHelp(calling.Id, out reason) : Simulation.TryCook(calling.Id, out reason))) { Message = reason; PlayClick(); World.Synchronize(0); Selected = calling; }
                 else Selected = Simulation.At(cell);
                 UI.RefreshSelection();
             }
