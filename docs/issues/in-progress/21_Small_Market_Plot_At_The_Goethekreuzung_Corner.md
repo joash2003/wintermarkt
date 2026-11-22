@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-17
-assignee: Joash Johnson Samuel
+assignee: Alibek Abylkasymov
 branch: 21-small-plot
 ---
 

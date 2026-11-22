@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-17
-assignee: Joash Johnson Samuel
+assignee: Farhad Arezo
 branch: 19-multi-stop-visitors
 ---
 

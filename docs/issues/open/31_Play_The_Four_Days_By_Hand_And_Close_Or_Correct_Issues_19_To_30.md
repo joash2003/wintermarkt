@@ -28,6 +28,10 @@ One person plays a full evening in the Unity editor, notes what breaks or feels 
 - [ ] Check: help-call click radius, sweeping by dragging, Krampus hit radius, Remove and refund, ending cards for 0 to 4 stars and for reputation zero, HUD and banner at 1280x720 and 1920x1080.
 - [ ] Check frame rate with a full market and many animated visitors.
 
+## Work log
+
+- 2026-11-22: the per-ticket checks are split by owner: whoever is assigned 19 to 30, 32 and 44 checks and closes their own ticket. This ticket stays the full-run play and the summary.
+
 ## Outcome
 
 _Filled in when closed: what shipped, the commit(s), and what was left out and why._
