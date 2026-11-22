@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-18
-assignee: Joash Johnson Samuel
+assignee: Aidan
 branch: 28-snow-sweeping
 ---
 
