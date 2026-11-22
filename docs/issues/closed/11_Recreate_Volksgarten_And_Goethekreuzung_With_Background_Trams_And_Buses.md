@@ -4,6 +4,7 @@ priority: high
 created: 2026-10-17
 assignee: Alibek Abylkasymov
 branch: 11-real-volksgarten
+closed: 2026-11-22
 ---
 
 # 11 — Recreate Volksgarten and Goethekreuzung with background trams and buses
@@ -47,4 +48,4 @@ Meet docs/LOCATION_AND_TRANSIT.md acceptance criteria. Both vehicle types move a
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: the Volksgarten corner at the Goethekreuzung from tools/build_site.py with the park outline, paths, street names, the Musiktheater and the Arbeiterkammer, and trams and buses on the surrounding streets (15236da, 504eb91, 5bcd667, merged to main on 17 Nov). Pictures from `bash tools/unity.sh shots` on 22 Nov 2026 (Windows, Unity 6000.3.25f1, main at 31dc71e), kept in docs/submission/assets/shots-2026-11-22/. park.png shows the layout and the landmarks; cooking.png in Logs/shots shows a tram at the right edge of the market view. Left out: task 6, local recognition feedback, goes to the playtests (issue 38); vehicle stopping cannot be judged from a still picture.
