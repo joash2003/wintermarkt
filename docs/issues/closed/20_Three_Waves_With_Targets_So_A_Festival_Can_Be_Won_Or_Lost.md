@@ -4,6 +4,7 @@ priority: high
 created: 2026-11-17
 assignee: Farhad Arezo
 branch: 20-waves
+closed: 2026-11-22
 ---
 
 # 20 — Three waves with targets so a festival can be won or lost
@@ -37,4 +38,4 @@ A festival is three waves, each with a target number of happy visitors; missing 
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Superseded. The three waves with a fail-on-miss rule were replaced by stars per act in issue 24 and by four days with real dates in issue 27. `MarketSettings.waves`, the arrival factor and the wave tests from this ticket live on under those. ending.png from 22 Nov (docs/submission/assets/shots-2026-11-22/) shows the result: four days, four stars. Nothing left to do here.
