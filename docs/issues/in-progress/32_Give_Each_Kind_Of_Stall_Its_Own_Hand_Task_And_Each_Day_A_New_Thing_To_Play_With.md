@@ -45,6 +45,7 @@ Nothing is served unless the player taps: a tap on a stall cooks one batch, the 
 - Bots now have one mouse (two hand actions a second). Table in the design spec. The acceptance boxes above are ticked from tests, bot runs and a Play Mode run of the whole evening with pictures of the tap and cooking markers; no exceptions.
 - Not checked: tapping by hand; whether five or six stalls are manageable for a person; the stock cubes were hard to make out at the default zoom and were enlarged afterwards without a second look; star targets were not re-tuned.
 - Not built: "each day brings a new thing to play with" from this ticket's first version.
+- 2026-11-22: merged into main (b42af77) on Windows. MarketWorld.cs conflicted with issue 44 (upgrade pop, wish markers gone): kept main's side and added the stocks field, its Clear and Remove. Gate green; not played by hand after the merge.
 
 ## Outcome
 
