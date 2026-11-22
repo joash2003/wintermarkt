@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-11-18
-assignee: Joash Johnson Samuel
+assignee: Alibek Abylkasymov
 branch: 44-stall-levels-look-different
 ---
 
