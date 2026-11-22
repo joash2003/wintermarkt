@@ -4,6 +4,7 @@ priority: medium
 created: 2026-11-17
 assignee: Alibek Abylkasymov
 branch: 18-kit-detail
+closed: 2026-11-22
 ---
 
 # 18 — Stardew Valley-style detail pass for the market, visitors and park
@@ -55,4 +56,4 @@ The market, its visitors and the park look detailed and cosy enough that a first
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: the CC0 Kenney Holiday Kit stalls, trees and props, dressed and animated visitors, town houses, the tram and the wooden UI (20c5c4e, 75f6342, 0db8237 on 18 Nov). Pictures from `bash tools/unity.sh shots` on 22 Nov 2026 (Windows, Unity 6000.3.25f1, main at 31dc71e), kept in docs/submission/assets/shots-2026-11-22/. market.png shows the dressed market; visitor.png in Logs/shots shows the visitors up close. Left out and split: the rides, the Krampus, the bus and the two landmarks are still primitives (issue 36); the art direction and whether packs are allowed (issue 42); sound and music (issue 35). Mood icons above heads were dropped in issue 22 at Joash's decision.
