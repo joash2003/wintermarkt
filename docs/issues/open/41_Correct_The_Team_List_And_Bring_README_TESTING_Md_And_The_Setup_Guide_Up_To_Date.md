@@ -10,7 +10,7 @@ branch:
 
 ## Context
 
-AGENTS.md names the team as Joash Johnson Samuel, Alibek Abylkasymov and Bobby Alinkal. The team chat and poll on 17 Nov 2026 show four people: Joash, Farhad Arezo, Alibek and Aidan; whether Bobby is still in the team is unknown to Claude. README.md still describes a provisional 32 x 36 grid and no generated scene; TESTING.md is mostly about the abandoned maze and the 20 Oct build; the design spec's status paragraphs near the top predate everything since 17 Nov. The team's areas from the poll are: Farhad rules and balance, Joash Unity and builds, Alibek art and UI, Aidan sound, playtests and deck.
+AGENTS.md names the team as Joash Johnson Samuel, Alibek Abylkasymov and Bobby Alinkal. The team chat and poll on 17 Nov 2026 show four people: Joash, Farhad Arezo, Alibek and Aidan; whether Bobby is still in the team is unknown. README.md still describes a provisional 32 x 36 grid and no generated scene; TESTING.md is mostly about the abandoned maze and the 20 Oct build; the design spec's status paragraphs near the top predate everything since 17 Nov. The team's areas from the poll are: Farhad rules and balance, Joash Unity and builds, Alibek art and UI, Aidan sound, playtests and deck.
 
 ## Goal
 

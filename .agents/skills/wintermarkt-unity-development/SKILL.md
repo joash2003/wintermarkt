@@ -5,7 +5,7 @@ description: Implement or repair Wintermarkt Unity C# gameplay, scenes, prefabs,
 
 The current game is Linz Wintermarkt; docs/LINZ_WINTERMARKT_DESIGN.md is the specification. Maze details below (levels, sonar, enemies, handoff sections) describe the legacy Echo Maze in Assets/_EchoMaze.
 
-Read the relevant sections of docs/archive/Echo_Maze_Claude_Code_Handoff.md and the current ticket before editing. The game is a real editable Unity 2D project with exactly three fixed levels, one sonar mechanic and one enemy type.
+Read the relevant sections of docs/archive/Echo_Maze_Handoff.md and the current ticket before editing. The game is a real editable Unity 2D project with exactly three fixed levels, one sonar mechanic and one enemy type.
 
 Inspect ProjectSettings/ProjectVersion.txt and installed editors; preserve the recorded version. The team uses 6000.3.25f1 (6.3 LTS); see issue 12. Keep runtime code free of UnityEditor references. Use the standard 2D renderer and original geometric sprites; no paid assets or new packages without a concrete need.
 

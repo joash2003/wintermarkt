@@ -38,4 +38,4 @@ You can also run EditMode tests in Unity's **Window > General > Test Runner**. S
 
 ## Contribute
 
-Read [setup and bundled AI skills](docs/CONTRIBUTOR_SETUP.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [tickets](docs/issues/README.md). No GitHub remote is configured yet. Assets are original geometry and generated sounds; see [credits](ASSET_CREDITS.md). The [handoff](Echo_Maze_Claude_Code_Handoff.md) contains the full specification. Team roster, real human playtests, shareable weekly slide deck and final course submission remain pending.
+Read [setup and bundled AI skills](docs/CONTRIBUTOR_SETUP.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [tickets](docs/issues/README.md). No GitHub remote is configured yet. Assets are original geometry and generated sounds; see [credits](ASSET_CREDITS.md). The [handoff](Echo_Maze_Handoff.md) contains the full specification. Team roster, real human playtests, shareable weekly slide deck and final course submission remain pending.

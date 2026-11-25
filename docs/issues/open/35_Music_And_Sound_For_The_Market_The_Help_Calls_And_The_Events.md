@@ -10,7 +10,7 @@ branch:
 
 ## Context
 
-The game has one generated bell tone (MarketGame). Music and sound were named in the future plan presented on 17 Nov 2026. The Unity plugin installed for Claude Code includes audio skills. Intended owner by the team poll: Aidan.
+The game has one generated bell tone (MarketGame). Music and sound were named in the future plan presented on 17 Nov 2026. Intended owner by the team poll: Aidan.
 
 ## Goal
 

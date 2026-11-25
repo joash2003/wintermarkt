@@ -1,6 +1,6 @@
 # Linz Wintermarkt: rules for AI assistants
 
-Using an AI assistant on this repo is optional. If you use one (Codex, Claude, Gemini, Copilot, Cursor, ChatGPT or anything else), it must follow this file. Codex and Cursor read it directly; Claude reads it through CLAUDE.md, Gemini CLI through GEMINI.md and GitHub Copilot through .github/copilot-instructions.md. In a chat website, paste this file in at the start.
+Using an AI assistant on this repo is optional. If you use one (Codex, Gemini, Copilot, Cursor, ChatGPT or anything else), it must follow this file. Codex and Cursor read it directly; Gemini CLI reads it through GEMINI.md and GitHub Copilot through .github/copilot-instructions.md. In a chat website, paste this file in at the start.
 
 ## The project
 
