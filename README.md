@@ -18,7 +18,7 @@ The pure market simulation tests can run without launching Unity: `bash tools/te
 - [Game concept and MVP](docs/LINZ_WINTERMARKT_DESIGN.md)
 - [Location/transit reference brief](docs/LOCATION_AND_TRANSIT.md)
 - [Issue tracker](docs/issues/README.md): `python3 tools/issue.py list`
-- [Contributor workflow](CONTRIBUTING.md) and [bundled contributor skills](docs/CONTRIBUTOR_SETUP.md)
+- [Contributor workflow](CONTRIBUTING.md) and [setup](docs/CONTRIBUTOR_SETUP.md)
 - [Verification record](TESTING.md)
 
 Source assets and generated project setup remain separate: no generated scene, measured site data or exported build is included yet.

@@ -31,7 +31,7 @@ After `new` or `move`, commit the change on its own, for example `File issue 15:
 
 ## Numbers are reserved, not guessed
 
-`new` pushes a create-only git tag `issue/N` to origin before writing the file. Git refuses a tag that already exists, so two people (or two AI assistants) can never take the same number; the loser re-reads and takes the next one. Pushing the tag needs write access to the GitHub repo.
+`new` pushes a create-only git tag `issue/N` to origin before writing the file. Git refuses a tag that already exists, so two people can never take the same number; the loser re-reads and takes the next one. Pushing the tag needs write access to the GitHub repo.
 
 Sub-issues never reserve: `11.01`, `11.02` and so on share the epic's number.
 

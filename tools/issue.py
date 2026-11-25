@@ -4,7 +4,7 @@
     docs/issues/<state>/<N>_<Title>.md          N = 7, or 7.00 (epic), or 7.01 (sub-issue)
 
 The folder is the status. A number is reserved by pushing a create-only git tag
-``issue/N`` to origin, so two clones or two agents can never mint the same
+``issue/N`` to origin, so two clones can never mint the same
 number; the reservation is a tag, not a commit. Git I/O goes through one
 injectable runner so every rule here is unit-tested without a repository.
 

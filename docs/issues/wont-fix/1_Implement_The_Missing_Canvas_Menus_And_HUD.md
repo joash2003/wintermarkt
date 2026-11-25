@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-10-17
-assignee: Codex
+assignee:
 branch:
 closed: 2026-10-17
 ---
@@ -49,7 +49,7 @@ Claim this ticket in a separate commit by setting Owner and Status to In progres
 
 - 2026-10-17: Created from current source inspection. No implementation or test completion claimed.
 
-- 2026-10-17 (Codex): Added MazeUI.cs with Canvas menus, instructions, HUD, pause/caught/victory panels and game callbacks. Runtime and resolution checks pending.
+- 2026-10-17: Added MazeUI.cs with Canvas menus, instructions, HUD, pause/caught/victory panels and game callbacks. Runtime and resolution checks pending.
 
 - User pivot: superseded by the Linz Wintermarkt direction. This is not a completion claim. Reuse relevant implementation or testing work only after assessing the new design.
 

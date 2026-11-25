@@ -10,7 +10,7 @@ branch:
 
 ## Context
 
-From the team chat on 18 Nov 2026. Farhad proposed that each stall takes a few minutes to build; the assistant's view was that minutes of waiting works against keeping the player's hands busy and that five to ten seconds would be fine; nobody decided. Farhad also wrote 'Game violation rules' without explanation; he was asked for an example and has not answered.
+From the team chat on 18 Nov 2026. Farhad proposed that each stall takes a few minutes to build; the counterpoint was that minutes of waiting works against keeping the player's hands busy and that five to ten seconds would be fine; nobody decided. Farhad also wrote 'Game violation rules' without explanation; he was asked for an example and has not answered.
 
 ## Goal
 

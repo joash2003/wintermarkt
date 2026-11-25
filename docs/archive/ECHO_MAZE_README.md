@@ -2,7 +2,7 @@
 
 A Unity 2D stealth maze game. Sonar reveals dark corridors but attracts enemies to the scan position. Escape three handcrafted levels.
 
-**Status:** implementation prepared; Unity compilation, Play Mode and standalone build are not verified. Editor startup inside the assistant sandbox failed because Unity Package Manager could not create its local socket (`EPERM`). See [test results](TESTING.md) and the [issue board](docs/issues/README.md).
+**Status:** implementation prepared; Unity compilation, Play Mode and standalone build are not verified. Editor startup inside the original sandbox failed because Unity Package Manager could not create its local socket (`EPERM`). See [test results](TESTING.md) and the [issue board](docs/issues/README.md).
 
 ## Open and play
 
@@ -38,4 +38,4 @@ You can also run EditMode tests in Unity's **Window > General > Test Runner**. S
 
 ## Contribute
 
-Read [setup and bundled AI skills](docs/CONTRIBUTOR_SETUP.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [tickets](docs/issues/README.md). No GitHub remote is configured yet. Assets are original geometry and generated sounds; see [credits](ASSET_CREDITS.md). The [handoff](Echo_Maze_Handoff.md) contains the full specification. Team roster, real human playtests, shareable weekly slide deck and final course submission remain pending.
+Read [setup](docs/CONTRIBUTOR_SETUP.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [tickets](docs/issues/README.md). No GitHub remote is configured yet. Assets are original geometry and generated sounds; see [credits](ASSET_CREDITS.md). Team roster, real human playtests, shareable weekly slide deck and final course submission remain pending.

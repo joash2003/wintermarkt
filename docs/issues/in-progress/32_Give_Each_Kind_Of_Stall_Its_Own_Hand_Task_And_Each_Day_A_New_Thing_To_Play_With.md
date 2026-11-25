@@ -10,7 +10,7 @@ branch: 32-tap-to-cook
 
 ## Context
 
-On 18 Nov 2026 Joash described the game as "boring" and "repeaty". Observed cause: stalls serve by themselves and every help call is the same click on a yellow ball (issue 23). The assistant first proposed a different mini-task per stall type. A teammate then proposed the idea below in the team chat, the assistant judged it the better one, and Joash approved building it on 18 Nov with two adjustments (one tap per batch instead of one per portion; portions go out by themselves).
+On 18 Nov 2026 Joash described the game as "boring" and "repeaty". Observed cause: stalls serve by themselves and every help call is the same click on a yellow ball (issue 23). A different mini-task per stall type was proposed first. A teammate then proposed the idea below in the team chat, it was judged the better one, and Joash approved building it on 18 Nov with two adjustments (one tap per batch instead of one per portion; portions go out by themselves).
 
 The teammate's idea, shortened: a Glühwein stall can prepare three portions at a time; the player taps to make them and they go to the customers. Customers' patience shrinks as the game goes on, so the player has to be faster and has to keep three or four stalls going at once. Upgrades raise the batch size or shorten the cooking time.
 

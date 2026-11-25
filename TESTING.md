@@ -19,7 +19,7 @@ Unity command actually attempted:
 
 The process stalled after Package Manager failure and was stopped. Local evidence is in `Logs/bootstrap.log` (ignored by Git). `python3` validates data independently; it does not execute the C# parser or prove runtime correctness.
 
-## Continue outside the assistant sandbox
+## Continue outside the sandbox
 
 Close any Unity instance for this project. From your normal Terminal run `bash tools/unity.sh setup`, then `bash tools/unity.sh test`. Check `Logs/bootstrap.log`, `Logs/editmode.log` and `Logs/editmode.xml`. Resolve any compile or package errors before proceeding. Run `bash tools/unity.sh build`, inspect `Logs/build.log`, then launch the exported app. Commands are prepared; tests and build have not run here.
 

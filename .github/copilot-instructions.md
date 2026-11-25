@@ -1,1 +1,0 @@
-Read AGENTS.md at the repository root before doing anything. It holds every project rule: language, the quality gate that runs before every commit, filing a ticket for every issue found, and safety rules.

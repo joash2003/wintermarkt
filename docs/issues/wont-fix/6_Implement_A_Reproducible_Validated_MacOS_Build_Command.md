@@ -2,7 +2,7 @@
 type: chore
 priority: high
 created: 2026-10-17
-assignee: Codex
+assignee:
 branch:
 closed: 2026-10-17
 ---
@@ -48,7 +48,7 @@ Claim this ticket in a separate commit by setting Owner and Status to In progres
 
 - 2026-10-17: Created from current source inspection. No implementation or test completion claimed.
 
-- 2026-10-17 (Codex): Added EchoMazeBuildAutomation.BuildRelease and tools/unity.sh build. No build command has run successfully; export/launch remains pending.
+- 2026-10-17: Added EchoMazeBuildAutomation.BuildRelease and tools/unity.sh build. No build command has run successfully; export/launch remains pending.
 
 - User pivot: superseded by the Linz Wintermarkt direction. This is not a completion claim. Reuse relevant implementation or testing work only after assessing the new design.
 
