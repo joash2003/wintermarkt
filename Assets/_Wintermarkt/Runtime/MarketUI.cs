@@ -61,12 +61,24 @@ namespace Wintermarkt
             footer = Label("", bottom, Vector2.zero, new Vector2(1510, 48), 17, ink);
             bannerPanel = Panel("Event banner", hud, new Vector2(.5f, 1), new Vector2(60, -128), new Vector2(820, 50), new Color(.6f, .13f, .15f, .95f));
             Framed(bannerPanel, bannerSprite); banner = Label("", bannerPanel, Vector2.zero, new Vector2(780, 38), 24, new Color(1, .96f, .88f)); banner.resizeTextForBestFit = true; banner.resizeTextMinSize = 13; banner.resizeTextMaxSize = 24; bannerPanel.gameObject.SetActive(false);
+            // Day card (issue 47): a full-width stripe that slams in at the start of each day, flashes, holds and fades, like a round banner in a shooter.
+            dayCard = Rect("Day card", hud, new Vector2(.5f, .5f), new Vector2(0, 90), new Vector2(1700, 170));
+            dayGroup = dayCard.gameObject.AddComponent<CanvasGroup>(); dayGroup.blocksRaycasts = false; dayGroup.interactable = false;
+            dayStripe = (RectTransform)Panel("Stripe", dayCard, new Vector2(.5f, .5f), Vector2.zero, new Vector2(1700, 150), new Color(.6f, .13f, .15f, .93f));
+            Panel("Top line", dayStripe, new Vector2(.5f, 1), Vector2.zero, new Vector2(1700, 5), gold); Panel("Bottom line", dayStripe, new Vector2(.5f, 0), Vector2.zero, new Vector2(1700, 5), gold);
+            dayNumber = Label("", dayCard, new Vector2(0, 50), new Vector2(1000, 30), 22, gold);
+            dayTitle = Label("", dayCard, new Vector2(0, -2), new Vector2(1600, 90), 76, new Color(1, .96f, .88f)); dayTitle.fontStyle = FontStyle.Bold;
+            dayTitle.gameObject.AddComponent<Shadow>().effectDistance = new Vector2(4, -4);
+            dayDate = Label("", dayCard, new Vector2(0, -52), new Vector2(1000, 28), 22, gold);
+            dayFlash = Panel("Flash", dayCard, new Vector2(.5f, .5f), Vector2.zero, new Vector2(1700, 150), Color.clear).GetComponent<Image>();
+            dayCard.gameObject.SetActive(false);
             // Add definition buttons after the simulation has been initialized by MarketGame.
             BuildMenu = build;
         }
         Transform BuildMenu, bannerPanel;
         Text banner;
-        int seenEvents, shownDay; float flashUntil, dayUntil; Core.MarketSimulation shownSim;
+        int seenEvents, shownDay; float flashUntil, dayStart = -10; Core.MarketSimulation shownSim;
+        RectTransform dayCard, dayStripe; CanvasGroup dayGroup; Text dayNumber, dayTitle, dayDate; Image dayFlash;
         bool buildButtonsReady;
         RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
         {
@@ -154,6 +166,17 @@ namespace Wintermarkt
             details.text = b.Definition.title + "\n" + game.Simulation.QueueCount(b) + " visitors waiting/in line\nLEVEL " + (b.Level + 1) + " / " + b.Definition.levels.Length + "\n\n" + b.Stats.income + " coins / visitor\n" + (game.Simulation.Settings.tapToCook ? "Tap: cooks " + b.Stats.capacity + " in " + b.Stats.serviceSeconds.ToString("0.#") + "s" : b.Stats.serviceSeconds.ToString("0.#") + "s service · " + b.Stats.capacity + " at once") + "\nAttraction +" + b.Stats.attraction.ToString("0.#") + "\n" + (max ? "Fully upgraded" : "Next upgrade: " + b.Definition.levels[b.Level + 1].cost + " coins") + "\nRemove: +" + game.Simulation.Refund(b) + " coins";
             upgrade.interactable = !max && game.State == FestivalState.Playing && game.Simulation.Coins >= b.Definition.levels[b.Level + 1].cost;
         }
+        // 0-0.25 s the stripe opens from the centre, 0.12-0.37 s the title slams down from double size, a white flash on impact and a second blink,
+        // hold, then from 2.6 s fade out while drifting up. Unscaled time, so pause and the 8x shot run do not change it.
+        void AnimateDayCard(float t)
+        {
+            bool showing = t >= 0 && t < 3.2f; dayCard.gameObject.SetActive(showing); if (!showing) return;
+            float open = 1 - Mathf.Pow(1 - Mathf.Clamp01(t / .25f), 3), slam = 1 - Mathf.Pow(1 - Mathf.Clamp01((t - .12f) / .25f), 2), fade = Mathf.Clamp01((t - 2.6f) / .6f);
+            dayStripe.localScale = new Vector3(open, 1, 1);
+            dayTitle.transform.localScale = Vector3.one * Mathf.Lerp(2.2f, 1, slam); dayTitle.color = new Color(1, .96f, .88f, slam);
+            dayFlash.color = new Color(1, 1, 1, (t < .37f ? 0 : .85f * Mathf.Clamp01(1 - (t - .37f) / .3f)) + (t > .8f && t < .92f ? .3f : 0));
+            dayGroup.alpha = 1 - fade; dayCard.anchoredPosition = new Vector2(0, 90 + 40 * fade);
+        }
         void Update()
         {
             if (game.Simulation == null) return;
@@ -162,12 +185,15 @@ namespace Wintermarkt
                 + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total") + "   ·   stars " + sim.Stars + "/" + sim.WaveCount;
             // Event banner: a running event with its time left, else a warning of the next one, else the one that just happened.
             if (sim.EventCount != seenEvents) { if (sim.EventCount > seenEvents) { flashUntil = Time.unscaledTime + 5; game.PlayClick(); } seenEvents = sim.EventCount; }
-            // Day banner (issue 47): a new day, or a new festival after a restart, opens with its name and date for 4 s.
-            if ((sim != shownSim || sim.Wave != shownDay) && game.State == FestivalState.Playing) { shownSim = sim; shownDay = sim.Wave; dayUntil = Time.unscaledTime + 4; }
-            var day = sim.CurrentWave;
+            // Day card (issue 47): a new day, or a new festival after a restart, opens with its name and date.
+            if ((sim != shownSim || sim.Wave != shownDay) && game.State == FestivalState.Playing)
+            {
+                var day = sim.CurrentWave; shownSim = sim; shownDay = sim.Wave; dayStart = Time.unscaledTime; game.PlayClick();
+                dayNumber.text = "DAY " + (sim.Wave + 1) + " / " + sim.WaveCount; dayTitle.text = day.title.ToUpperInvariant(); dayDate.text = (day.date ?? "").ToUpperInvariant();
+            }
+            AnimateDayCard(Time.unscaledTime - dayStart);
             int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
-            string news = Time.unscaledTime < dayUntil ? "Day " + (sim.Wave + 1) + "   ·   " + day.title + (string.IsNullOrEmpty(day.date) ? "" : "   ·   " + day.date)
-                : hunting > 0 ? "Krampus run! Click them to throw snowballs   " + hunting + " left" : sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s" + (sim.SnowPiles.Count > 0 ? "   ·   sweep the snow!" : "")
+            string news = hunting > 0 ? "Krampus run! Click them to throw snowballs   " + hunting + " left" : sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s" + (sim.SnowPiles.Count > 0 ? "   ·   sweep the snow!" : "")
                 : sim.Upcoming != null ? "In " + Mathf.CeilToInt(sim.UpcomingIn) + "s   " + sim.Upcoming.title
                 : sim.SnowPiles.Count > 0 ? "Snow on " + sim.SnowPiles.Count + " queue spots: hold the mouse button and sweep it away"
                 : sim.LastEvent != null && Time.unscaledTime < flashUntil ? sim.LastEvent.title : null;

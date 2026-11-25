@@ -18,8 +18,8 @@ Each day opens with the red banner showing its number, name and date for a few s
 
 ## Acceptance criteria
 
-- [ ] When a day starts (including day 1), the banner shows for about 4 seconds, e.g. "Day 2 · Krampus night · 5 December".
-- [ ] The day banner wins over event text while it shows; afterwards the banner behaves as before.
+- [ ] When a day starts (including day 1), a large card across the middle of the screen slams in, flashes, holds and fades within about 3 seconds: "DAY 2 / 4", "KRAMPUS NIGHT", "5 DECEMBER".
+- [ ] The card never blocks clicks, and the red event banner keeps working as before.
 - [x] Each wave in `market.json` has a `date`: First Advent 29 Nov, Krampus night 5 Dec, Christmas Eve 24 Dec, New Year's Eve 31 Dec (2026).
 - [ ] The banner text fits at 1280x720 and 1920x1080.
 
@@ -32,6 +32,8 @@ Each day opens with the red banner showing its number, name and date for a few s
 ## Work log
 
 - 2026-11-25: `WaveDefinition.date` added and set for the four days in `market.json`. `MarketUI.Update` shows "Day N · title · date" in the red banner for 4 s whenever the day changes or a new festival starts, ahead of event text. Quality gate passes (compile, 28 core tests). Not checked yet: Play Mode, and the text size at 1280x720 and 1920x1080.
+
+- 2026-11-25: the red-bar version was too flat, so the day now gets its own centre card in a round-banner style: the stripe opens from the centre (0.25 s), the title slams down from double size, a white flash on impact plus a second blink, hold, then fade and drift up from 2.6 s to 3.2 s, with the bell sound. The event banner is back to events only. Quality gate passes. Not checked yet: Play Mode, the feel, and the size at 1280x720 and 1920x1080.
 
 ## Outcome
 
