@@ -20,14 +20,18 @@ Each day opens with the red banner showing its number, name and date for a few s
 
 - [ ] When a day starts (including day 1), the banner shows for about 4 seconds, e.g. "Day 2 · Krampus night · 5 December".
 - [ ] The day banner wins over event text while it shows; afterwards the banner behaves as before.
-- [ ] Each wave in `market.json` has a `date`: First Advent 29 Nov, Krampus night 5 Dec, Christmas Eve 24 Dec, New Year's Eve 31 Dec (2026).
+- [x] Each wave in `market.json` has a `date`: First Advent 29 Nov, Krampus night 5 Dec, Christmas Eve 24 Dec, New Year's Eve 31 Dec (2026).
 - [ ] The banner text fits at 1280x720 and 1920x1080.
 
 ## Tasks
 
-- [ ] Add `date` to the wave definition and to the four waves in `market.json`.
-- [ ] In `MarketUI.Update`, remember the last wave and show the day banner for 4 s when it changes.
+- [x] Add `date` to the wave definition and to the four waves in `market.json`.
+- [x] In `MarketUI.Update`, remember the last wave and show the day banner for 4 s when it changes.
 - [ ] Check in Play Mode (or `bash tools/unity.sh shots`) and note the result here.
+
+## Work log
+
+- 2026-11-25: `WaveDefinition.date` added and set for the four days in `market.json`. `MarketUI.Update` shows "Day N · title · date" in the red banner for 4 s whenever the day changes or a new festival starts, ahead of event text. Quality gate passes (compile, 25 core tests). Not checked yet: Play Mode, and the text size at 1280x720 and 1920x1080.
 
 ## Outcome
 

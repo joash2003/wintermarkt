@@ -24,6 +24,7 @@
   "waves": [
     {
       "title": "First Advent",
+      "date": "29 November",
       "seconds": 120,
       "arrivalFactor": 1.0,
       "helpFactor": 1.0,
@@ -32,6 +33,7 @@
     },
     {
       "title": "Krampus night",
+      "date": "5 December",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,
@@ -40,6 +42,7 @@
     },
     {
       "title": "Christmas Eve",
+      "date": "24 December",
       "seconds": 180,
       "arrivalFactor": 1.6,
       "helpFactor": 1.4,
@@ -48,6 +51,7 @@
     },
     {
       "title": "New Year's Eve",
+      "date": "31 December",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,

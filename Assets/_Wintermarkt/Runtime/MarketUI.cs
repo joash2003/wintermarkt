@@ -66,7 +66,7 @@ namespace Wintermarkt
         }
         Transform BuildMenu, bannerPanel;
         Text banner;
-        int seenEvents; float flashUntil;
+        int seenEvents, shownDay; float flashUntil, dayUntil; Core.MarketSimulation shownSim;
         bool buildButtonsReady;
         RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
         {
@@ -162,8 +162,12 @@ namespace Wintermarkt
                 + sim.Coins + " coins   ·   " + Mathf.RoundToInt(sim.Reputation) + "% reputation   ·   " + (sim.MostWanted != null ? "Visitors are missing: " + sim.MostWanted.ToUpperInvariant() : sim.Happy + " happy in total") + "   ·   stars " + sim.Stars + "/" + sim.WaveCount;
             // Event banner: a running event with its time left, else a warning of the next one, else the one that just happened.
             if (sim.EventCount != seenEvents) { if (sim.EventCount > seenEvents) { flashUntil = Time.unscaledTime + 5; game.PlayClick(); } seenEvents = sim.EventCount; }
+            // Day banner (issue 47): a new day, or a new festival after a restart, opens with its name and date for 4 s.
+            if ((sim != shownSim || sim.Wave != shownDay) && game.State == FestivalState.Playing) { shownSim = sim; shownDay = sim.Wave; dayUntil = Time.unscaledTime + 4; }
+            var day = sim.CurrentWave;
             int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
-            string news = hunting > 0 ? "Krampus run! Click them to throw snowballs   " + hunting + " left" : sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s" + (sim.SnowPiles.Count > 0 ? "   ·   sweep the snow!" : "")
+            string news = Time.unscaledTime < dayUntil ? "Day " + (sim.Wave + 1) + "   ·   " + day.title + (string.IsNullOrEmpty(day.date) ? "" : "   ·   " + day.date)
+                : hunting > 0 ? "Krampus run! Click them to throw snowballs   " + hunting + " left" : sim.ActiveEvent != null ? sim.ActiveEvent.title + "   " + Mathf.CeilToInt(sim.EventRemaining) + "s" + (sim.SnowPiles.Count > 0 ? "   ·   sweep the snow!" : "")
                 : sim.Upcoming != null ? "In " + Mathf.CeilToInt(sim.UpcomingIn) + "s   " + sim.Upcoming.title
                 : sim.SnowPiles.Count > 0 ? "Snow on " + sim.SnowPiles.Count + " queue spots: hold the mouse button and sweep it away"
                 : sim.LastEvent != null && Time.unscaledTime < flashUntil ? sim.LastEvent.title : null;
