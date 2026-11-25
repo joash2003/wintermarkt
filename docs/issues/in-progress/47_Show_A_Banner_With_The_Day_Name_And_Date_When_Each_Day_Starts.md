@@ -2,8 +2,8 @@
 type: feature
 priority: medium
 created: 2026-11-25
-assignee:
-branch:
+assignee: Joash Johnson Samuel
+branch: 47-day-banner
 ---
 
 # 47 — Show a banner with the day name and date when each day starts
