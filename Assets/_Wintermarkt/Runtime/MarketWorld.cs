@@ -471,16 +471,7 @@ namespace Wintermarkt
                 present.Add(k.Id); Transform beast; int hits;
                 if (!beasts.TryGetValue(k.Id, out beast))
                 {
-                    beast = new GameObject("Krampus " + k.Id).transform; beast.SetParent(content); beast.localScale = Vector3.one * 1.7f; beasts[k.Id] = beast;
-                    Color fur = new Color(.13f, .09f, .08f), horn = new Color(.82f, .76f, .6f);
-                    Shape("Body", beast, PrimitiveType.Capsule, Vector3.up * 1.5f, new Vector3(1.5f, 1.5f, 1.5f), fur);
-                    Shape("Head", beast, PrimitiveType.Sphere, Vector3.up * 3.3f, Vector3.one * 1.25f, fur);
-                    for (int side = -1; side <= 1; side += 2)
-                    {
-                        Shape("Horn", beast, PrimitiveType.Cylinder, new Vector3(side * .55f, 4.2f, 0), new Vector3(.22f, .65f, .22f), horn).localRotation = Quaternion.Euler(0, 0, -side * 28);
-                        Shape("Eye", beast, PrimitiveType.Sphere, new Vector3(side * .28f, 3.4f, .55f), Vector3.one * .28f, Glow(new Color(1, .1f, .05f)));
-                    }
-                    Shape("Tongue", beast, PrimitiveType.Cube, new Vector3(0, 2.9f, .6f), new Vector3(.3f, .6f, .15f), Glow(new Color(.9f, .1f, .15f)));
+                    beast = Krampus("Krampus " + k.Id, content); beasts[k.Id] = beast;
                 }
                 if (!beastHits.TryGetValue(k.Id, out hits) || hits != k.Hits)
                 {
@@ -492,6 +483,62 @@ namespace Wintermarkt
                 if (k.NextCell != k.Position) beast.rotation = Quaternion.LookRotation(World(k.NextCell) - World(k.Position));
             }
             foreach (int id in new List<int>(beasts.Keys)) if (!present.Contains(id)) { Destroy(beasts[id].gameObject); beasts.Remove(id); beastHits.Remove(id); }
+        }
+        Transform Krampus(string name, Transform parent)
+        {
+            var beast = new GameObject(name).transform; beast.SetParent(parent, false); beast.localScale = Vector3.one * 1.7f;
+            Color fur = new Color(.13f, .09f, .08f), horn = new Color(.82f, .76f, .6f);
+            Shape("Body", beast, PrimitiveType.Capsule, Vector3.up * 1.5f, new Vector3(1.5f, 1.5f, 1.5f), fur);
+            Shape("Head", beast, PrimitiveType.Sphere, Vector3.up * 3.3f, Vector3.one * 1.25f, fur);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Shape("Horn", beast, PrimitiveType.Cylinder, new Vector3(side * .55f, 4.2f, 0), new Vector3(.22f, .65f, .22f), horn).localRotation = Quaternion.Euler(0, 0, -side * 28);
+                Shape("Eye", beast, PrimitiveType.Sphere, new Vector3(side * .28f, 3.4f, .55f), Vector3.one * .28f, Glow(new Color(1, .1f, .05f)));
+            }
+            Shape("Tongue", beast, PrimitiveType.Cube, new Vector3(0, 2.9f, .6f), new Vector3(.3f, .6f, .15f), Glow(new Color(.9f, .1f, .15f)));
+            return beast;
+        }
+        // Day card hero (issue 47): one character posing on its own stage far off the market, filmed by its own camera into a texture the UI shows.
+        Camera heroCamera; Transform heroStage, hero; PlayableGraph heroGraph; AnimationClipPlayable heroPose; float heroLength;
+        public RenderTexture HeroTexture { get; private set; }
+        /// <summary>model is a People/ character, "krampus", or empty for none; pose is one of the model's clips (idle, emote-yes, jump, pick-up, ...).</summary>
+        public void ShowHero(string model, string pose)
+        {
+            if (!heroCamera)
+            {
+                heroStage = new GameObject("Day card stage").transform; heroStage.position = new Vector3(5000, 0, 5000);
+                HeroTexture = new RenderTexture(512, 512, 24);
+                heroCamera = new GameObject("Day card camera").AddComponent<Camera>(); heroCamera.transform.SetParent(heroStage, false);
+                heroCamera.targetTexture = HeroTexture; heroCamera.clearFlags = CameraClearFlags.SolidColor; heroCamera.backgroundColor = Color.clear; heroCamera.fieldOfView = 30;
+            }
+            HideHero(); if (string.IsNullOrEmpty(model)) return;
+            hero = model == "krampus" ? Krampus("Krampus hero", heroStage) : Prop("People/" + model, heroStage, Vector3.zero, 3.3f);
+            if (!hero) return;
+            hero.localRotation = Quaternion.Euler(0, 25, 0);
+            // Frame the whole figure: the models face +z, so the camera stands in front on +z.
+            var renderers = hero.GetComponentsInChildren<Renderer>(); if (renderers.Length == 0) return;
+            var bounds = renderers[0].bounds; foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+            float distance = bounds.extents.y * 1.15f / Mathf.Tan(heroCamera.fieldOfView * .5f * Mathf.Deg2Rad);
+            heroCamera.transform.position = bounds.center + Vector3.forward * distance; heroCamera.transform.LookAt(bounds.center);
+            heroCamera.nearClipPlane = .1f; heroCamera.farClipPlane = distance * 3; heroCamera.enabled = true;
+            var clip = model == "krampus" || string.IsNullOrEmpty(pose) ? null : Clip("People/" + model, pose);
+            if (!clip || hero.childCount == 0) return;
+            var animator = hero.GetComponentInChildren<Animator>(); if (!animator) animator = hero.GetChild(0).gameObject.AddComponent<Animator>();
+            animator.applyRootMotion = false;
+            heroGraph = PlayableGraph.Create("Day card hero"); heroGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+            heroPose = AnimationClipPlayable.Create(heroGraph, clip); heroLength = clip.length;
+            AnimationPlayableOutput.Create(heroGraph, "Pose", animator).SetSourcePlayable(heroPose); heroGraph.Play();
+        }
+        /// <summary>Loops the hero's clip at t seconds into the card; the Krampus has no clips, so it sways.</summary>
+        public void PoseHero(float t)
+        {
+            if (heroGraph.IsValid()) { heroPose.SetTime(heroLength > 0 ? t % heroLength : 0); heroGraph.Evaluate(); }
+            else if (hero) hero.localRotation = Quaternion.Euler(0, 25 + Mathf.Sin(t * 6) * 12, 0);
+        }
+        public void HideHero()
+        {
+            if (heroGraph.IsValid()) heroGraph.Destroy();
+            if (hero) Destroy(hero.gameObject); hero = null; if (heroCamera) heroCamera.enabled = false;
         }
         // The snowstorm event: plain falling cubes, because a particle shader may be missing from a build (see issue 8).
         void Snowfall(bool storm, float dt)
@@ -764,7 +811,7 @@ namespace Wintermarkt
                 Lamp("Rim light", ride, new Vector3(Mathf.Sin(a), 0, Mathf.Cos(a)) * (radius + .5f * ring), Vector3.one * .4f);
             }
         }
-        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); foreach (var m in kitMaterials.Values) if (m) Destroy(m); foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy(); }
+        void OnDestroy() { foreach (var m in materials.Values) if (m) Destroy(m); foreach (var m in glows.Values) if (m) Destroy(m); foreach (var m in kitMaterials.Values) if (m) Destroy(m); foreach (var w in walkers.Values) if (w.graph.IsValid()) w.graph.Destroy(); if (heroGraph.IsValid()) heroGraph.Destroy(); if (HeroTexture) HeroTexture.Release(); }
 
         sealed class AmbientVehicle
         {

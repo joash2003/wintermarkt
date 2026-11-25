@@ -24,6 +24,9 @@
   "waves": [
     {
       "title": "First Advent",
+      "date": "29 November",
+      "hero": "character-female-a",
+      "pose": "emote-yes",
       "seconds": 120,
       "arrivalFactor": 1.0,
       "helpFactor": 1.0,
@@ -32,6 +35,8 @@
     },
     {
       "title": "Krampus night",
+      "date": "5 December",
+      "hero": "krampus",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,
@@ -40,6 +45,9 @@
     },
     {
       "title": "Christmas Eve",
+      "date": "24 December",
+      "hero": "character-male-c",
+      "pose": "pick-up",
       "seconds": 180,
       "arrivalFactor": 1.6,
       "helpFactor": 1.4,
@@ -48,6 +56,9 @@
     },
     {
       "title": "New Year's Eve",
+      "date": "31 December",
+      "hero": "character-female-e",
+      "pose": "jump",
       "seconds": 150,
       "arrivalFactor": 1.3,
       "helpFactor": 1.2,

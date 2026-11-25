@@ -35,7 +35,7 @@ namespace Wintermarkt.Core
     [Serializable]
     public sealed class WaveDefinition
     {
-        public string title;
+        public string title, date, hero, pose;   // hero and pose: the character on the day card (issue 47), see MarketWorld.ShowHero
         public float seconds, arrivalFactor = 1, helpFactor = 1, patienceFactor = 1;
         public int target;
     }
