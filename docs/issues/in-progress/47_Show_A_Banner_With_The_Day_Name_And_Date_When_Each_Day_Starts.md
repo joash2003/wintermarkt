@@ -31,7 +31,7 @@ Each day opens with the red banner showing its number, name and date for a few s
 
 ## Work log
 
-- 2026-11-25: `WaveDefinition.date` added and set for the four days in `market.json`. `MarketUI.Update` shows "Day N · title · date" in the red banner for 4 s whenever the day changes or a new festival starts, ahead of event text. Quality gate passes (compile, 25 core tests). Not checked yet: Play Mode, and the text size at 1280x720 and 1920x1080.
+- 2026-11-25: `WaveDefinition.date` added and set for the four days in `market.json`. `MarketUI.Update` shows "Day N · title · date" in the red banner for 4 s whenever the day changes or a new festival starts, ahead of event text. Quality gate passes (compile, 28 core tests). Not checked yet: Play Mode, and the text size at 1280x720 and 1920x1080.
 
 ## Outcome
 
