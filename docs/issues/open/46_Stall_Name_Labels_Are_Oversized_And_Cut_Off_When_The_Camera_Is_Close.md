@@ -2,7 +2,7 @@
 type: bug
 priority: low
 created: 2026-11-22
-assignee:
+assignee: Alibek Abylkasymov
 branch:
 ---
 
