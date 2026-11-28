@@ -78,7 +78,7 @@ namespace Wintermarkt.Editor
             double sinceDay = EditorApplication.timeSinceStartup - waveAt;
             if (sinceDay > 1.2 && sinceDay < 2.4) Save(cam, "day-" + (sim.Wave + 1));
             // Issue 14: a queue of three or more, close up, to see that it stands in joining order.
-            foreach (var b in sim.Buildings) if (sim.QueueCount(b) >= 3) { Close(cam, game, b, "queue"); break; }
+            if (sinceDay > 3.5) foreach (var b in sim.Buildings) if (sim.QueueCount(b) >= 3) { Close(cam, game, b, "queue"); break; }   // after the day card has gone
             MarketBuilding calling = null; foreach (var b in sim.Buildings) if (b.NeedsHelp) calling = b;
             int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
             if (calling != null && calling.HelpRemaining < 6) Save(cam, "help-call");
