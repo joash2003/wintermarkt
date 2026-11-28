@@ -33,8 +33,16 @@ json_data() {
   return $bad
 }
 
+unity_version() {
+  # The team's version (issue 12). Opening the project in another Unity rewrites this file; change the value here only when the team agrees a new version.
+  local want=6000.3.25f1 have
+  have=$(sed -n 's/^m_EditorVersion: //p' ProjectSettings/ProjectVersion.txt | tr -d '\r')
+  [ "$have" = "$want" ] || { echo "ProjectSettings/ProjectVersion.txt says '$have' but the team uses $want: open the project in $want and revert the rewrite"; return 1; }
+}
+
 echo "Quality gate"
 check "Secret scan (staged)" gitleaks git --staged --no-banner --redact
+check "Unity version pinned" unity_version
 check "Whitespace + conflicts" git diff --cached --check
 check "JSON data" json_data
 check "Issue files" "$py" -B tools/issue.py check --offline

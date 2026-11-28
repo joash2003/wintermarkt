@@ -33,6 +33,7 @@ Install the hook once per clone: `git config core.hooksPath .githooks`. Every co
 | Check | Catches |
 |---|---|
 | Secret scan (staged) | API keys, tokens and passwords in what you are committing |
+| Unity version pinned | ProjectSettings/ProjectVersion.txt naming any Unity but the team's 6000.3.25f1, which means the project was opened in the wrong version (issue 12) |
 | Whitespace + conflicts | leftover `<<<<<<<` merge markers and broken whitespace |
 | JSON data | broken market.json, site.json or other JSON under Assets |
 | Issue files | a ticket with a wrong filename, heading, front matter or missing section, or closed without an Outcome |
