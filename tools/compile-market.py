@@ -5,7 +5,10 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 hubs = [Path('/Applications/Unity/Hub/Editor'), Path('C:/Program Files/Unity/Hub/Editor'), Path.home() / 'Unity/Hub/Editor']
-installed = sorted(p for hub in hubs for p in [*hub.glob('*/Unity.app/Contents'), *hub.glob('*/Editor')])
+pinned = next(l.split()[1] for l in (root/'ProjectSettings/ProjectVersion.txt').read_text().splitlines() if l.startswith('m_EditorVersion:'))
+# The pinned version sorts last, so it wins when installed; otherwise the newest.
+# shortcut: "newest" is string order, so a future 6000.10 sorts before 6000.9; switch to a version sort if that happens.
+installed = sorted((p for hub in hubs for p in [*hub.glob('*/Unity.app/Contents'), *hub.glob('*/Editor')]), key=lambda p: (pinned in p.parts, p))
 unity = Path(os.environ['UNITY_APP']) if 'UNITY_APP' in os.environ else installed[-1] if installed else Path('/missing')
 data = unity / 'Resources/Scripting' if (unity / 'Resources/Scripting').is_dir() else unity / 'Data'
 packages = unity / 'Resources/PackageManager' if (unity / 'Resources/PackageManager').is_dir() else data / 'Resources/PackageManager'
@@ -17,6 +20,7 @@ netstandard = data / 'NetStandard/ref/2.1.0/netstandard.dll'
 ui = next(iter(sorted(packages.glob('ProjectTemplates/libcache/*/ScriptAssemblies/UnityEngine.UI.dll'))), Path('/missing'))
 if not mono.exists() or not csc.exists() or not ui.exists() or not netstandard.exists():
     raise SystemExit('Unity references not found. Install Unity through Unity Hub or set UNITY_APP to Unity.app/Contents (macOS) or the version\'s Editor folder (Windows/Linux).')
+print('Using Unity at ' + str(unity))
 logs = root / 'Logs/market-compile'; logs.mkdir(parents=True, exist_ok=True)
 refs = [netstandard, managed/'UnityEngine.dll', managed/'UnityEditor.dll'] + list(engine.glob('*.dll'))
 refs = [p for p in refs if p.exists()]
