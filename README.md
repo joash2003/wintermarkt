@@ -6,7 +6,7 @@ A Unity management-game prototype about growing a Christmas market in Linz’s V
 
 ## Open in Unity
 
-**Requirement: Unity 6000.3.25f1 (6.3 LTS), exactly this version, installed through Unity Hub.** Any other version rewrites ProjectSettings and the package versions on opening; never commit such a change (issue 12). Open this folder in Unity Hub, let the package import finish, then use **Tools → Wintermarkt → Create or Repair Project**. This creates `Assets/_Wintermarkt/Scenes/Market.unity` only when it is missing, configures the market scene for the player build, and opens it. Press Play. The existing `_EchoMaze` project is retained as legacy source.
+**Requirement: Unity 6000.3.25f1 (6.3 LTS), exactly this version, installed through Unity Hub.** Any other version rewrites ProjectSettings and the package versions on opening; never commit such a change (issue 12). Open this folder in Unity Hub, let the package import finish, then use **Tools → Wintermarkt → Create or Repair Project**. This creates `Assets/_Wintermarkt/Scenes/Market.unity` only when it is missing, configures the market scene for the player build, and opens it. Press Play.
 
 From Terminal, `bash tools/unity.sh setup` runs the same bootstrap, `bash tools/unity.sh data` validates configuration, `bash tools/unity.sh test` runs EditMode tests, and `bash tools/unity.sh build` exports a macOS prototype. Some restricted environments prevent Unity Package Manager from opening its local socket; if setup stalls, open the project in the regular Unity Hub/editor and let package import finish there.
 

@@ -17,7 +17,6 @@ The source is published to the private repo https://github.com/joash2003/winterm
 - Linz Wintermarkt is a real-time Christmas-market management game in Unity for the JKU GameDev 2026 course. Team: Joash Johnson Samuel, Alibek Abylkasymov, Bobby Alinkal.
 - The design spec is docs/LINZ_WINTERMARKT_DESIGN.md. It wins over every other document. Work comes from tickets in docs/issues/.
 - Code lives in Assets/_Wintermarkt: Core (pure C#, no UnityEngine), Runtime (MonoBehaviours), Editor (menu tools), Tests. Tuning is in Resources/Wintermarkt/market.json and site.json.
-- Assets/_EchoMaze is the abandoned Echo Maze prototype. Do not edit it, and never run `tools/unity.sh legacy-setup`.
 
 ### Language
 

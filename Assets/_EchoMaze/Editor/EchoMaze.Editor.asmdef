@@ -1,9 +1,0 @@
-{
-  "name": "EchoMaze.Editor",
-  "references": [
-    "EchoMaze.Runtime"
-  ],
-  "includePlatforms": [
-    "Editor"
-  ]
-}
