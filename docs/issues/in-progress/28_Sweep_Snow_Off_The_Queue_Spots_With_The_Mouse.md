@@ -29,6 +29,7 @@ During a snowstorm snow piles up on free queue spots and blocks them until the p
 - [ ] Tests first where Core changes.
 - [ ] Data, simulation and what the player sees.
 - [ ] Bots, design spec, Play Mode render.
+- [ ] Optional, Farhad's idea from 28 Nov: a small snowplough model follows the cursor while sweeping. Decide when the sweep is checked by hand.
 
 ## Work log
 

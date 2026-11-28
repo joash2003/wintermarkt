@@ -27,6 +27,7 @@ The evening has music and distinct sounds, so the player can hear what is happen
 ## Tasks
 
 - [ ] Choose or make the sounds (Kenney has CC0 audio packs).
+- [ ] Farhad produces the clips with ElevenLabs Pro (offered 28 Nov); Aidan wires them in. AI-generated audio goes into ASSET_CREDITS.md as such, and whether the course allows it is asked together with issue 42.
 - [ ] An audio manager in Runtime instead of the single AudioSource.
 - [ ] Volume balance on laptop speakers.
 
