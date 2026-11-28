@@ -33,6 +33,7 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 2. One person opens the project in that version, accepts the version change, runs Tools → Wintermarkt → Create or Repair Project and presses Play.
 3. Commit the changed ProjectVersion.txt, Packages/manifest.json and packages-lock.json together, and update the version in README.md.
 4. Everyone installs that exact version through Unity Hub.
+5. Review by Farhad or Alibek (about ten minutes): install 6000.3.25f1 through Unity Hub, `git pull`, open the project (no version prompt may appear), run Tools > Wintermarkt > Create or Repair Project, press Play and place a stall. Then tick the last box, add a work log line with name and date, and run `py tools/issue.py move 12 closed` with an Outcome; if anything fails, write what happened here instead.
 
 ## Acceptance criteria
 
@@ -45,6 +46,8 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 
 - 2026-10-20: found while porting the quality gate; compile and test tools now detect the installed Unity instead of a fixed version path.
 - 2026-10-20: team decision (Joash): Unity 6000.3.25f1 (6.3 LTS). Changed ProjectVersion.txt and Packages/manifest.json (ugui 2.6.0 -> 2.0.0, test-framework 1.8.0 -> 1.6.0, the versions 6.3 ships); committed the new packages-lock.json. `tools/unity.sh setup`, `test` (24/24 EditMode) and `build` pass in 6.3, and the built app runs (see TESTING.md). README, readme.txt and CONTRIBUTING.md name 6.3 LTS. Remaining: Alibek and Bobby install 6000.3.25f1 and confirm the project opens, then close this.
+
+- 2026-11-28: the pin has held for five weeks: ProjectVersion.txt is unchanged since 5d25915 (20 Oct) and the only package change since, 18db4aa on 18 Nov, added com.unity.modules.animation. Every commit so far is Joash's, so nobody else has opened the project yet. GitHub: Farhad-JKU and AlibekAby have push access, Aidan's invitation of 25 Nov is still unaccepted, Bobby has left the team (issue 41). The compile gate now uses the pinned version (issue 45), and today's `bash tools/unity.sh shots` and `build` ran in 6000.3.25f1 on Joash's Windows PC (issues 37 and 47). The 6000.6.4f1 lines in TESTING.md are the dated 17 Oct record, not a current claim. Remaining: task 5.
 
 ## Outcome
 
