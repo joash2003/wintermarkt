@@ -82,6 +82,7 @@ namespace Wintermarkt
         Text banner;
         int seenEvents, shownDay; float flashUntil, dayStart = -10; Core.MarketSimulation shownSim;
         RectTransform dayCard, dayStripe; CanvasGroup dayGroup; Text dayNumber, dayTitle, dayDate; Image dayFlash; RawImage dayHero;
+        public bool DayCardShowing => dayCard != null && dayCard.gameObject.activeSelf;   // the shots run waits for the card to go before close-ups (issue 14)
         bool buildButtonsReady;
         RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
         {
