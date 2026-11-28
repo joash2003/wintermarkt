@@ -2,7 +2,7 @@
 type: bug
 priority: low
 created: 2026-10-20
-assignee: Farhad Arezo
+assignee: Joash Johnson Samuel
 branch:
 ---
 
