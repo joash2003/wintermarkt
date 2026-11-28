@@ -4,6 +4,7 @@ priority: high
 created: 2026-10-20
 assignee: Joash Johnson Samuel
 branch: main
+closed: 2026-11-28
 ---
 
 # 12 — Agree on one Unity version for the team
@@ -51,4 +52,4 @@ ProjectSettings/ProjectVersion.txt (`m_EditorVersion: 6000.6.4f1`), Packages/man
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Unity 6000.3.25f1 (6.3 LTS) is the team version: pinned in ProjectSettings/ProjectVersion.txt since 5d25915 (20 Oct) with the packages 6.3 ships, named in README.md, readme.txt and CONTRIBUTING.md, and used by the compile gate (issue 45). Closed on 2026-11-28 by Joash's decision: the team agrees the version in the group chat instead of a review on a second machine, so the last acceptance box stays unticked. Left out: no other contributor has opened the project yet. If the first open in 6000.3.25f1 shows a version prompt or an error, reopen this or file a bug.
