@@ -53,6 +53,26 @@ namespace Wintermarkt.Tests
                 Require(slots.Add(v.Slot), "Queue slot double-booked");
             Require(slots.Count <= 4 && sim.Welcomed > slots.Count, "Queue capacity not respected");
         }
+        public static void QueueStepsForwardInOrder()
+        {
+            // Issue 14: the front of the queue is always the visitor who joined first, so served spots are refilled from behind, not by newcomers.
+            var sim = Create(); string reason; Require(sim.TryPlace("stall", new Cell(2, 2), out reason), reason);
+            bool stepped = false; var lastSlot = new Dictionary<int, int>();
+            for (int t = 0; t < 60; t++)
+            {
+                sim.Tick(.5f); var b = sim.Buildings[0]; int lastId = -1;
+                for (int slot = 0; slot < 4; slot++)
+                    foreach (var v in sim.Visitors)
+                        if (v.Destination == b && v.Slot == slot && v.State != VisitorState.Leaving && v.State != VisitorState.Gone)
+                        { Require(v.Id > lastId, "A later visitor stands in front of an earlier one"); lastId = v.Id; }
+                foreach (var v in sim.Visitors)
+                {
+                    int before; if (v.Slot >= 0 && lastSlot.TryGetValue(v.Id, out before) && v.Slot < before) stepped = true;
+                    if (v.Slot >= 0) lastSlot[v.Id] = v.Slot;
+                }
+            }
+            Require(stepped, "Nobody ever stepped forward");
+        }
         public static void UpgradeAndPause()
         {
             var sim = Create(); string reason; sim.TryPlace("stall", new Cell(2, 2), out reason);
@@ -320,6 +340,6 @@ namespace Wintermarkt.Tests
             calm.Tick(26); late.Tick(26);
             Require(calm.Abandoned == 0 && late.Abandoned > 0, "A day with a lower patience factor makes visitors give up sooner");
         }
-        public static Action[] All { get { return new Action[] { TapCooksABatchThatIsHandedOut, FullStallCannotBeTappedAndUpgradesGrowTheBatch, LaterDaysAreLessPatient, SnowBuriesQueueSpotsUntilSwept, KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
+        public static Action[] All { get { return new Action[] { TapCooksABatchThatIsHandedOut, FullStallCannotBeTappedAndUpgradesGrowTheBatch, LaterDaysAreLessPatient, SnowBuriesQueueSpotsUntilSwept, KrampusScaresAndIsDrivenOff, BurstEventSpawnsVisitors, StormShortensPatience, PowerCutCallsEveryStall, HelpedStallIsBoosted, MissedHelpClosesStall, HelpCallsGrowWithStalls, MoodIsRecorded, RemoveRefundsAndFreesSpace, MissedTargetCostsAStarNotTheGame, MetTargetsGiveEveryStar, ReputationZeroEndsTheEvening, ArrivalFactorSpeedsArrivals, VisitorVisitsEveryWish, MissingWishDisappoints, NoArrivalsBeforeFirstBuilding, PlacementIsAtomic, NavigationRejectsWalls, ServicePaysExactlyOnce, QueueSlotsAreUnique, QueueStepsForwardInOrder, UpgradeAndPause, UpgradeImprovesThroughput, FullRunStaysBounded, InvalidDataFails }; } }
     }
 }

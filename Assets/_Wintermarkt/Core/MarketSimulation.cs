@@ -323,7 +323,7 @@ namespace Wintermarkt.Core
                     }
                     // A stall only calls while visitors are waiting for it: an idle stall has nothing to pour.
                     else if (Settings.helpIntervalSeconds > 0 && (b.NextHelp -= dt) <= 0 && QueueCount(b) > 0) b.HelpRemaining = Settings.helpWindowSeconds;
-                    StartService(b);
+                    MoveUp(b); StartService(b);
                 }
                 visitors.RemoveAll(v => v.State == VisitorState.Gone);
                 if (Remaining <= 0)
@@ -485,6 +485,28 @@ namespace Wintermarkt.Core
             { v.EdgeProgress = 0; v.State = v.State == VisitorState.Leaving ? VisitorState.Gone : VisitorState.Waiting; }
         }
 
+        // When a spot frees up everyone behind steps forward (issue 14): the visitors heading for or standing in the queue are re-packed
+        // into the lowest free spots in the order they joined. A visitor being served keeps their spot; a snowed-in spot is skipped.
+        void MoveUp(MarketBuilding b)
+        {
+            var queue = new List<MarketVisitor>();
+            foreach (var v in visitors) if (v.Destination == b && v.Slot >= 0 && (v.State == VisitorState.Waiting || v.State == VisitorState.Walking)) queue.Add(v);
+            if (queue.Count == 0) return;
+            queue.Sort((x, y) => x.QueueOrder.CompareTo(y.QueueOrder));
+            int slot = 0;
+            foreach (var v in queue)
+            {
+                while (piles.Contains(b.QueueCell(slot)) || ServingAt(b, slot)) slot++;
+                if (v.Slot != slot)
+                {
+                    v.Slot = slot; v.Route = Site.Path(v.Position, b.QueueCell(slot), occupied) ?? new List<Cell>(); v.RouteIndex = 0; v.EdgeProgress = 0;
+                    v.State = v.Route.Count == 0 ? VisitorState.Waiting : VisitorState.Walking;
+                }
+                slot++;
+            }
+        }
+        bool ServingAt(MarketBuilding b, int slot)
+        { foreach (var v in visitors) if (v.Destination == b && v.Slot == slot && v.State == VisitorState.Serving) return true; return false; }
         void StartService(MarketBuilding b)
         {
             if (b.ClosedRemaining > 0) return;
