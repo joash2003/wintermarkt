@@ -4,6 +4,7 @@ priority: medium
 created: 2026-11-25
 assignee: Joash Johnson Samuel
 branch: 47-day-banner
+closed: 2026-11-28
 ---
 
 # 47 — Show a banner with the day name and date when each day starts
@@ -22,7 +23,7 @@ Each day opens with the red banner showing its number, name and date for a few s
 - [x] Each day shows off its own character on the card, set in `market.json` (`hero`, `pose`): day 1 a visitor nodding yes, day 2 the Krampus swaying, day 3 a visitor picking something up, day 4 a visitor jumping.
 - [x] The card never blocks clicks, and the red event banner keeps working as before.
 - [x] Each wave in `market.json` has a `date`: First Advent 29 Nov, Krampus night 5 Dec, Christmas Eve 24 Dec, New Year's Eve 31 Dec (2026).
-- [ ] The banner text fits at 1280x720 and 1920x1080.
+- [x] The banner text fits at 1280x720 and 1920x1080.
 
 ## Tasks
 
@@ -40,6 +41,8 @@ Each day opens with the red banner showing its number, name and date for a few s
 
 - 2026-11-28: `bash tools/unity.sh shots` now pictures each day card in its hold phase (Logs/shots/day-1.png to day-4.png) and ran twice with no exceptions, about 1.5 minutes each on Joash's PC. The first run showed the stripe, the title and the posed character with a clean cut-out, but the "DAY 1 / 4" and date lines were invisible: the panel skin redefines `gold` as berry red, so they were red on red. Fixed in ffed8b3 with an explicit gold; the second run shows all three lines and the gold edges. Seen: the Krampus is a dark silhouette with red eyes and horns, as in the market; the character overlaps the build menu on the left for the three seconds, which reads as intended. Not checked: 1280x720 and 1920x1080 (the pictures are 1600x900) and whether clicks pass through the card, which `CanvasGroup.blocksRaycasts = false` is meant to guarantee; both are a minute in the editor during issue 31.
 
+- 2026-11-28, later: the shots run now also saves the day-1 card at 1280x720 and 1920x1080 (PlayModeShots asks the canvas scaler to recompute for the picture size first). Both pictures show the card and its three lines complete and in proportion: the canvas scales with screen size from a 1600x900 reference, so every 16:9 size lays out the same. Last box ticked.
+
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped: a day card that slams in, flashes, holds and fades within 3.2 s on unscaled time, with the day number, title and date on a red stripe and the day's character (market.json hero and pose) rendered by a second camera into a texture and animated with the Kenney clips; it never blocks clicks (CanvasGroup.blocksRaycasts off). Commits c8a5c6a ffed8b3 7cffad0 7b39b44 a7191c0 abd7266 2f33ce8 025d565 96f2990. Checked with the shots run on 2026-11-28: all four day cards at 1600x900, day 1 also at 1280x720 and 1920x1080, no exceptions; a colour bug found there (gold lines drawn in the panel's berry red) was fixed. Left out: a window that is not 16:9 was not pictured, and the click pass-through rests on the CanvasGroup setting rather than a test click.

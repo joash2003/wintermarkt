@@ -3,6 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using Wintermarkt.Core;
 
 namespace Wintermarkt.Editor
@@ -76,7 +77,7 @@ namespace Wintermarkt.Editor
             // Issue 47: the day card in its hold phase; it runs on unscaled time, so about 1 to 2.5 s after the day starts whatever the time scale.
             if (sim.Wave != shownWave) { shownWave = sim.Wave; waveAt = EditorApplication.timeSinceStartup; }
             double sinceDay = EditorApplication.timeSinceStartup - waveAt;
-            if (sinceDay > 1.2 && sinceDay < 2.4) Save(cam, "day-" + (sim.Wave + 1));
+            if (sinceDay > 1.2 && sinceDay < 2.4) { Save(cam, "day-" + (sim.Wave + 1)); if (sim.Wave == 0) { Save(cam, "day-1-720p", 1280, 720); Save(cam, "day-1-1080p", 1920, 1080); } }   // the two sizes 47 must fit
             // Issue 14: a queue of three or more, close up, to see that it stands in joining order; the day card starts later than the day itself, so ask the UI whether it has gone.
             var ui = Object.FindAnyObjectByType<MarketUI>();
             if (ui != null && !ui.DayCardShowing) foreach (var b in sim.Buildings) if (sim.QueueCount(b) >= 3) { Close(cam, game, b, "queue"); break; }
@@ -112,14 +113,16 @@ namespace Wintermarkt.Editor
             cam.transform.position = home; cam.orthographicSize = zoom;
         }
 
-        static void Save(Camera cam, string name)
+        static void Save(Camera cam, string name, int width = 1600, int height = 900)
         {
             if (!done.Add(name)) return;
             // The HUD is a screen overlay, which a camera render does not include: draw it through the camera for the picture.
             foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None)) { canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = cam; canvas.planeDistance = 2; }
-            Canvas.ForceUpdateCanvases();
-            var target = new RenderTexture(1600, 900, 24); cam.targetTexture = target; cam.Render();
-            RenderTexture.active = target; var picture = new Texture2D(1600, 900, TextureFormat.RGB24, false); picture.ReadPixels(new Rect(0, 0, 1600, 900), 0, 0); picture.Apply();
+            var target = new RenderTexture(width, height, 24); cam.targetTexture = target;
+            // The scaler recomputes its factor only in its own Update, so make it look at the new target size now; otherwise a 1280x720 picture shows the 1600x900 layout.
+            foreach (var scaler in Object.FindObjectsByType<CanvasScaler>(FindObjectsSortMode.None)) typeof(CanvasScaler).GetMethod("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(scaler, null);
+            Canvas.ForceUpdateCanvases(); cam.Render();
+            RenderTexture.active = target; var picture = new Texture2D(width, height, TextureFormat.RGB24, false); picture.ReadPixels(new Rect(0, 0, width, height), 0, 0); picture.Apply();
             cam.targetTexture = null; RenderTexture.active = null;
             Directory.CreateDirectory("Logs/shots"); File.WriteAllBytes("Logs/shots/" + name + ".png", picture.EncodeToPNG());
         }
