@@ -12,6 +12,6 @@ Visuals: geometry built at runtime in MarketWorld from Unity primitives and from
 
 Still original primitive geometry: the Musiktheater and the Arbeiterkammer, streets, the bus, the two rides, the Krampus, wish and help markers, lights and fireworks.
 
-Audio: an original short bell tone generated at runtime in MarketGame. Font: Unity built-in LegacyRuntime font, supplied by Unity under its applicable terms. Engine, standard UI and test packages are Unity dependencies, not original Wintermarkt assets. The legacy Echo Maze source in Assets/_EchoMaze generates its own shapes, pulse rings and sine-wave beeps.
+Audio: an original short bell tone generated at runtime in MarketGame. Font: Unity built-in LegacyRuntime font, supplied by Unity under its applicable terms. Engine, standard UI and test packages are Unity dependencies, not original Wintermarkt assets.
 
 Team member names and contribution attribution must be confirmed. No project-wide license has been selected; do not infer a license for redistribution from this credits file.
