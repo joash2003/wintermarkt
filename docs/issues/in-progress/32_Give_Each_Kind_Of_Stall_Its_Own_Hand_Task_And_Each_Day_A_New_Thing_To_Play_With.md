@@ -37,6 +37,7 @@ Nothing is served unless the player taps: a tap on a stall cooks one batch, the 
 - [x] Simulation and data.
 - [x] Click handling and stall display.
 - [x] Bots, tuning, design spec, Play Mode pictures.
+- [ ] Aidan's twist from 28 Nov: one click per portion instead of one tap per batch, so a batch of 3 takes 3 clicks. Triples the hand work, which the lecturer asked for on 25 Nov; decide after playtest 1 and re-run the bots, because it changes every star target.
 
 ## Work log
 

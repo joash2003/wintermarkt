@@ -18,6 +18,7 @@ namespace Wintermarkt.Editor
         static readonly HashSet<string> done = new HashSet<string>();
         static bool placed; static double endAt, upgradedAt; static MarketBuilding upgraded;
         static readonly string[] order = { "punsch", "pastry", "craft", "carousel", "wheel" };   // pictured in this order, one level at a time
+        static int shownWave = -1; static double waveAt;
         static bool Has(string flag) { return System.Array.IndexOf(System.Environment.GetCommandLineArgs(), flag) >= 0; }
         static PlayModeShots() { if (Has("-shot")) EditorApplication.update += Tick; }
 
@@ -72,6 +73,12 @@ namespace Wintermarkt.Editor
                     }
                 }
             }
+            // Issue 47: the day card in its hold phase; it runs on unscaled time, so about 1 to 2.5 s after the day starts whatever the time scale.
+            if (sim.Wave != shownWave) { shownWave = sim.Wave; waveAt = EditorApplication.timeSinceStartup; }
+            double sinceDay = EditorApplication.timeSinceStartup - waveAt;
+            if (sinceDay > 1.2 && sinceDay < 2.4) Save(cam, "day-" + (sim.Wave + 1));
+            // Issue 14: a queue of three or more, close up, to see that it stands in joining order.
+            foreach (var b in sim.Buildings) if (sim.QueueCount(b) >= 3) { Close(cam, game, b, "queue"); break; }
             MarketBuilding calling = null; foreach (var b in sim.Buildings) if (b.NeedsHelp) calling = b;
             int hunting = 0; foreach (var k in sim.Krampuses) if (!k.Fleeing) hunting++;
             if (calling != null && calling.HelpRemaining < 6) Save(cam, "help-call");
