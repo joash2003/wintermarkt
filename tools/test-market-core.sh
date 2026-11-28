@@ -3,7 +3,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mono_root="${UNITY_MONO_ROOT:-}"
 if [ -z "$mono_root" ]; then
-  for unity in /Applications/Unity/Hub/Editor/*/Unity.app/Contents "/c/Program Files/Unity/Hub/Editor/"*/Editor "$HOME"/Unity/Hub/Editor/*/Editor "${UNITY_APP:-}"; do
+  pinned=$(sed -n 's/^m_EditorVersion: //p' ProjectSettings/ProjectVersion.txt | tr -d '\r')
+  # Later entries win: the pinned version beats the newest, UNITY_APP beats both (issue 45).
+  for unity in /Applications/Unity/Hub/Editor/*/Unity.app/Contents "/c/Program Files/Unity/Hub/Editor/"*/Editor "$HOME"/Unity/Hub/Editor/*/Editor "/Applications/Unity/Hub/Editor/$pinned/Unity.app/Contents" "/c/Program Files/Unity/Hub/Editor/$pinned/Editor" "$HOME/Unity/Hub/Editor/$pinned/Editor" "${UNITY_APP:-}"; do
     for candidate in "$unity/Resources/Scripting/MonoBleedingEdge" "$unity/Data/MonoBleedingEdge"; do
       if [ -f "$candidate/lib/mono/4.5/csc.exe" ]; then mono_root=$candidate; fi
     done
