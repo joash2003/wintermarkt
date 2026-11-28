@@ -65,13 +65,14 @@ namespace Wintermarkt
             dayCard = Rect("Day card", hud, new Vector2(.5f, .5f), new Vector2(0, 90), new Vector2(1700, 170));
             dayGroup = dayCard.gameObject.AddComponent<CanvasGroup>(); dayGroup.blocksRaycasts = false; dayGroup.interactable = false;
             dayStripe = (RectTransform)Panel("Stripe", dayCard, new Vector2(.5f, .5f), Vector2.zero, new Vector2(1700, 150), new Color(.6f, .13f, .15f, .93f));
-            Panel("Top line", dayStripe, new Vector2(.5f, 1), Vector2.zero, new Vector2(1700, 5), gold); Panel("Bottom line", dayStripe, new Vector2(.5f, 0), Vector2.zero, new Vector2(1700, 5), gold);
+            var dayGold = new Color(.96f, .77f, .4f);   // not `gold`: with the wooden panels that is berry red, invisible on the red stripe
+            Panel("Top line", dayStripe, new Vector2(.5f, 1), Vector2.zero, new Vector2(1700, 5), dayGold); Panel("Bottom line", dayStripe, new Vector2(.5f, 0), Vector2.zero, new Vector2(1700, 5), dayGold);
             // The day's character, filmed live by MarketWorld.ShowHero; taller than the stripe so it breaks out of it.
             dayHero = Rect("Hero", dayCard, new Vector2(.5f, .5f), new Vector2(-560, 40), new Vector2(380, 380)).gameObject.AddComponent<RawImage>(); dayHero.raycastTarget = false;
-            dayNumber = Label("", dayCard, new Vector2(0, 50), new Vector2(1000, 30), 22, gold);
+            dayNumber = Label("", dayCard, new Vector2(0, 50), new Vector2(1000, 30), 22, dayGold);
             dayTitle = Label("", dayCard, new Vector2(0, -2), new Vector2(1600, 90), 76, new Color(1, .96f, .88f)); dayTitle.fontStyle = FontStyle.Bold;
             dayTitle.gameObject.AddComponent<Shadow>().effectDistance = new Vector2(4, -4);
-            dayDate = Label("", dayCard, new Vector2(0, -52), new Vector2(1000, 28), 22, gold);
+            dayDate = Label("", dayCard, new Vector2(0, -52), new Vector2(1000, 28), 22, dayGold);
             dayFlash = Panel("Flash", dayCard, new Vector2(.5f, .5f), Vector2.zero, new Vector2(1700, 150), Color.clear).GetComponent<Image>();
             dayCard.gameObject.SetActive(false);
             // Add definition buttons after the simulation has been initialized by MarketGame.
