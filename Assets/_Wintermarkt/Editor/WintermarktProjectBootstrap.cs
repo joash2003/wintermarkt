@@ -75,13 +75,16 @@ namespace Wintermarkt.Editor
             ValidateData();
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
             if (!scene) throw new InvalidOperationException("Run Tools > Wintermarkt > Create or Repair Project first.");
-            Directory.CreateDirectory("Builds/LinzWintermarkt_macOS");
+            // The build is for the platform the editor runs on (issue 37): Windows on a Windows PC, macOS on a Mac.
+            bool windows = Application.platform == RuntimePlatform.WindowsEditor;
+            string folder = windows ? "Builds/LinzWintermarkt_Windows" : "Builds/LinzWintermarkt_macOS";
+            Directory.CreateDirectory(folder);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
-                scenes = new[] { ScenePath }, locationPathName = "Builds/LinzWintermarkt_macOS/LinzWintermarkt.app",
-                target = BuildTarget.StandaloneOSX, options = BuildOptions.None
+                scenes = new[] { ScenePath }, locationPathName = folder + (windows ? "/LinzWintermarkt.exe" : "/LinzWintermarkt.app"),
+                target = windows ? BuildTarget.StandaloneWindows64 : BuildTarget.StandaloneOSX, options = BuildOptions.None
             });
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
-                throw new InvalidOperationException("Wintermarkt macOS build failed: " + report.summary.result);
+                throw new InvalidOperationException("Wintermarkt build failed: " + report.summary.result);
             Debug.Log("Wintermarkt build succeeded: " + report.summary.outputPath + " (" + report.summary.totalSize + " bytes)");
         }
     }
