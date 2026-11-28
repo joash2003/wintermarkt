@@ -34,12 +34,13 @@ Suspected from code reading on 18 Oct. Not yet observed in Play Mode, because th
 ## Acceptance criteria
 
 - [ ] Decision recorded after a Play Mode check.
-- [ ] If changed: new test fails before and passes after; `tools/quality-check.sh` passes.
+- [x] If changed: new test fails before and passes after; `tools/quality-check.sh` passes.
 - [ ] Another contributor reviewed the change.
 
 ## Work log
 
 - 2026-10-20: filed from the 18 Oct code review.
+- 2026-11-28: built from code reading without waiting for the Play Mode decision, because the lecturer's feedback of 25 Nov (nothing visible happens) makes a frozen-looking queue matter. `MarketSimulation.MoveUp` re-packs the waiting and arriving visitors of a stall into the lowest free spots in joining order on every substep; a visitor being served keeps their spot and snowed-in spots are skipped; a moved visitor walks the one cell forward. New test `QueueStepsForwardInOrder` fails on the old Core (a newcomer took the front spot while earlier visitors stood behind) and passes with the change; 29 core tests pass; gate green. Commit 161c70e. Still open: the decision box above, from the Play Mode look during issue 31, and another contributor's review.
 
 ## Outcome
 

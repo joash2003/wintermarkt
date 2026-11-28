@@ -4,6 +4,7 @@ priority: low
 created: 2026-11-22
 assignee: Joash Johnson Samuel
 branch:
+closed: 2026-11-28
 ---
 
 # 45 — compile-market.py compiles against the newest installed Unity, not the pinned one
@@ -18,15 +19,15 @@ The compile check uses the Unity named in ProjectSettings/ProjectVersion.txt whe
 
 ## Acceptance criteria
 
-- [ ] On a machine with 6000.3.25f1 and a newer Unity installed, `python3 tools/compile-market.py` reports the pinned version.
-- [ ] With only another version installed it still runs, as today.
-- [ ] UNITY_APP still overrides both.
+- [x] On a machine with 6000.3.25f1 and a newer Unity installed, `python3 tools/compile-market.py` reports the pinned version.
+- [x] With only another version installed it still runs, as today.
+- [x] UNITY_APP still overrides both.
 
 ## Tasks
 
-- [ ] Read the pin from ProjectVersion.txt in compile-market.py and prefer it, the way tools/unity.sh does.
-- [ ] Do the same in tools/test-market-core.sh, which also takes the first Unity it finds for mono.
+- [x] Read the pin from ProjectVersion.txt in compile-market.py and prefer it, the way tools/unity.sh does.
+- [x] Do the same in tools/test-market-core.sh, which also takes the first Unity it finds for mono.
 
 ## Outcome
 
-_Filled in when closed: what shipped, the commit(s), and what was left out and why._
+Shipped in c27031b: `tools/compile-market.py` and `tools/test-market-core.sh` prefer the Unity named in `ProjectSettings/ProjectVersion.txt` when it is installed and only otherwise take the newest found; `UNITY_APP` and `UNITY_MONO_ROOT` still override. The compile check now prints the version it used. Checked 2026-11-28 on Joash's Windows PC with 6000.3.25f1 and 6000.6.5f1 installed: `compiled against 6000.3.25f1`. Not checked: a machine with only another version installed, which takes the old, unchanged code path.
