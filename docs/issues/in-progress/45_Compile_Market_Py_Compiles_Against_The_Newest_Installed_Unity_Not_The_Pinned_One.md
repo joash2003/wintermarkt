@@ -3,7 +3,7 @@ type: bug
 priority: low
 created: 2026-11-22
 assignee: Joash Johnson Samuel
-branch:
+branch: issue-45-pinned-unity
 ---
 
 # 45 — compile-market.py compiles against the newest installed Unity, not the pinned one
