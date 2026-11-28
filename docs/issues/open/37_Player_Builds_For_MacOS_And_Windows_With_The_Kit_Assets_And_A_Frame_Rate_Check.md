@@ -19,14 +19,18 @@ A macOS and a Windows build of the current game start, look like the editor vers
 ## Acceptance criteria
 
 - [ ] `bash tools/unity.sh build` succeeds on macOS and the app shows stalls, trees, visitors, tram, houses and the wooden UI, not fallback shapes or magenta.
-- [ ] A Windows build is made and started on a real Windows machine.
+- [x] A Windows build is made and started on a real Windows machine.
 - [ ] Frame rate with a full market in the rush is measured and written down; if it is poor, animated visitors are capped.
-- [ ] Results are recorded in TESTING.md.
+- [x] Results are recorded in TESTING.md.
 
 ## Tasks
 
 - [ ] Build and run both.
 - [ ] Fix what is missing from the builds.
+
+## Work log
+
+- 2026-11-28: `BuildRelease` builds for the platform the editor runs on (Windows exe on Windows, macOS app on a Mac), commit e612cd6. `bash tools/unity.sh build` on Joash's Windows PC: 90 MB exe, no errors in the build log; started for 20 s, window alive, Player.log clean. Table in TESTING.md. Not done: a look at the running game (the screen capture caught the Start menu), the frame rate, and the macOS build, which needs a Mac.
 
 ## Outcome
 

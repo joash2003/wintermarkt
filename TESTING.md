@@ -65,3 +65,15 @@ Environment: macOS, Unity 6000.3.25f1 (6.3 LTS), after switching the project fro
 | `bash tools/unity.sh build` | PASS: Builds/LinzWintermarkt_macOS/LinzWintermarkt.app (103 MB) |
 | Launch the built app | First build: every surface magenta and `ArgumentNullException: shader` in `MarketWorld.Material` (Shader.Find("Standard") returns null in a player). Fixed by loading Resources/Wintermarkt/Blockout.mat. Second build: still magenta, because ProjectSettings/GraphicsSettings.asset had every built-in shader slot blank, so UI/Default was not in the build. Fixed by letting Unity regenerate the file. Third build: renders the park, roads, Musiktheater, HUD (350 coins, 0 guests, 10:00) and build menu; no exceptions in Player.log |
 | Place a stall and play a festival | Not run: scripted clicks are blocked on this Mac. Needs a human tester |
+
+## Windows build (2026-11-28)
+
+Environment: Joash's Windows 11 PC, Unity 6000.3.25f1 (6.3 LTS), commit e612cd6 (`BuildRelease` now builds for the platform the editor runs on, issue 37).
+
+| Check | Result |
+|---|---|
+| `bash tools/unity.sh build` | PASS: Builds/LinzWintermarkt_Windows/LinzWintermarkt.exe, 90 MB, no compile or shader errors in Logs/wintermarkt-build.log |
+| Start the built exe | PASS: window "Linz Wintermarkt" alive after 20 s, 451 MB, Player.log clean (Direct3D 12, no exception, no missing shader) |
+| Looks like the editor version | Not checked: the screen capture caught the Windows Start menu instead of the game; needs a person to look (issue 31) |
+| Frame rate in the rush | Not measured |
+| macOS build | Not run on this PC; the Mac build target is installed here but the app needs a Mac to start |
